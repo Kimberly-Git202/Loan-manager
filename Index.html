@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JML LOAN MANAGEMENT</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="logo">JML LOAN</span>
+                <i class="fas fa-bars" id="toggleSidebar" onclick="toggleSidebar()"></i>
+            </div>
+            <ul>
+                <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> <span>Clients</span></li>
+                <li onclick="showSection('add-client-sec')" class="nav-item"><i class="fas fa-user-plus"></i> <span>Add Client</span></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" onkeyup="searchClients()" placeholder="Search client name...">
+                </div>
+                <div class="admin-label">Admin Account</div>
+            </header>
+
+            <section id="list-sec" class="content-section">
+                <h2><i class="fas fa-database"></i> Client Database</h2>
+                <div class="card table-card">
+                    <table class="styled-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Phone</th>
+                                <th>Balance</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="add-client-sec" class="content-section hidden">
+                <div class="card form-card">
+                    <h2>Register New Client</h2>
+                    <form id="clientForm">
+                        <div class="form-grid">
+                            <input type="text" id="f-name" placeholder="Full Name" required>
+                            <input type="text" id="f-occ" placeholder="Occupation">
+                            <input type="text" id="f-id" placeholder="ID Number">
+                            <input type="text" id="f-ref" placeholder="Referral">
+                            <input type="text" id="f-phone" placeholder="Phone">
+                            <input type="text" id="f-addr" placeholder="Address">
+                            <input type="number" id="f-loan" placeholder="Initial Loan (KSh)" required>
+                        </div>
+                        <button type="submit" class="btn-save-main">Save Client Details</button>
+                    </form>
+                </div>
+            </section>
+
+            <div id="detailWindow" class="modal hidden">
+                <div class="modal-content">
+                    <span class="close-x" onclick="closeDetails()">&times;</span>
+                    
+                    <div class="modal-header">
+                        <h1 contenteditable="true" id="d-name" onblur="updateClientField('name', this.innerText)">---</h1>
+                        <div class="status-container">
+                            Status: 
+                            <select id="d-status" onchange="updateClientField('status', this.value)">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Cleared">Cleared</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <h3>Basic Info (Editable)</h3>
+                            <p>Occupation: <span contenteditable="true" id="d-occ" onblur="updateClientField('occupation', this.innerText)">---</span></p>
+                            <p>ID Number: <span contenteditable="true" id="d-idnum" onblur="updateClientField('idNum', this.innerText)">---</span></p>
+                            <p>Address: <span contenteditable="true" id="d-addr" onblur="updateClientField('address', this.innerText)">---</span></p>
+                        </div>
+                        <div class="info-card">
+                            <h3>Contact</h3>
+                            <p>Phone: <span contenteditable="true" id="d-phone" onblur="updateClientField('phone', this.innerText)">---</span></p>
+                            <p>Referral: <span contenteditable="true" id="d-ref" onblur="updateClientField('referral', this.innerText)">---</span></p>
+                        </div>
+                    </div>
+
+                    <div class="loan-summary">
+                        <div class="loan-display">
+                            <small>Loan Amount</small>
+                            <h2 id="d-loan">KSh 0</h2>
+                        </div>
+                        <div class="loan-display highlight">
+                            <small>Balance (Click to Edit)</small>
+                            <input type="number" id="d-bal-input" onchange="saveManualBalance()">
+                        </div>
+                    </div>
+
+                    <div class="notes-section">
+                        <h3>Notes & Reminders</h3>
+                        <textarea id="d-notes" onblur="updateClientField('notes', this.value)" placeholder="Add notes here..."></textarea>
+                    </div>
+
+                    <div class="activity-section">
+                        <h3>Recent Activity</h3>
+                        <div class="table-wrapper">
+                            <table class="activity-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Activity</th>
+                                        <th>Details</th>
+                                        <th>Handled By</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="quick-payment">
+                        <h3>Process Quick Payment</h3>
+                        <div class="pay-row">
+                            <input type="number" id="dailyPay" placeholder="Amount">
+                            <button onclick="updatePayment()">Update Balance</button>
+                        </div>
+                    </div>
+
+                    <div class="footer-btn">
+                        <button class="btn-clear" onclick="markAsCleared()">Tick if Loan Cleared</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
