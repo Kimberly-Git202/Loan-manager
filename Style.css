@@ -1,0 +1,50 @@
+:root { --primary: #1e4eb8; --bg: #f8fafc; --text: #1e293b; }
+body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
+.app-container { display: flex; height: 100vh; }
+
+.sidebar { width: 240px; background: var(--primary); color: white; transition: 0.3s; flex-shrink: 0; z-index: 100; }
+.sidebar.minimized { width: 70px; }
+.sidebar.minimized span, .sidebar.minimized .logo { display: none; }
+.sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar ul { list-style: none; padding: 0; margin-top: 10px; }
+.sidebar li { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; }
+.sidebar li.active { background: rgba(255,255,255,0.2); border-left: 4px solid white; }
+
+.main-content { flex: 1; overflow-y: auto; }
+.top-header { background: white; padding: 15px 25px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; }
+.search-box { background: #f1f5f9; padding: 8px 15px; border-radius: 20px; width: 300px; display: flex; align-items: center; }
+.search-box input { border: none; background: transparent; outline: none; width: 100%; margin-left: 10px; }
+
+.content-section { padding: 20px; }
+.styled-table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.styled-table th, .styled-table td { padding: 15px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+.styled-table th { background: #f8fafc; font-size: 13px; color: #64748b; text-transform: uppercase; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 10px; }
+.modal-content { background: white; width: 100%; max-width: 800px; max-height: 90vh; border-radius: 15px; padding: 25px; overflow-y: auto; position: relative; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 15px 0; }
+.info-card { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; }
+.loan-summary { display: flex; gap: 15px; margin: 15px 0; }
+.loan-display { flex: 1; padding: 15px; background: #eff6ff; border-radius: 10px; text-align: center; border: 1px solid #dbeafe; }
+.loan-display input { width: 90%; font-size: 1.5rem; font-weight: bold; border: 1px solid #bfdbfe; text-align: center; color: var(--primary); border-radius: 5px; }
+
+.activity-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+.activity-table th { text-align: left; padding: 10px; background: #f1f5f9; border-bottom: 2px solid #e2e8f0; }
+.activity-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+
+.btn-clear { width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+.hidden { display: none !important; }
+.close-x { position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; }
+textarea { width: 100%; height: 80px; border-radius: 8px; border: 1px solid #e2e8f0; padding: 10px; font-family: inherit; }
+
+.quick-payment { background: #fffbeb; border: 1px solid #fef3c7; padding: 15px; border-radius: 10px; margin-top: 15px; }
+.pay-row { display: flex; gap: 10px; margin-top: 10px; }
+.pay-row input { flex: 1; padding: 10px; border: 1px solid #fbbf24; border-radius: 5px; }
+.pay-row button { background: #fbbf24; color: #92400e; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
+@media (max-width: 600px) {
+    .sidebar { position: fixed; height: 100%; }
+    .sidebar.minimized { left: -70px; }
+    .info-grid { grid-template-columns: 1fr; }
+    .loan-summary { flex-direction: column; }
+}
