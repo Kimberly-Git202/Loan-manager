@@ -1,17 +1,20 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
+// Final Corrected Firebase Config for Belgium Server
 const firebaseConfig = {
   apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
   authDomain: "jml-loans-560d8.firebaseapp.com",
   projectId: "jml-loans-560d8",
   storageBucket: "jml-loans-560d8.firebasestorage.app",
-  databaseURL: "https://jml-loans-560d8-default-rtdb.firebaseio.com",
+  // This matches your specific database location in Europe
+  databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app", 
   messagingSenderId: "425047270355",
   appId: "1:425047270355:web:6ccd08365ca1cde7354526",
   measurementId: "G-9YEWM3SW1P"
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -22,6 +25,7 @@ let currentIndex = null;
 onValue(ref(db, 'jml_data/'), (snapshot) => {
     clients = snapshot.val() || [];
     renderTable();
+    // Refresh dashboard if it's currently open
     if (currentIndex !== null) openDashboard(currentIndex);
 });
 
@@ -37,8 +41,14 @@ window.toggleSidebar = function() {
 window.showSection = function(id) {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    // Highlight active nav
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    
+    // Update active state in sidebar
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if(item.getAttribute('onclick').includes(id)) {
+            item.classList.add('active');
+        }
+    });
 };
 
 // --- ADD CLIENT ---
@@ -61,7 +71,7 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
             history: [{ 
                 date: new Date().toLocaleDateString('en-GB'), 
                 act: "Loan Started", 
-                det: `Ksh ${loan} Approved`, 
+                det: `Ksh ${loan.toLocaleString()} Approved`, 
                 by: "Admin" 
             }]
         };
@@ -71,7 +81,7 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
         this.reset();
     } catch (err) {
         console.error("Error adding client:", err);
-        alert("Failed to save client. Check your connection.");
+        alert("Action failed. Please refresh and try again.");
     }
 });
 
@@ -79,14 +89,19 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
 function renderTable() {
     const tbody = document.getElementById('clientTableBody');
     if (!tbody) return;
+    
+    if (clients.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No clients found. Add your first client!</td></tr>`;
+        return;
+    }
+
     tbody.innerHTML = clients.map((c, i) => `
         <tr>
             <td>${i + 1}</td>
             <td><strong>${c.name}</strong></td>
             <td>${c.phone}</td>
             <td>Ksh ${c.balance.toLocaleString()}</td>
-            <td><span class="tag">${c.status}</span></td>
-            <td><button class="view-btn" onclick="openDashboard(${i})">View Dashboard</button></td>
+            <td><button class="view-btn" onclick="openDashboard(${i})">Dashboard</button></td>
         </tr>
     `).join('');
 }
@@ -96,14 +111,18 @@ window.openDashboard = function(index) {
     currentIndex = index;
     const c = clients[index];
     
-    // Fill Modal Data
+    // Header & Status
     document.getElementById('d-name').innerText = c.name;
     document.getElementById('d-status').value = c.status;
+    
+    // Editable Basic Info
     document.getElementById('d-occ').innerText = c.occ;
     document.getElementById('d-idnum').innerText = c.idNum;
     document.getElementById('d-phone').innerText = c.phone;
     document.getElementById('d-addr').innerText = c.addr;
     document.getElementById('d-ref').innerText = c.ref;
+    
+    // Loan & Balance
     document.getElementById('d-loan').innerText = `Ksh ${c.loan.toLocaleString()}`;
     document.getElementById('d-bal-input').value = c.balance;
     document.getElementById('d-notes').value = c.notes || "";
@@ -125,7 +144,7 @@ function renderActivity(history) {
     `).join('');
 }
 
-// --- UPDATE INDIVIDUAL FIELDS ---
+// --- UPDATING DATA ---
 window.updateClientField = function(field, value) {
     if (currentIndex === null) return;
     clients[currentIndex][field] = value;
@@ -133,11 +152,12 @@ window.updateClientField = function(field, value) {
 };
 
 window.saveManualBalance = function() {
+    if (currentIndex === null) return;
     const newVal = parseFloat(document.getElementById('d-bal-input').value);
     clients[currentIndex].history.push({
         date: new Date().toLocaleDateString('en-GB'),
         act: "Correction",
-        det: `Manual set to Ksh ${newVal}`,
+        det: `Manual set to Ksh ${newVal.toLocaleString()}`,
         by: "Admin"
     });
     clients[currentIndex].balance = newVal;
@@ -145,13 +165,14 @@ window.saveManualBalance = function() {
 };
 
 window.updatePayment = function() {
+    if (currentIndex === null) return;
     const amt = parseFloat(document.getElementById('dailyPay').value);
     if (amt > 0) {
         clients[currentIndex].balance -= amt;
         clients[currentIndex].history.push({
             date: new Date().toLocaleDateString('en-GB'),
             act: "Payment",
-            det: `Paid Ksh ${amt}`,
+            det: `Paid Ksh ${amt.toLocaleString()}`,
             by: "Admin"
         });
         document.getElementById('dailyPay').value = "";
@@ -160,6 +181,7 @@ window.updatePayment = function() {
 };
 
 window.markAsCleared = function() {
+    if (currentIndex === null) return;
     if(confirm("Mark this loan as fully cleared?")) {
         clients[currentIndex].balance = 0;
         clients[currentIndex].status = "Cleared";
@@ -182,8 +204,9 @@ window.searchClients = function() {
     const term = document.getElementById('globalSearch').value.toLowerCase();
     const rows = document.querySelectorAll('#clientTableBody tr');
     rows.forEach(row => {
-        const name = row.cells[1].innerText.toLowerCase();
+        const name = row.cells[1] ? row.cells[1].innerText.toLowerCase() : "";
         row.style.display = name.includes(term) ? "" : "none";
     });
 };
+
 
