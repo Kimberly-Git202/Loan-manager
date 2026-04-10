@@ -179,5 +179,26 @@ window.closeDetails = function() {
     document.getElementById('detailWindow').classList.add('hidden'); 
 };
 
+// --- DELETE CLIENT ---
+window.deleteClient = function(index) {
+    if (index === null) return;
+    
+    const clientName = clients[index].name;
+    
+    // Safety check so you don't delete by accident
+    if(confirm(`Are you sure you want to PERMANENTLY delete ${clientName}? This cannot be undone.`)) {
+        
+        // Remove the client from our local list
+        clients.splice(index, 1);
+        
+        // Push the updated list to Firebase
+        saveData();
+        
+        // Close the dashboard and go back to the list
+        closeDetails();
+        
+        alert("Client deleted successfully.");
+    }
+};
 
 
