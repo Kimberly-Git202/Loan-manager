@@ -13,7 +13,7 @@
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span class="logo">JML LOAN</span>
-                <i class="fas fa-bars" id="toggleSidebar" onclick="toggleSidebar()"></i>
+                <i class="fas fa-bars" onclick="toggleSidebar()"></i>
             </div>
             <ul>
                 <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> <span>Clients</span></li>
@@ -25,9 +25,11 @@
             <header class="top-header">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" onkeyup="searchClients()" placeholder="Search client name...">
+                    <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search client name...">
                 </div>
-                <div class="admin-label">Cloud Sync Active</div>
+                <div class="summary-chip">
+                    Total Out: <span id="total-outstanding">KSh 0</span>
+                </div>
             </header>
 
             <section id="list-sec" class="content-section">
@@ -72,7 +74,7 @@
                     <span class="close-x" onclick="closeDetails()">&times;</span>
                     
                     <div class="modal-header">
-                        <h1 contenteditable="true" id="d-name" onblur="updateClientField('name', this.innerText)">---</h1>
+                        <h1 id="d-name">---</h1>
                         <div class="status-container">
                             Status: 
                             <select id="d-status" onchange="updateClientField('status', this.value)">
@@ -85,45 +87,40 @@
 
                     <div class="info-grid">
                         <div class="info-card">
-                            <h3>Basic Info (Editable)</h3>
-                            <p>Occupation: <span contenteditable="true" id="d-occ" onblur="updateClientField('occupation', this.innerText)">---</span></p>
-                            <p>ID Number: <span contenteditable="true" id="d-idnum" onblur="updateClientField('idNum', this.innerText)">---</span></p>
-                            <p>Address: <span contenteditable="true" id="d-addr" onblur="updateClientField('address', this.innerText)">---</span></p>
+                            <h3>Basic Info</h3>
+                            <p>Occupation: <span id="d-occ">---</span></p>
+                            <p>ID: <span id="d-idnum">---</span></p>
+                            <p>Addr: <span id="d-addr">---</span></p>
                         </div>
                         <div class="info-card">
                             <h3>Contact</h3>
-                            <p>Phone: <span contenteditable="true" id="d-phone" onblur="updateClientField('phone', this.innerText)">---</span></p>
-                            <p>Referral: <span contenteditable="true" id="d-ref" onblur="updateClientField('referral', this.innerText)">---</span></p>
+                            <p>Phone: <span id="d-phone">---</span></p>
+                            <p>Ref: <span id="d-ref">---</span></p>
                         </div>
                     </div>
 
                     <div class="loan-summary">
                         <div class="loan-display">
-                            <small>Loan Amount</small>
+                            <small>Initial Loan</small>
                             <h2 id="d-loan">KSh 0</h2>
                         </div>
                         <div class="loan-display highlight">
-                            <small>Balance (Click to Edit)</small>
+                            <small>Current Balance</small>
                             <input type="number" id="d-bal-input" onchange="saveManualBalance()">
                         </div>
                     </div>
 
                     <div class="notes-section">
-                        <h3>Notes & Reminders</h3>
-                        <textarea id="d-notes" onblur="updateClientField('notes', this.value)" placeholder="Add notes here..."></textarea>
+                        <h3>Notes</h3>
+                        <textarea id="d-notes" onblur="updateClientField('notes', this.value)" placeholder="Add notes..."></textarea>
                     </div>
 
                     <div class="activity-section">
-                        <h3>Recent Activity</h3>
+                        <h3>Payment History</h3>
                         <div class="table-wrapper">
                             <table class="activity-table">
                                 <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Activity</th>
-                                        <th>Details</th>
-                                        <th>Handled By</th>
-                                    </tr>
+                                    <tr><th>Date</th><th>Activity</th><th>Details</th><th>By</th></tr>
                                 </thead>
                                 <tbody id="activityTableBody"></tbody>
                             </table>
@@ -131,15 +128,15 @@
                     </div>
 
                     <div class="quick-payment">
-                        <h3>Process Quick Payment</h3>
+                        <h3>Record Payment</h3>
                         <div class="pay-row">
                             <input type="number" id="dailyPay" placeholder="Amount">
-                            <button onclick="updatePayment()">Update Balance</button>
+                            <button onclick="updatePayment()">Post Payment</button>
                         </div>
                     </div>
 
                     <div class="footer-btn">
-                        <button class="btn-clear" onclick="markAsCleared()">Tick if Loan Cleared</button>
+                        <button class="btn-clear" onclick="markAsCleared()">Close Loan (Settled)</button>
                     </div>
                 </div>
             </div>
@@ -148,3 +145,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
