@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
-// Your Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
   authDomain: "jml-loans-560d8.firebaseapp.com",
@@ -13,7 +12,6 @@ const firebaseConfig = {
   measurementId: "G-9YEWM3SW1P"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -21,16 +19,13 @@ let clients = [];
 let currentIndex = null;
 
 // --- CLOUD DATA SYNC ---
-// This replaces your window.onload and localStorage.getItem
 onValue(ref(db, 'jml_data/'), (snapshot) => {
     clients = snapshot.val() || [];
     renderTable();
-    // If the dashboard is open, refresh the data inside it too
     if (currentIndex !== null) openDashboard(currentIndex);
 });
 
 function saveData() { 
-    // This replaces localStorage.setItem
     set(ref(db, 'jml_data/'), clients); 
 }
 
@@ -42,34 +37,42 @@ window.toggleSidebar = function() {
 window.showSection = function(id) {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    // Highlight active nav
+    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 };
 
 // --- ADD CLIENT ---
 document.getElementById('clientForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const loan = parseFloat(document.getElementById('f-loan').value);
-    const newClient = {
-        name: document.getElementById('f-name').value,
-        occ: document.getElementById('f-occ').value,
-        idNum: document.getElementById('f-id').value,
-        ref: document.getElementById('f-ref').value,
-        phone: document.getElementById('f-phone').value,
-        addr: document.getElementById('f-addr').value,
-        loan: loan,
-        balance: loan,
-        status: "Active",
-        notes: "",
-        history: [{ 
-            date: new Date().toLocaleDateString('en-GB'), 
-            act: "Loan Started", 
-            det: `Ksh ${loan} Approved`, 
-            by: "Admin" 
-        }]
-    };
-    clients.push(newClient);
-    saveData();
-    showSection('list-sec');
-    this.reset();
+    try {
+        const loan = parseFloat(document.getElementById('f-loan').value);
+        const newClient = {
+            name: document.getElementById('f-name').value,
+            occ: document.getElementById('f-occ').value || "---",
+            idNum: document.getElementById('f-id').value || "---",
+            ref: document.getElementById('f-ref').value || "---",
+            phone: document.getElementById('f-phone').value || "---",
+            addr: document.getElementById('f-addr').value || "---",
+            period: document.getElementById('f-period').value || "---",
+            loan: loan,
+            balance: loan,
+            status: "Active",
+            notes: "",
+            history: [{ 
+                date: new Date().toLocaleDateString('en-GB'), 
+                act: "Loan Started", 
+                det: `Ksh ${loan} Approved`, 
+                by: "Admin" 
+            }]
+        };
+        clients.push(newClient);
+        saveData();
+        showSection('list-sec');
+        this.reset();
+    } catch (err) {
+        console.error("Error adding client:", err);
+        alert("Failed to save client. Check your connection.");
+    }
 });
 
 // --- RENDER TABLE ---
@@ -79,7 +82,7 @@ function renderTable() {
     tbody.innerHTML = clients.map((c, i) => `
         <tr>
             <td>${i + 1}</td>
-            <td>${c.name}</td>
+            <td><strong>${c.name}</strong></td>
             <td>${c.phone}</td>
             <td>Ksh ${c.balance.toLocaleString()}</td>
             <td><span class="tag">${c.status}</span></td>
@@ -93,16 +96,17 @@ window.openDashboard = function(index) {
     currentIndex = index;
     const c = clients[index];
     
+    // Fill Modal Data
     document.getElementById('d-name').innerText = c.name;
-    document.getElementById('d-status-select').value = c.status;
-    document.getElementById('e-occ').value = c.occ;
-    document.getElementById('e-idnum').value = c.idNum;
-    document.getElementById('e-ref').value = c.ref;
-    document.getElementById('e-phone').value = c.phone;
-    document.getElementById('e-addr').value = c.addr;
+    document.getElementById('d-status').value = c.status;
+    document.getElementById('d-occ').innerText = c.occ;
+    document.getElementById('d-idnum').innerText = c.idNum;
+    document.getElementById('d-phone').innerText = c.phone;
+    document.getElementById('d-addr').innerText = c.addr;
+    document.getElementById('d-ref').innerText = c.ref;
     document.getElementById('d-loan').innerText = `Ksh ${c.loan.toLocaleString()}`;
     document.getElementById('d-bal-input').value = c.balance;
-    document.getElementById('d-notes').value = c.notes;
+    document.getElementById('d-notes').value = c.notes || "";
     
     renderActivity(c.history || []);
     document.getElementById('detailWindow').classList.remove('hidden');
@@ -121,23 +125,26 @@ function renderActivity(history) {
     `).join('');
 }
 
-// --- SAVE ACTIONS ---
-window.saveAllChanges = function() {
-    const c = clients[currentIndex];
-    c.occ = document.getElementById('e-occ').value;
-    c.idNum = document.getElementById('e-idnum').value;
-    c.ref = document.getElementById('e-ref').value;
-    c.phone = document.getElementById('e-phone').value;
-    c.addr = document.getElementById('e-addr').value;
-    c.balance = parseFloat(document.getElementById('d-bal-input').value);
-    c.notes = document.getElementById('d-notes').value;
-    c.status = document.getElementById('d-status-select').value;
-    
+// --- UPDATE INDIVIDUAL FIELDS ---
+window.updateClientField = function(field, value) {
+    if (currentIndex === null) return;
+    clients[currentIndex][field] = value;
     saveData();
-    alert("Saved to Cloud Successfully!");
 };
 
-window.recordPayment = function() {
+window.saveManualBalance = function() {
+    const newVal = parseFloat(document.getElementById('d-bal-input').value);
+    clients[currentIndex].history.push({
+        date: new Date().toLocaleDateString('en-GB'),
+        act: "Correction",
+        det: `Manual set to Ksh ${newVal}`,
+        by: "Admin"
+    });
+    clients[currentIndex].balance = newVal;
+    saveData();
+};
+
+window.updatePayment = function() {
     const amt = parseFloat(document.getElementById('dailyPay').value);
     if (amt > 0) {
         clients[currentIndex].balance -= amt;
@@ -152,7 +159,7 @@ window.recordPayment = function() {
     }
 };
 
-window.clearLoan = function() {
+window.markAsCleared = function() {
     if(confirm("Mark this loan as fully cleared?")) {
         clients[currentIndex].balance = 0;
         clients[currentIndex].status = "Cleared";
@@ -171,7 +178,6 @@ window.closeDetails = function() {
     document.getElementById('detailWindow').classList.add('hidden'); 
 };
 
-// Global search (if you have the search input)
 window.searchClients = function() {
     const term = document.getElementById('globalSearch').value.toLowerCase();
     const rows = document.querySelectorAll('#clientTableBody tr');
@@ -180,3 +186,4 @@ window.searchClients = function() {
         row.style.display = name.includes(term) ? "" : "none";
     });
 };
+
