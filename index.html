@@ -22,7 +22,7 @@
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span class="logo">JML LIMITED</span>
-                <i class="fas fa-bars" onclick="toggleSidebar()"></i>
+                <i class="fas fa-times close-sidebar" onclick="toggleSidebar()"></i>
             </div>
             <ul>
                 <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> <span>Clients</span></li>
@@ -35,13 +35,18 @@
 
         <main class="main-content">
             <header class="top-header">
+                <div class="header-left">
+                    <i class="fas fa-bars menu-trigger" onclick="toggleSidebar()"></i>
+                    <i class="fas fa-arrow-left back-arrow hidden" id="backArrow" onclick="showSection('list-sec')"></i>
+                </div>
+                
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search records...">
                 </div>
                 <div class="header-stats">
                     <div class="stat-bubble">
-                        <small>Today's Revenue</small>
+                        <small>Today</small>
                         <span id="summary-today">KSh 0</span>
                     </div>
                 </div>
@@ -52,24 +57,15 @@
                 <div class="finance-grid">
                     <div class="stat-card">
                         <i class="fas fa-hand-holding-usd card-icon"></i>
-                        <div>
-                            <small>Total Outstanding</small>
-                            <h2 id="grand-total-out">KSh 0</h2>
-                        </div>
+                        <div><small>Outstanding</small><h2 id="grand-total-out">KSh 0</h2></div>
                     </div>
                     <div class="stat-card">
                         <i class="fas fa-piggy-bank card-icon"></i>
-                        <div>
-                            <small>Total Recovered</small>
-                            <h2 id="grand-total-paid">KSh 0</h2>
-                        </div>
+                        <div><small>Recovered</small><h2 id="grand-total-paid">KSh 0</h2></div>
                     </div>
                     <div class="stat-card highlight">
                         <i class="fas fa-calendar-check card-icon"></i>
-                        <div>
-                            <small>Payments Today</small>
-                            <h2 id="grand-total-today">KSh 0</h2>
-                        </div>
+                        <div><small>Today</small><h2 id="grand-total-today">KSh 0</h2></div>
                     </div>
                 </div>
             </section>
@@ -82,8 +78,8 @@
                             <tr>
                                 <th>#</th>
                                 <th>Client Name</th>
-                                <th>Phone Contact</th>
-                                <th>Current Balance</th>
+                                <th>Contact</th>
+                                <th>Balance</th>
                                 <th style="text-align: center;">Action</th>
                             </tr>
                         </thead>
@@ -94,18 +90,18 @@
 
             <section id="add-client-sec" class="content-section hidden">
                 <div class="card form-card large-form">
-                    <h2>New Client Enrollment</h2>
+                    <h2>New Enrollment</h2>
                     <form id="clientForm">
                         <div class="form-grid-pro">
                             <div class="input-wrap"><label>Full Name</label><input type="text" id="f-name" required></div>
-                            <div class="input-wrap"><label>Phone Number</label><input type="text" id="f-phone"></div>
+                            <div class="input-wrap"><label>Phone</label><input type="text" id="f-phone"></div>
                             <div class="input-wrap"><label>ID Number</label><input type="text" id="f-id"></div>
                             <div class="input-wrap"><label>Location</label><input type="text" id="f-location"></div>
                             <div class="input-wrap"><label>Occupation</label><input type="text" id="f-occupation"></div>
                             <div class="input-wrap"><label>Referral</label><input type="text" id="f-Referral"></div>
-                            <div class="input-wrap full-width"><label>Principal Loan (KSh)</label><input type="number" id="f-loan" required></div>
-                            <div class="input-wrap"><label>Start Date</label><input type="date" id="f-start" required></div>
-                            <div class="input-wrap"><label>End Date</label><input type="date" id="f-end" required></div>
+                            <div class="input-wrap full-width"><label>Principal (KSh)</label><input type="number" id="f-loan" required></div>
+                            <div class="input-wrap"><label>Start</label><input type="date" id="f-start" required></div>
+                            <div class="input-wrap"><label>End</label><input type="date" id="f-end" required></div>
                         </div>
                         <button type="submit" class="btn-save-main">Create Account</button>
                     </form>
@@ -114,9 +110,7 @@
 
             <div id="detailWindow" class="modal hidden">
                 <div class="modal-content">
-                    <div class="modal-header-nav">
-                        <span class="close-x" onclick="closeDetails()">&times;</span>
-                    </div>
+                    <span class="close-x" onclick="closeDetails()">&times;</span>
                     
                     <div class="client-profile-header">
                         <h1 id="d-name" contenteditable="true" onblur="updateClientField('name', this.innerText)">---</h1>
@@ -140,7 +134,7 @@
                     </div>
 
                     <div class="activity-section">
-                        <h3><i class="fas fa-history"></i> Transaction History</h3>
+                        <h3>Transaction History</h3>
                         <div class="table-scroll">
                             <table class="activity-table">
                                 <thead>
@@ -156,7 +150,7 @@
                         <div class="pay-row">
                             <input type="number" id="dailyPay" placeholder="Amount">
                             <input type="time" id="payTime" value="12:00">
-                            <button onclick="updatePayment()">Process Payment</button>
+                            <button onclick="updatePayment()">Process</button>
                         </div>
                     </div>
 
