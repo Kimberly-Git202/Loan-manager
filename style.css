@@ -7,44 +7,101 @@
     --text: #1e293b;
     --card: #ffffff;
     --border: #e2e8f0;
+    --sidebar-width: 260px;
 }
 
 body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
-.app-container { display: flex; height: 100vh; overflow: hidden; }
+.app-container { display: flex; height: 100vh; position: relative; }
 
-/* Login Styles */
-.auth-overlay { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
-.auth-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-.auth-card input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; }
-.auth-card button { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
-
-/* Scroll Fix */
-.main-content { flex: 1; height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-
-.sidebar { width: 250px; background: var(--primary); color: white; transition: 0.3s; flex-shrink: 0; }
-.sidebar.minimized { width: 80px; }
-
-/* Modal Scrolled */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; justify-content: center; padding: 20px; overflow-y: auto; }
-.modal-content { background: var(--card); width: 100%; max-width: 800px; border-radius: 20px; padding: 30px; margin: auto; position: relative; }
-
-.table-scroll { overflow-x: auto; width: 100%; border: 1px solid var(--border); border-radius: 10px; margin-top: 10px; }
-.activity-table { width: 100%; border-collapse: collapse; min-width: 500px; }
-.activity-table td, .activity-table th { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
-
-/* Editable fields UI */
-[contenteditable="true"] { border-bottom: 1px dashed var(--accent); cursor: text; padding: 2px 5px; }
-[contenteditable="true"]:focus { outline: 2px solid var(--accent); background: #f0f7ff; }
-
-/* Stats Card Grid */
-.finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
-.stat-card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
-
-.view-btn { padding: 8px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
-.hidden { display: none !important; }
-
-@media (max-width: 768px) {
-    .sidebar { position: fixed; left: -250px; height: 100%; z-index: 1500; }
-    .sidebar.minimized { left: 0; }
-    .form-grid-pro { grid-template-columns: 1fr; }
+/* Sidebar & Mobile Drawer */
+.sidebar { 
+    width: var(--sidebar-width); 
+    background: var(--primary); 
+    color: white; 
+    transition: all 0.3s ease; 
+    flex-shrink: 0; 
+    z-index: 2000;
 }
+
+.sidebar-header { 
+    padding: 20px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 1px solid rgba(255,255,255,0.1); 
+}
+
+.sidebar ul { list-style: none; padding: 10px 0; margin: 0; }
+.nav-item { 
+    padding: 15px 25px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    transition: 0.2s;
+    opacity: 0.8;
+}
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); opacity: 1; border-left: 4px solid var(--accent); }
+
+/* Main Content */
+.main-content { flex: 1; height: 100vh; overflow-y: auto; width: 100%; }
+.top-header { 
+    background: var(--card); 
+    padding: 10px 20px; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    border-bottom: 1px solid var(--border); 
+    position: sticky; top: 0; z-index: 100;
+}
+
+.menu-trigger { font-size: 1.4rem; cursor: pointer; color: var(--primary); display: block; }
+
+.search-box { 
+    background: var(--bg); 
+    padding: 8px 15px; 
+    border-radius: 10px; 
+    flex: 1; 
+    display: flex; 
+    align-items: center; 
+    border: 1px solid var(--border); 
+}
+.search-box input { border: none; background: transparent; outline: none; width: 100%; padding-left: 10px; font-size: 0.9rem; }
+
+/* Tables */
+.table-container { 
+    margin: 20px; 
+    background: var(--card); 
+    border-radius: 12px; 
+    border: 1px solid var(--border); 
+    overflow-x: auto; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); 
+}
+.styled-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+.styled-table th { background: #f1f5f9; padding: 15px; text-align: left; font-size: 0.8rem; color: #64748b; text-transform: uppercase; }
+.styled-table td { padding: 15px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.styled-table tr:hover { background: #f8fafc; }
+
+/* Auth Overlay */
+.auth-overlay { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.auth-card { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 350px; text-align: center; }
+.auth-card input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
+.auth-card button { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+/* Responsive Logic */
+@media (max-width: 768px) {
+    .sidebar { 
+        position: fixed; 
+        left: -100%; 
+        height: 100%; 
+        box-shadow: 10px 0 20px rgba(0,0,0,0.2);
+    }
+    .sidebar.open { left: 0; }
+    .nav-item { padding: 20px 25px; font-size: 1.1rem; }
+}
+
+/* Helper Classes */
+.hidden { display: none !important; }
+.view-btn { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; justify-content: center; overflow-y: auto; padding: 10px; }
+.modal-content { background: var(--card); width: 100%; max-width: 700px; border-radius: 15px; padding: 20px; margin: auto; }
