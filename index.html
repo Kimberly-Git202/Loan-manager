@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JML LOAN MANAGEMENT | Pro</title>
+    <title>JML LIMITED | Loan Management</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -12,14 +12,14 @@
     <div class="app-container">
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span class="logo">JML LOAN</span>
+                <span class="logo">JML LIMITED</span>
                 <i class="fas fa-bars" onclick="toggleSidebar()"></i>
             </div>
             <ul>
                 <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> <span>Clients</span></li>
-                <li onclick="showSection('loans-summary-sec')" class="nav-item"><i class="fas fa-chart-pie"></i> <span>Loans</span></li>
+                <li onclick="showSection('loans-summary-sec')" class="nav-item"><i class="fas fa-chart-line"></i> <span>Financials</span></li>
                 <li onclick="showSection('add-client-sec')" class="nav-item"><i class="fas fa-user-plus"></i> <span>Add Client</span></li>
-                <li onclick="toggleDarkMode()" class="nav-item"><i class="fas fa-adjust"></i> <span>Mode</span></li>
+                <li onclick="toggleDarkMode()" class="nav-item"><i class="fas fa-moon"></i> <span>Dark Mode</span></li>
             </ul>
         </nav>
 
@@ -27,35 +27,55 @@
             <header class="top-header">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Quick search...">
+                    <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search records...">
                 </div>
-                <div class="summary-chip">
-                    Paid Today: <span id="summary-today">KSh 0</span>
+                <div class="header-stats">
+                    <div class="stat-bubble">
+                        <small>Today's Revenue</small>
+                        <span id="summary-today">KSh 0</span>
+                    </div>
                 </div>
             </header>
 
             <section id="loans-summary-sec" class="content-section hidden">
+                <h2 class="section-title">Financial Overview</h2>
                 <div class="finance-grid">
                     <div class="stat-card">
-                        <small>Grand Total Out</small>
-                        <h2 id="grand-total-out">KSh 0</h2>
+                        <i class="fas fa-hand-holding-usd card-icon"></i>
+                        <div>
+                            <small>Total Outstanding</small>
+                            <h2 id="grand-total-out">KSh 0</h2>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <small>Grand Total Paid</small>
-                        <h2 id="grand-total-paid">KSh 0</h2>
+                        <i class="fas fa-piggy-bank card-icon"></i>
+                        <div>
+                            <small>Total Recovered</small>
+                            <h2 id="grand-total-paid">KSh 0</h2>
+                        </div>
                     </div>
-                    <div class="stat-card today-box">
-                        <small>Total Paid Today</small>
-                        <h2 id="grand-total-today">KSh 0</h2>
+                    <div class="stat-card highlight">
+                        <i class="fas fa-calendar-check card-icon"></i>
+                        <div>
+                            <small>Payments Today</small>
+                            <h2 id="grand-total-today">KSh 0</h2>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <section id="list-sec" class="content-section">
-                <div class="card table-card">
+                <h2 class="section-title">Client Registry</h2>
+                <div class="table-container">
                     <table class="styled-table">
                         <thead>
-                            <tr><th>#</th><th>Name</th><th>Phone</th><th>Balance</th><th>Action</th></tr>
+                            <tr>
+                                <th>#</th>
+                                <th>Client Name</th>
+                                <th>Phone Contact</th>
+                                <th>Current Balance</th>
+                                <th style="text-align: center;">Action</th>
+                            </tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
@@ -64,88 +84,74 @@
 
             <section id="add-client-sec" class="content-section hidden">
                 <div class="card form-card large-form">
-                    <h2><i class="fas fa-user-plus"></i> Registration</h2>
+                    <h2>New Client Enrollment</h2>
                     <form id="clientForm">
                         <div class="form-grid-pro">
-                            <input type="text" id="f-name" placeholder="Full Name" required>
-                            <input type="text" id="f-phone" placeholder="Phone Number">
-                            <input type="text" id="f-id" placeholder="ID Number">
-                            <input type="text" id="f-location" placeholder="Location">
-                            <input type="text" id="f-occupation" placeholder="Occupation">
-                            <input type="text" id="f-Referral" placeholder="Referral">
-                            <div class="full-width"><input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required></div>
-                            <div class="date-input-group">
-                                <label>Start Date</label>
-                                <input type="date" id="f-start" required>
-                            </div>
-                            <div class="date-input-group">
-                                <label>End Date</label>
-                                <input type="date" id="f-end" required>
-                            </div>
+                            <div class="input-wrap"><label>Full Name</label><input type="text" id="f-name" required></div>
+                            <div class="input-wrap"><label>Phone Number</label><input type="text" id="f-phone"></div>
+                            <div class="input-wrap"><label>ID Number</label><input type="text" id="f-id"></div>
+                            <div class="input-wrap"><label>Location</label><input type="text" id="f-location"></div>
+                            <div class="input-wrap"><label>Occupation</label><input type="text" id="f-occupation"></div>
+                            <div class="input-wrap"><label>Referral</label><input type="text" id="f-Referral"></div>
+                            <div class="input-wrap full-width"><label>Principal Loan (KSh)</label><input type="number" id="f-loan" required></div>
+                            <div class="input-wrap"><label>Start Date</label><input type="date" id="f-start" required></div>
+                            <div class="input-wrap"><label>End Date</label><input type="date" id="f-end" required></div>
                         </div>
-                        <button type="submit" class="btn-save-main">Confirm Registration</button>
+                        <button type="submit" class="btn-save-main">Create Account</button>
                     </form>
                 </div>
             </section>
 
             <div id="detailWindow" class="modal hidden">
                 <div class="modal-content">
-                    <span class="close-x" onclick="closeDetails()">&times;</span>
+                    <div class="modal-header-nav">
+                        <span class="close-x" onclick="closeDetails()">&times;</span>
+                    </div>
                     
-                    <h1 id="d-name">---</h1>
-                    <select id="d-status" onchange="updateClientField('status', this.value)" class="status-badge">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                        <option value="Cleared">Cleared</option>
-                    </select>
-
-                    <div class="loan-metrics">
-                        <div class="metric-box">
-                            <small>Principal</small>
-                            <p id="d-principal">0</p>
-                        </div>
-                        <div class="metric-box">
-                            <small>Total + Interest</small>
-                            <p id="d-total-int">0</p>
-                        </div>
-                        <div class="metric-box bal-box">
-                            <small>Balance</small>
-                            <input type="number" id="d-bal-input" onchange="saveManualBalance()">
-                        </div>
-                        <div class="metric-box paid-box">
-                            <small>Total Paid</small>
-                            <p id="d-total-paid">0</p>
-                        </div>
+                    <div class="client-profile-header">
+                        <h1 id="d-name">---</h1>
+                        <select id="d-status" onchange="updateClientField('status', this.value)" class="status-badge">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Cleared">Cleared</option>
+                        </select>
                     </div>
 
-                    <div class="dates-edit">
-                        <label>Start: <input type="date" id="d-start" onchange="updateClientField('startDate', this.value)"></label>
-                        <label>End: <input type="date" id="d-end" onchange="updateClientField('endDate', this.value)"></label>
+                    <div class="loan-metrics">
+                        <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
+                        <div class="metric-box"><small>Total (with Int.)</small><p id="d-total-int">0</p></div>
+                        <div class="metric-box bal-focus"><small>Balance Due</small><input type="number" id="d-bal-input" onchange="saveManualBalance()"></div>
+                        <div class="metric-box paid-focus"><small>Total Paid</small><p id="d-total-paid">0</p></div>
+                    </div>
+
+                    <div class="dates-bar">
+                        <div class="date-field"><i class="fas fa-calendar-alt"></i> Start: <input type="date" id="d-start" onchange="updateClientField('startDate', this.value)"></div>
+                        <div class="date-field"><i class="fas fa-hourglass-end"></i> End: <input type="date" id="d-end" onchange="updateClientField('endDate', this.value)"></div>
                     </div>
 
                     <div class="activity-section">
-                        <h3>Payment History</h3>
+                        <h3>Transaction History</h3>
                         <div class="table-scroll">
                             <table class="activity-table">
                                 <thead>
-                                    <tr><th>Date</th><th>Time</th><th>Details</th><th>By</th></tr>
+                                    <tr><th>Date</th><th>Time</th><th>Details</th><th>User</th></tr>
                                 </thead>
                                 <tbody id="activityTableBody"></tbody>
                             </table>
                         </div>
                     </div>
 
-                    <div class="payment-action">
-                        <h3>Record Payment</h3>
+                    <div class="payment-action-card">
+                        <h3>Post New Payment</h3>
                         <div class="pay-row">
                             <input type="number" id="dailyPay" placeholder="Amount">
                             <input type="time" id="payTime" value="12:00">
-                            <button onclick="updatePayment()">Post Payment</button>
+                            <button onclick="updatePayment()">Process Payment</button>
                         </div>
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn-clear" onclick="markAsCleared()">Settle Loan</button>
+                        <button class="btn-clear" onclick="markAsCleared()">Close Account (Settled)</button>
                         <button class="btn-delete" onclick="deleteClient(currentIndex)">Delete Profile</button>
                     </div>
                 </div>
@@ -155,6 +161,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
-
-
