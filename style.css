@@ -9,86 +9,42 @@
     --border: #e2e8f0;
 }
 
-.dark-mode {
-    --bg: #020617;
-    --text: #f1f5f9;
-    --card: #0f172a;
-    --border: #1e293b;
-    --primary: #2563eb;
-}
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
+.app-container { display: flex; height: 100vh; overflow: hidden; }
 
-body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; }
-.app-container { display: flex; height: 100vh; }
+/* Login Styles */
+.auth-overlay { position: fixed; inset: 0; background: var(--primary); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.auth-card { background: white; padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+.auth-card input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid var(--border); border-radius: 10px; box-sizing: border-box; }
+.auth-card button { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
 
-/* Sidebar */
+/* Scroll Fix */
+.main-content { flex: 1; height: 100vh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
 .sidebar { width: 250px; background: var(--primary); color: white; transition: 0.3s; flex-shrink: 0; }
 .sidebar.minimized { width: 80px; }
-.sidebar-header { padding: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-.logo { font-weight: 700; font-size: 1.1rem; }
 
-.sidebar ul { list-style: none; padding: 0; }
-.nav-item { padding: 18px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; opacity: 0.7; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.nav-item.active { opacity: 1; background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
+/* Modal Scrolled */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; justify-content: center; padding: 20px; overflow-y: auto; }
+.modal-content { background: var(--card); width: 100%; max-width: 800px; border-radius: 20px; padding: 30px; margin: auto; position: relative; }
 
-/* Main UI */
-.main-content { flex: 1; overflow-y: auto; padding-bottom: 50px; }
-.top-header { background: var(--card); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
-.search-box { background: var(--bg); padding: 12px 20px; border-radius: 30px; width: 350px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); }
-.search-box input { border: none; background: transparent; outline: none; width: 100%; color: var(--text); }
+.table-scroll { overflow-x: auto; width: 100%; border: 1px solid var(--border); border-radius: 10px; margin-top: 10px; }
+.activity-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.activity-table td, .activity-table th { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
 
-.stat-bubble { background: var(--accent); color: white; padding: 8px 20px; border-radius: 12px; display: flex; flex-direction: column; }
+/* Editable fields UI */
+[contenteditable="true"] { border-bottom: 1px dashed var(--accent); cursor: text; padding: 2px 5px; }
+[contenteditable="true"]:focus { outline: 2px solid var(--accent); background: #f0f7ff; }
 
-.content-section { padding: 30px; }
-.section-title { margin-bottom: 25px; font-weight: 700; }
+/* Stats Card Grid */
+.finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 20px; }
+.stat-card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); }
 
-/* Tables */
-.table-container { background: var(--card); border-radius: 15px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.styled-table { width: 100%; border-collapse: collapse; }
-.styled-table th { background: var(--bg); padding: 18px; text-align: left; font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-.styled-table td { padding: 18px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
-
-/* Forms & Inputs */
-.large-form { max-width: 900px; background: var(--card); padding: 40px; border-radius: 20px; margin: 0 auto; border: 1px solid var(--border); }
-.form-grid-pro { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-.input-wrap { display: flex; flex-direction: column; gap: 10px; }
-.input-wrap label { font-weight: 600; font-size: 0.85rem; color: #64748b; }
-.input-wrap input { padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 1rem; transition: 0.2s; }
-.input-wrap input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-.full-width { grid-column: span 2; }
-
-/* Dashboard Modal */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
-.modal-content { background: var(--card); width: 100%; max-width: 850px; max-height: 90vh; border-radius: 30px; padding: 40px; overflow-y: auto; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-
-.loan-metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px; }
-.metric-box { background: var(--bg); padding: 22px; border-radius: 18px; text-align: center; border: 1px solid var(--border); }
-.metric-box small { color: #64748b; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
-.metric-box p { font-size: 1.2rem; font-weight: 700; margin-top: 5px; }
-.bal-focus { border: 2px solid var(--accent); background: white; }
-.bal-focus input { width: 100%; text-align: center; border: none; background: transparent; font-size: 1.6rem; font-weight: 800; color: var(--accent); margin-top: 5px; }
-
-/* Payment Table */
-.activity-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-.activity-table th { padding: 12px; text-align: left; border-bottom: 2px solid var(--border); font-size: 0.8rem; color: #64748b; }
-.activity-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-
-.payment-action-card { background: var(--bg); padding: 25px; border-radius: 20px; margin-top: 30px; border: 1px solid var(--border); }
-.pay-row { display: flex; gap: 15px; margin-top: 15px; }
-.pay-row input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
-.pay-row button { background: var(--accent); color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-
-.late-time { color: #ef4444 !important; font-weight: 700; }
-.view-btn { background: var(--accent); color: white; border: none; padding: 10px 22px; border-radius: 10px; cursor: pointer; font-weight: 600; }
-.btn-save-main { width: 100%; padding: 18px; margin-top: 20px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1.1rem; }
-.btn-clear { width: 100%; padding: 16px; background: #10b981; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 20px; }
-.btn-delete { width: 100%; margin-top: 15px; color: #ef4444; border: none; background: none; cursor: pointer; text-decoration: underline; }
-
+.view-btn { padding: 8px 20px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; }
 .hidden { display: none !important; }
-.close-x { position: absolute; right: 30px; top: 30px; font-size: 1.8rem; cursor: pointer; color: #64748b; }
 
 @media (max-width: 768px) {
-    .form-grid-pro { grid-template-columns: 1fr; }
-    .sidebar { position: fixed; left: -250px; z-index: 2000; height: 100%; }
+    .sidebar { position: fixed; left: -250px; height: 100%; z-index: 1500; }
     .sidebar.minimized { left: 0; }
-    .loan-metrics { grid-template-columns: 1fr; }
+    .form-grid-pro { grid-template-columns: 1fr; }
 }
