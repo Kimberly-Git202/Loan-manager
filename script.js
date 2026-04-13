@@ -1,16 +1,15 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
-  authDomain: "jml-loans-560d8.firebaseapp.com",
-  projectId: "jml-loans-560d8",
-  storageBucket: "jml-loans-560d8.firebasestorage.app",
-  databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app", 
-  messagingSenderId: "425047270355",
-  appId: "1:425047270355:web:6ccd08365ca1cde7354526"
+    apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
+    authDomain: "jml-loans-560d8.firebaseapp.com",
+    projectId: "jml-loans-560d8",
+    storageBucket: "jml-loans-560d8.firebasestorage.app",
+    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app", 
+    messagingSenderId: "425047270355",
+    appId: "1:425047270355:web:6ccd08365ca1cde7354526"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -20,154 +19,169 @@ const auth = getAuth(app);
 let clients = [];
 let currentIndex = null;
 
-onAuthStateChanged(auth, (user) => {
+// Persistence for Dark Mode
+if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+
+onAuthStateChanged(auth, user => {
     if (user) {
-        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('login-overlay').classList.add('hidden');
         loadData();
     } else {
-        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('login-overlay').classList.remove('hidden');
     }
 });
 
-window.handleLogin = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Error"));
-};
-
-window.handleLogout = () => signOut(auth);
-
 function loadData() {
-    onValue(ref(db, 'jml_data/'), (snapshot) => {
-        clients = snapshot.val() || [];
+    onValue(ref(db, 'jml_data/'), (snap) => {
+        clients = snap.val() || [];
         renderTable();
-        if (currentIndex !== null) openDashboard(currentIndex);
+        calculateFinance();
     });
 }
 
 function saveData() { set(ref(db, 'jml_data/'), clients); }
 
 window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
-
 window.toggleDarkMode = () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
+    const isDark = document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
 };
-
-// Apply saved theme
-if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    if(window.innerWidth < 768) toggleSidebar();
+    if (window.innerWidth < 768) toggleSidebar();
 };
+
+function calculateFinance() {
+    let out = 0, paid = 0, today = 0;
+    const now = new Date().toLocaleDateString('en-GB');
+    
+    clients.forEach(c => {
+        out += (parseFloat(c.balance) || 0);
+        (c.history || []).forEach(h => {
+            if (h.act === "Payment") {
+                paid += (parseFloat(h.amt) || 0);
+                if (h.date === now) today += (parseFloat(h.amt) || 0);
+            }
+        });
+    });
+    
+    document.getElementById('f-out').innerText = `KSh ${out.toLocaleString()}`;
+    document.getElementById('f-paid').innerText = `KSh ${paid.toLocaleString()}`;
+    document.getElementById('f-today').innerText = `KSh ${today.toLocaleString()}`;
+    document.getElementById('header-today').innerText = `KSh ${today.toLocaleString()}`;
+}
 
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     tbody.innerHTML = clients.map((c, i) => `
         <tr>
-            <td><strong>${c.name}</strong></td>
-            <td>${c.phone || '---'}</td>
-            <td>KSh ${c.balance.toLocaleString()}</td>
-            <td><button onclick="openDashboard(${i})" style="padding:5px 10px; border-radius:5px; background:var(--accent); color:white; border:none;">View</button></td>
+            <td>${i+1}</td>
+            <td><b>${c.name}</b></td>
+            <td>${c.phone}</td>
+            <td style="color:var(--accent); font-weight:bold">KSh ${(c.balance || 0).toLocaleString()}</td>
+            <td><button class="btn-post" onclick="openModal(${i})">View</button></td>
         </tr>
     `).join('');
 };
 
-window.openDashboard = (i) => {
+window.openModal = (i) => {
     currentIndex = i;
     const c = clients[i];
-    const principal = parseFloat(c.loan);
-    const totalInt = principal * 1.25; // 25% Interest
-    const totalPaid = totalInt - parseFloat(c.balance);
-
     document.getElementById('d-name').innerText = c.name;
-    document.getElementById('d-principal').innerText = `KSh ${principal.toLocaleString()}`;
-    document.getElementById('d-total-int').innerText = `KSh ${totalInt.toLocaleString()}`;
-    document.getElementById('d-balance').innerText = `KSh ${c.balance.toLocaleString()}`;
-    document.getElementById('d-total-paid').innerText = `KSh ${totalPaid.toLocaleString()}`;
+    document.getElementById('d-principal').innerText = `KSh ${(c.loan || 0).toLocaleString()}`;
+    document.getElementById('d-balance').innerText = `KSh ${(c.balance || 0).toLocaleString()}`;
+    document.getElementById('d-start').value = c.startDate || '';
+    document.getElementById('d-end').value = c.endDate || '';
     
-    renderActivity(c.history || []);
-    document.getElementById('detailWindow').classList.remove('hidden');
+    // Toggle Renewal View
+    const settled = c.balance <= 0;
+    document.getElementById('payment-area').classList.toggle('hidden', settled);
+    document.getElementById('settleBtn').classList.toggle('hidden', settled);
+    document.getElementById('renewal-area').classList.toggle('hidden', !settled);
+    document.getElementById('status-badge').innerText = settled ? "Cleared" : "Active";
+    document.getElementById('status-badge').style.background = settled ? "var(--success)" : "var(--accent)";
+    document.getElementById('status-badge').style.color = "white";
+
+    renderHistory(c.history || []);
+    document.getElementById('detailModal').classList.remove('hidden');
 };
 
-function renderActivity(history) {
-    const tbody = document.getElementById('activityTableBody');
+function renderHistory(history) {
+    const tbody = document.getElementById('historyBody');
     tbody.innerHTML = history.slice().reverse().map(h => {
         const isLate = h.time > "18:00";
         return `<tr>
             <td>${h.date}</td>
-            <td style="color:${isLate ? 'red' : 'inherit'}; font-weight:${isLate ? 'bold' : 'normal'}">${h.time}</td>
+            <td class="${isLate ? 'late-time' : ''}">${h.time}</td>
             <td>${h.det}</td>
             <td>${h.by}</td>
         </tr>`;
     }).join('');
 }
 
-window.updatePayment = () => {
-    const amt = parseFloat(document.getElementById('dailyPay').value);
+window.processPayment = () => {
+    const amt = parseFloat(document.getElementById('payAmt').value);
     const time = document.getElementById('payTime').value;
     const user = auth.currentUser.email.split('@')[0];
-
+    
     if (amt > 0) {
         clients[currentIndex].balance -= amt;
         clients[currentIndex].history.push({
             date: new Date().toLocaleDateString('en-GB'),
             time: time,
+            act: "Payment",
+            amt: amt,
             det: `Paid KSh ${amt.toLocaleString()}`,
             by: user
         });
         saveData();
-        document.getElementById('dailyPay').value = "";
+        openModal(currentIndex); // Refresh UI
+        document.getElementById('payAmt').value = '';
     }
 };
 
-window.markAsCleared = () => {
-    if(confirm("Confirm Settle Loan?")) {
+window.settleLoan = () => {
+    if(confirm("Mark loan as fully settled?")) {
         clients[currentIndex].balance = 0;
         clients[currentIndex].history.push({
             date: new Date().toLocaleDateString('en-GB'),
-            time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
-            det: "Loan Settled Fully",
-            by: "System"
+            time: "---",
+            act: "System",
+            det: "Loan Settle/Closed",
+            by: "Admin"
         });
         saveData();
+        openModal(currentIndex);
     }
 };
 
-window.deleteClient = () => {
-    if(confirm("Permanently delete this profile?")) {
-        clients.splice(currentIndex, 1);
-        saveData();
-        closeDetails();
-    }
-};
-
-window.closeDetails = () => {
-    currentIndex = null;
-    document.getElementById('detailWindow').classList.add('hidden');
-};
-
-document.getElementById('clientForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const principal = parseFloat(document.getElementById('f-loan').value);
-    const newClient = {
-        name: document.getElementById('f-name').value,
-        loan: principal,
-        balance: principal * 1.25, // Starting balance includes 25% interest
-        startDate: document.getElementById('f-start').value,
-        history: [{
+window.showNewLoanPrompt = () => {
+    const newPrincipal = prompt("Enter New Principal Amount for " + clients[currentIndex].name);
+    if (newPrincipal && !isNaN(newPrincipal)) {
+        const total = parseFloat(newPrincipal) * 1.25;
+        clients[currentIndex].loan = parseFloat(newPrincipal);
+        clients[currentIndex].balance = total;
+        clients[currentIndex].history.push({
             date: new Date().toLocaleDateString('en-GB'),
             time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
-            det: "Account Opened",
+            act: "Renewal",
+            det: `New Loan Approved: KSh ${total.toLocaleString()}`,
             by: "Admin"
-        }]
-    };
-    clients.push(newClient);
-    saveData();
-    showSection('list-sec');
-    this.reset();
-});
+        });
+        saveData();
+        openModal(currentIndex);
+    }
+};
+
+window.closeModal = () => document.getElementById('detailModal').classList.add('hidden');
+window.deleteClient = () => {
+    if(confirm("PERMANENTLY delete this client record?")) {
+        clients.splice(currentIndex, 1);
+        saveData();
+        closeModal();
+    }
+};
+
 
