@@ -9,6 +9,15 @@
 </head>
 <body class="light-mode">
 
+    <div id="login-overlay" class="auth-overlay">
+        <div class="auth-card">
+            <h2>JML LIMITED LOGIN</h2>
+            <input type="email" id="login-email" placeholder="Email Address">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="handleLogin()" id="login-btn">Secure Access</button>
+        </div>
+    </div>
+
     <div class="app-container">
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -20,6 +29,7 @@
                 <li onclick="showSection('loans-summary-sec')" class="nav-item"><i class="fas fa-chart-line"></i> <span>Financials</span></li>
                 <li onclick="showSection('add-client-sec')" class="nav-item"><i class="fas fa-user-plus"></i> <span>Add Client</span></li>
                 <li onclick="toggleDarkMode()" class="nav-item"><i class="fas fa-moon"></i> <span>Dark Mode</span></li>
+                <li onclick="handleLogout()" class="nav-item"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></li>
             </ul>
         </nav>
 
@@ -109,7 +119,7 @@
                     </div>
                     
                     <div class="client-profile-header">
-                        <h1 id="d-name">---</h1>
+                        <h1 id="d-name" contenteditable="true" onblur="updateClientField('name', this.innerText)">---</h1>
                         <select id="d-status" onchange="updateClientField('status', this.value)" class="status-badge">
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
@@ -119,7 +129,7 @@
 
                     <div class="loan-metrics">
                         <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
-                        <div class="metric-box"><small>Total (with Int.)</small><p id="d-total-int">0</p></div>
+                        <div class="metric-box"><small>Total (Principal + Interest)</small><p id="d-total-int">0</p></div>
                         <div class="metric-box bal-focus"><small>Balance Due</small><input type="number" id="d-bal-input" onchange="saveManualBalance()"></div>
                         <div class="metric-box paid-focus"><small>Total Paid</small><p id="d-total-paid">0</p></div>
                     </div>
@@ -161,4 +171,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
