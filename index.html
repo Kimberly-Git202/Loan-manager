@@ -3,77 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JML LIMITED | Professional</title>
+    <title>JML LIMITED</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-
     <div id="login-overlay" class="auth-overlay">
         <div class="auth-card">
             <h2>JML LIMITED</h2>
-            <p>Access Secure Registry</p>
-            <input type="email" id="login-email" placeholder="Work Email">
+            <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-password" placeholder="Password">
-            <button onclick="handleLogin()">Login</button>
+            <button onclick="handleLogin()">Secure Access</button>
         </div>
     </div>
 
     <div class="app-container">
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span class="logo">JML LIMITED</span>
-                <i class="fas fa-arrow-left" onclick="toggleSidebar()" style="cursor:pointer"></i>
+                <span>JML LIMITED</span>
+                <i class="fas fa-arrow-left" onclick="toggleSidebar()"></i>
             </div>
             <ul>
-                <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> <span>Client Registry</span></li>
-                <li onclick="showSection('loans-summary-sec')" class="nav-item"><i class="fas fa-chart-line"></i> <span>Financials</span></li>
-                <li onclick="showSection('add-client-sec')" class="nav-item"><i class="fas fa-user-plus"></i> <span>Add Client</span></li>
-                <li onclick="handleLogout()" class="nav-item"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></li>
+                <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> Clients</li>
+                <li onclick="showSection('loans-summary-sec')" class="nav-item"><i class="fas fa-chart-pie"></i> Financials</li>
+                <li onclick="showSection('add-client-sec')" class="nav-item"><i class="fas fa-user-plus"></i> Add Client</li>
+                <li onclick="toggleDarkMode()" class="nav-item"><i class="fas fa-moon"></i> Dark Mode</li>
+                <li onclick="handleLogout()" class="nav-item"><i class="fas fa-sign-out-alt"></i> Logout</li>
             </ul>
         </nav>
 
         <main class="main-content">
             <header class="top-header">
-                <i class="fas fa-bars menu-trigger" onclick="toggleSidebar()"></i>
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search clients...">
-                </div>
+                <i class="fas fa-bars" onclick="toggleSidebar()" style="font-size: 20px;"></i>
+                <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search..." style="flex:1; padding:8px; border-radius:8px; border:1px solid var(--border);">
             </header>
 
             <section id="list-sec" class="content-section">
                 <div class="table-container">
                     <table class="styled-table">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Client Name</th>
-                                <th>Contact</th>
-                                <th>Balance</th>
-                                <th>Action</th>
-                            </tr>
+                            <tr><th>Name</th><th>Contact</th><th>Balance</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
-            <section id="loans-summary-sec" class="content-section hidden">
-                <div class="finance-grid">
-                    <div class="stat-card"><h3>Total Outstanding</h3><h2 id="grand-total-out">0</h2></div>
-                    <div class="stat-card"><h3>Recovered</h3><h2 id="grand-total-paid">0</h2></div>
-                </div>
-            </section>
-
             <section id="add-client-sec" class="content-section hidden">
-                <div class="table-container" style="padding: 20px;">
-                    <h2>New Enrollment</h2>
+                <div style="padding: 20px;">
                     <form id="clientForm">
-                        <input type="text" id="f-name" placeholder="Full Name" required style="width:100%; padding:10px; margin-bottom:10px;">
-                        <input type="number" id="f-loan" placeholder="Loan Amount" required style="width:100%; padding:10px; margin-bottom:10px;">
-                        <input type="date" id="f-start" required style="width:100%; padding:10px; margin-bottom:10px;">
-                        <button type="submit" class="view-btn" style="width:100%; padding:15px;">Save Client</button>
+                        <input type="text" id="f-name" placeholder="Client Name" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <input type="number" id="f-loan" placeholder="Principal Amount" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <input type="date" id="f-start" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <button type="submit" class="btn-process">Create Account</button>
                     </form>
                 </div>
             </section>
@@ -82,24 +64,43 @@
 
     <div id="detailWindow" class="modal hidden">
         <div class="modal-content">
-             <span class="close-x" onclick="closeDetails()" style="float:right; cursor:pointer">&times; Close</span>
-             <h2 id="d-name">Client Name</h2>
-             <hr>
-             <p>Principal: <span id="d-principal">0</span></p>
-             <p>Balance: <input type="number" id="d-bal-input" onchange="saveManualBalance()"></p>
-             <div class="table-scroll">
-                 <table class="activity-table" style="width:100%">
-                     <thead><tr><th>Date</th><th>Time</th><th>By</th></tr></thead>
-                     <tbody id="activityTableBody"></tbody>
-                 </table>
-             </div>
-             <div class="payment-action-card">
-                 <input type="number" id="dailyPay" placeholder="KSh">
-                 <button onclick="updatePayment()">Pay</button>
-             </div>
+            <div style="display:flex; justify-content:space-between;">
+                <h2 id="d-name">Client Name</h2>
+                <i class="fas fa-times" onclick="closeDetails()" style="cursor:pointer"></i>
+            </div>
+            
+            <div class="loan-metrics">
+                <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
+                <div class="metric-box"><small>Total + Interest</small><p id="d-total-int">0</p></div>
+                <div class="metric-box"><small>Balance Due</small><p id="d-balance" style="color:red">0</p></div>
+                <div class="metric-box"><small>Total Paid</small><p id="d-total-paid" style="color:green">0</p></div>
+            </div>
+
+            <h3 style="padding: 0 15px;">Transaction History</h3>
+            <div class="table-container">
+                <table class="styled-table">
+                    <thead><tr><th>Date</th><th>Time</th><th>Activity</th><th>By</th></tr></thead>
+                    <tbody id="activityTableBody"></tbody>
+                </table>
+            </div>
+
+            <div style="padding:15px; background:var(--bg); border-radius:12px; margin-top:10px;">
+                <h4>Post New Payment</h4>
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="number" id="dailyPay" placeholder="Amount" style="flex:1; padding:10px;">
+                    <input type="time" id="payTime" value="12:00" style="padding:10px;">
+                </div>
+                <button class="btn-process" onclick="updatePayment()">Process Payment</button>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:20px; align-items:center;">
+                <button class="btn-settle" onclick="markAsCleared()">Settle Loan</button>
+                <button class="btn-delete" onclick="deleteClient()">Delete Profile</button>
+            </div>
         </div>
     </div>
 
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
