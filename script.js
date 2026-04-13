@@ -33,6 +33,9 @@ window.toggleDarkMode = function() { document.body.classList.toggle('dark-mode')
 window.showSection = function(id) {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    // Update active nav state
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    event.currentTarget.classList.add('active');
 };
 
 function updateFinanceSummary() {
@@ -75,8 +78,8 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
         history: [{ 
             date: new Date().toLocaleDateString('en-GB'), 
             time: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}),
-            act: "Loan Started", 
-            det: `Approved KSh ${totalDue.toLocaleString()}`, 
+            act: "Initial", 
+            det: `Account Opened - Ksh ${totalDue.toLocaleString()} Due`, 
             by: "Admin" 
         }]
     };
@@ -85,6 +88,19 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
     showSection('list-sec');
     this.reset();
 });
+
+window.renderTable = function() {
+    const tbody = document.getElementById('clientTableBody');
+    tbody.innerHTML = clients.map((c, i) => `
+        <tr>
+            <td style="color: #64748b; font-weight: 600;">${i+1}</td>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.phone}</td>
+            <td style="font-weight: 700; color: var(--accent);">KSh ${c.balance.toLocaleString()}</td>
+            <td style="text-align: center;"><button class="view-btn" onclick="openDashboard(${i})">View</button></td>
+        </tr>
+    `).join('');
+};
 
 window.openDashboard = function(index) {
     currentIndex = index;
@@ -106,13 +122,12 @@ window.openDashboard = function(index) {
 function renderActivity(history) {
     const tbody = document.getElementById('activityTableBody');
     tbody.innerHTML = history.slice().reverse().map(h => {
-        // Red formatting for past 6PM (18:00)
         const isLate = h.time && h.time > "18:00";
-        const timeStyle = isLate ? 'style="color: #ef4444; font-weight: bold;"' : '';
+        const timeClass = isLate ? 'class="late-time"' : '';
         
         return `<tr>
             <td>${h.date}</td>
-            <td ${timeStyle}>${h.time || "---"}</td>
+            <td ${timeClass}>${h.time || "---"}</td>
             <td>${h.det}</td>
             <td>${h.by}</td>
         </tr>`;
@@ -137,14 +152,6 @@ window.updatePayment = function() {
     }
 };
 
-window.renderTable = function() {
-    document.getElementById('clientTableBody').innerHTML = clients.map((c, i) => `
-        <tr><td>${i+1}</td><td><strong>${c.name}</strong></td><td>${c.phone}</td>
-        <td>KSh ${c.balance.toLocaleString()}</td>
-        <td><button class="view-btn" onclick="openDashboard(${i})">View</button></td></tr>
-    `).join('');
-};
-
 window.saveManualBalance = function() {
     clients[currentIndex].balance = parseFloat(document.getElementById('d-bal-input').value);
     saveData();
@@ -152,12 +159,13 @@ window.saveManualBalance = function() {
 
 window.updateClientField = function(f, v) { clients[currentIndex][f] = v; saveData(); };
 window.closeDetails = function() { currentIndex = null; document.getElementById('detailWindow').classList.add('hidden'); };
-window.deleteClient = function(i) { if(confirm("Delete?")) { clients.splice(i, 1); saveData(); closeDetails(); }};
-window.markAsCleared = function() { clients[currentIndex].balance = 0; clients[currentIndex].status = "Cleared"; saveData(); };
+window.deleteClient = function(i) { if(confirm("Permanently delete this profile?")) { clients.splice(i, 1); saveData(); closeDetails(); }};
+window.markAsCleared = function() { if(confirm("Mark loan as settled?")) { clients[currentIndex].balance = 0; clients[currentIndex].status = "Cleared"; saveData(); }};
 window.searchClients = function() {
     const term = document.getElementById('globalSearch').value.toLowerCase();
     document.querySelectorAll('#clientTableBody tr').forEach(row => {
         row.style.display = row.cells[1].innerText.toLowerCase().includes(term) ? "" : "none";
     });
 };
+
 
