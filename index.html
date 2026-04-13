@@ -104,7 +104,9 @@
 
             <div id="detailWindow" class="modal hidden">
                 <div class="modal-content">
-                    <span class="close-x" onclick="closeDetails()">&times;</span>
+                    <div class="modal-header-nav">
+                        <span class="close-x" onclick="closeDetails()">&times;</span>
+                    </div>
                     
                     <div class="client-profile-header">
                         <h1 id="d-name">---</h1>
@@ -117,27 +119,22 @@
 
                     <div class="loan-metrics">
                         <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
-                        <div class="metric-box"><small>Total + Interest</small><p id="d-total-int">0</p></div>
-                        <div class="metric-box bal-box"><small>Balance Due</small><input type="number" id="d-bal-input" onchange="saveManualBalance()"></div>
-                        <div class="metric-box paid-box"><small>Total Paid</small><p id="d-total-paid">0</p></div>
+                        <div class="metric-box"><small>Total (with Int.)</small><p id="d-total-int">0</p></div>
+                        <div class="metric-box bal-focus"><small>Balance Due</small><input type="number" id="d-bal-input" onchange="saveManualBalance()"></div>
+                        <div class="metric-box paid-focus"><small>Total Paid</small><p id="d-total-paid">0</p></div>
                     </div>
 
-                    <div class="dates-edit">
-                        <label>Start: <input type="date" id="d-start" onchange="updateClientField('startDate', this.value)"></label>
-                        <label>End: <input type="date" id="d-end" onchange="updateClientField('endDate', this.value)"></label>
+                    <div class="dates-bar">
+                        <div class="date-field"><i class="fas fa-calendar-alt"></i> Start: <input type="date" id="d-start" onchange="updateClientField('startDate', this.value)"></div>
+                        <div class="date-field"><i class="fas fa-hourglass-end"></i> End: <input type="date" id="d-end" onchange="updateClientField('endDate', this.value)"></div>
                     </div>
 
                     <div class="activity-section">
-                        <h3><i class="fas fa-history"></i> Payment History</h3>
+                        <h3><i class="fas fa-history"></i> Transaction History</h3>
                         <div class="table-scroll">
                             <table class="activity-table">
                                 <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Time</th>
-                                        <th>Activity</th>
-                                        <th>By</th>
-                                    </tr>
+                                    <tr><th>Date</th><th>Time</th><th>Activity</th><th>By</th></tr>
                                 </thead>
                                 <tbody id="activityTableBody"></tbody>
                             </table>
@@ -145,11 +142,11 @@
                     </div>
 
                     <div class="payment-action-card">
-                        <h3>Record Payment</h3>
+                        <h3>Post New Payment</h3>
                         <div class="pay-row">
-                            <input type="number" id="dailyPay" placeholder="Amount (KSh)">
+                            <input type="number" id="dailyPay" placeholder="Amount">
                             <input type="time" id="payTime" value="12:00">
-                            <button onclick="updatePayment()">Post Payment</button>
+                            <button onclick="updatePayment()">Process Payment</button>
                         </div>
                     </div>
 
@@ -164,3 +161,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
