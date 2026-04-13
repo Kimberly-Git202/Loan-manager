@@ -7,9 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-
-    <div class="app-container">
+<body class="light-mode"> <div class="app-container">
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span class="logo">JML LOAN</span>
@@ -17,7 +15,9 @@
             </div>
             <ul>
                 <li onclick="showSection('list-sec')" class="nav-item active"><i class="fas fa-users"></i> <span>Clients</span></li>
+                <li onclick="showSection('loans-summary-sec')" class="nav-item"><i class="fas fa-hand-holding-usd"></i> <span>Loans</span></li>
                 <li onclick="showSection('add-client-sec')" class="nav-item"><i class="fas fa-user-plus"></i> <span>Add Client</span></li>
+                <li onclick="toggleDarkMode()" class="nav-item"><i class="fas fa-moon"></i> <span>Dark/Light Mode</span></li>
             </ul>
         </nav>
 
@@ -28,9 +28,27 @@
                     <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search client name...">
                 </div>
                 <div class="summary-chip">
-                    Total Out: <span id="total-outstanding">KSh 0</span>
+                    Today: <span id="summary-today">KSh 0</span>
                 </div>
             </header>
+
+            <section id="loans-summary-sec" class="content-section hidden">
+                <h2><i class="fas fa-chart-line"></i> Financial Summary</h2>
+                <div class="info-grid">
+                    <div class="info-card stat-card">
+                        <h3>Grand Total Out</h3>
+                        <h1 id="grand-total-out">KSh 0</h1>
+                    </div>
+                    <div class="info-card stat-card">
+                        <h3>Grand Total Paid</h3>
+                        <h1 id="grand-total-paid">KSh 0</h1>
+                    </div>
+                    <div class="info-card stat-card today-highlight">
+                        <h3>Total Paid Today</h3>
+                        <h1 id="grand-total-today">KSh 0</h1>
+                    </div>
+                </div>
+            </section>
 
             <section id="list-sec" class="content-section">
                 <h2><i class="fas fa-database"></i> Client Database</h2>
@@ -54,14 +72,22 @@
                 <div class="card form-card">
                     <h2>Register New Client</h2>
                     <form id="clientForm">
-                        <div class="form-grid">
+                        <div class="form-grid-large">
                             <input type="text" id="f-name" placeholder="Full Name" required>
                             <input type="text" id="f-phone" placeholder="Phone">
                             <input type="text" id="f-id" placeholder="ID Number">
                             <input type="text" id="f-location" placeholder="Location">
                             <input type="text" id="f-occupation" placeholder="Occupation">
                             <input type="text" id="f-Referral" placeholder="Referral">
-                            <input type="number" id="f-loan" placeholder="Initial Loan (KSh)" required>
+                            <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required title="Interest (25%) will be added automatically">
+                            <div class="date-input-group">
+                                <label>Start Date:</label>
+                                <input type="date" id="f-start" required>
+                            </div>
+                            <div class="date-input-group">
+                                <label>End Date:</label>
+                                <input type="date" id="f-end" required>
+                            </div>
                         </div>
                         <button type="submit" class="btn-save-main">Save Client Details</button>
                     </form>
@@ -86,32 +112,35 @@
 
                     <div class="info-grid">
                         <div class="info-card">
+                            <h3>Loan Dates</h3>
+                            <p>Start: <input type="date" id="d-start" onchange="updateClientField('startDate', this.value)"></p>
+                            <p>End: <input type="date" id="d-end" onchange="updateClientField('endDate', this.value)"></p>
+                        </div>
+                        <div class="info-card">
                             <h3>Basic Info</h3>
                             <p>Occupation: <span id="d-occ">---</span></p>
                             <p>ID: <span id="d-idnum">---</span></p>
                             <p>Addr: <span id="d-addr">---</span></p>
                         </div>
-                        <div class="info-card">
-                            <h3>Contact</h3>
-                            <p>Phone: <span id="d-phone">---</span></p>
-                            <p>Ref: <span id="d-ref">---</span></p>
-                        </div>
                     </div>
 
                     <div class="loan-summary">
                         <div class="loan-display">
-                            <small>Initial Loan</small>
-                            <h2 id="d-loan">KSh 0</h2>
+                            <small>Principal</small>
+                            <h2 id="d-principal">KSh 0</h2>
+                        </div>
+                        <div class="loan-display">
+                            <small>Total (with Interest)</small>
+                            <h2 id="d-total-int">KSh 0</h2>
                         </div>
                         <div class="loan-display highlight">
                             <small>Current Balance</small>
                             <input type="number" id="d-bal-input" onchange="saveManualBalance()">
                         </div>
-                    </div>
-
-                    <div class="notes-section">
-                        <h3>Notes</h3>
-                        <textarea id="d-notes" onblur="updateClientField('notes', this.value)" placeholder="Add notes..."></textarea>
+                        <div class="loan-display">
+                            <small>Total Paid</small>
+                            <h2 id="d-total-paid" style="color: #10b981;">KSh 0</h2>
+                        </div>
                     </div>
 
                     <div class="activity-section">
@@ -119,7 +148,7 @@
                         <div class="table-wrapper">
                             <table class="activity-table">
                                 <thead>
-                                    <tr><th>Date</th><th>Activity</th><th>Details</th><th>By</th></tr>
+                                    <tr><th>Date</th><th>Time</th><th>Activity</th><th>Details</th><th>By</th></tr>
                                 </thead>
                                 <tbody id="activityTableBody"></tbody>
                             </table>
@@ -130,16 +159,14 @@
                         <h3>Record Payment</h3>
                         <div class="pay-row">
                             <input type="number" id="dailyPay" placeholder="Amount">
+                            <input type="time" id="payTime" value="12:00">
                             <button onclick="updatePayment()">Post Payment</button>
                         </div>
                     </div>
 
                     <div class="footer-btn">
                         <button class="btn-clear" onclick="markAsCleared()">Close Loan (Settled)</button>
-                        <button class="btn-delete" onclick="deleteClient(currentIndex)" style="background: #e74c3c; color: white; margin-top: 15px; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-    <i class="fas fa-trash-alt"></i> Delete Client Profile
-</button>
-
+                        <button class="btn-delete" onclick="deleteClient(currentIndex)">Delete Profile</button>
                     </div>
                 </div>
             </div>
@@ -148,4 +175,5 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
