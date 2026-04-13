@@ -1,4 +1,3 @@
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 
@@ -39,7 +38,6 @@ window.toggleDarkMode = function() { document.body.classList.toggle('dark-mode')
 function updateFinanceSummary() {
     let out = 0, paid = 0, today = 0;
     const todayStr = new Date().toLocaleDateString('en-GB');
-
     clients.forEach(c => {
         const totalDue = (c.loan || 0) * 1.25;
         out += (c.balance || 0);
@@ -48,7 +46,6 @@ function updateFinanceSummary() {
             if(h.date === todayStr && h.act === "Payment") today += (h.amt || 0);
         });
     });
-
     document.getElementById('grand-total-out').innerText = `KSh ${out.toLocaleString()}`;
     document.getElementById('grand-total-paid').innerText = `KSh ${paid.toLocaleString()}`;
     document.getElementById('grand-total-today').innerText = `KSh ${today.toLocaleString()}`;
@@ -59,7 +56,6 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const principal = parseFloat(document.getElementById('f-loan').value);
     const totalDue = principal * 1.25;
-
     const newClient = {
         name: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value || "---",
@@ -74,8 +70,9 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
         status: "Active",
         history: [{ 
             date: new Date().toLocaleDateString('en-GB'), 
-            time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
-            act: "Loan Started", det: `Total Due: KSh ${totalDue.toLocaleString()}`, by: "Admin" 
+            act: "Loan Started", 
+            det: `KSh ${principal.toLocaleString()} Approved`, 
+            by: "Admin" 
         }]
     };
     clients.push(newClient);
@@ -88,7 +85,6 @@ window.openDashboard = function(index) {
     currentIndex = index;
     const c = clients[index];
     const totalDue = c.loan * 1.25;
-
     document.getElementById('d-name').innerText = c.name;
     document.getElementById('d-principal').innerText = `KSh ${c.loan.toLocaleString()}`;
     document.getElementById('d-total-int').innerText = `KSh ${totalDue.toLocaleString()}`;
@@ -96,27 +92,28 @@ window.openDashboard = function(index) {
     document.getElementById('d-total-paid').innerText = `KSh ${(totalDue - c.balance).toLocaleString()}`;
     document.getElementById('d-start').value = c.startDate || "";
     document.getElementById('d-end').value = c.endDate || "";
-    
     renderHistory(c.history || []);
     document.getElementById('detailWindow').classList.remove('hidden');
 };
 
 function renderHistory(history) {
     const tbody = document.getElementById('activityTableBody');
-    tbody.innerHTML = history.slice().reverse().map(h => {
-        const timeClass = h.time > "18:00" ? 'style="color:red; font-weight:bold;"' : '';
-        return `<tr><td>${h.date}</td><td ${timeClass}>${h.time || ""}</td><td>${h.det}</td></tr>`;
-    }).join('');
+    tbody.innerHTML = history.slice().reverse().map(h => `
+        <tr>
+            <td>${h.date}</td>
+            <td>${h.act}</td>
+            <td>${h.det}</td>
+            <td>${h.by || "Admin"}</td>
+        </tr>
+    `).join('');
 }
 
 window.updatePayment = function() {
     const amt = parseFloat(document.getElementById('dailyPay').value);
-    const time = document.getElementById('payTime').value;
     if (amt > 0) {
         clients[currentIndex].balance -= amt;
         clients[currentIndex].history.push({
             date: new Date().toLocaleDateString('en-GB'),
-            time: time,
             act: "Payment",
             amt: amt,
             det: `Paid KSh ${amt.toLocaleString()}`,
@@ -142,7 +139,7 @@ window.renderTable = function() {
 
 window.updateClientField = function(f, v) { clients[currentIndex][f] = v; saveData(); };
 window.closeDetails = function() { currentIndex = null; document.getElementById('detailWindow').classList.add('hidden'); };
-window.deleteClient = function(i) { if(confirm("Delete?")) { clients.splice(i, 1); saveData(); closeDetails(); }};
+window.deleteClient = function(i) { if(confirm("Delete Client Profile?")) { clients.splice(i, 1); saveData(); closeDetails(); }};
 window.markAsCleared = function() { clients[currentIndex].balance = 0; clients[currentIndex].status = "Cleared"; saveData(); };
 window.searchClients = function() {
     const term = document.getElementById('globalSearch').value.toLowerCase();
@@ -150,3 +147,4 @@ window.searchClients = function() {
         row.style.display = row.cells[1].innerText.toLowerCase().includes(term) ? "" : "none";
     });
 };
+
