@@ -18,7 +18,6 @@ const db = getDatabase(app);
 let clients = [];
 let currentIndex = null;
 
-// Initial Load
 onValue(ref(db, 'jml_data/'), (snapshot) => {
     clients = snapshot.val() || [];
     renderTable();
@@ -34,8 +33,8 @@ window.toggleDarkMode = function() { document.body.classList.toggle('dark-mode')
 window.showSection = function(id) {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    // Target active nav based on click context
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+    if(event) event.currentTarget.classList.add('active');
 };
 
 function updateFinanceSummary() {
@@ -78,8 +77,8 @@ document.getElementById('clientForm').addEventListener('submit', function(e) {
         history: [{ 
             date: new Date().toLocaleDateString('en-GB'), 
             time: new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'}),
-            act: "Loan Started", 
-            det: `Approved KSh ${totalDue.toLocaleString()}`, 
+            act: "Initial", 
+            det: `Account Opened - Ksh ${totalDue.toLocaleString()} Due`, 
             by: "Admin" 
         }]
     };
@@ -93,11 +92,11 @@ window.renderTable = function() {
     const tbody = document.getElementById('clientTableBody');
     tbody.innerHTML = clients.map((c, i) => `
         <tr>
-            <td>${i+1}</td>
+            <td style="color: #64748b; font-weight: 600;">${i+1}</td>
             <td><strong>${c.name}</strong></td>
             <td>${c.phone}</td>
-            <td>KSh ${c.balance.toLocaleString()}</td>
-            <td style="text-align:center;"><button class="view-btn" onclick="openDashboard(${i})">View</button></td>
+            <td style="font-weight: 700; color: #2563eb;">KSh ${c.balance.toLocaleString()}</td>
+            <td style="text-align: center;"><button class="view-btn" onclick="openDashboard(${i})">View</button></td>
         </tr>
     `).join('');
 };
@@ -105,10 +104,10 @@ window.renderTable = function() {
 window.openDashboard = function(index) {
     currentIndex = index;
     const c = clients[index];
-    const totalInt = (c.loan || 0) * 1.25;
+    const totalInt = c.loan * 1.25;
 
     document.getElementById('d-name').innerText = c.name;
-    document.getElementById('d-principal').innerText = `KSh ${(c.loan || 0).toLocaleString()}`;
+    document.getElementById('d-principal').innerText = `KSh ${c.loan.toLocaleString()}`;
     document.getElementById('d-total-int').innerText = `KSh ${totalInt.toLocaleString()}`;
     document.getElementById('d-bal-input').value = c.balance;
     document.getElementById('d-total-paid').innerText = `KSh ${(totalInt - c.balance).toLocaleString()}`;
@@ -123,15 +122,14 @@ function renderActivity(history) {
     const tbody = document.getElementById('activityTableBody');
     tbody.innerHTML = history.slice().reverse().map(h => {
         const isLate = h.time && h.time > "18:00";
-        const timeStyle = isLate ? 'style="color: #ef4444; font-weight: bold;"' : '';
+        const timeClass = isLate ? 'class="late-time"' : '';
         
-        return `
-            <tr>
-                <td>${h.date}</td>
-                <td ${timeStyle}>${h.time || "---"}</td>
-                <td>${h.det}</td>
-                <td style="font-weight:600; color:var(--primary);">${h.by}</td>
-            </tr>`;
+        return `<tr>
+            <td>${h.date}</td>
+            <td ${timeClass}>${h.time || "---"}</td>
+            <td>${h.det}</td>
+            <td style="font-weight:600;">${h.by}</td>
+        </tr>`;
     }).join('');
 }
 
@@ -150,8 +148,6 @@ window.updatePayment = function() {
         });
         saveData();
         document.getElementById('dailyPay').value = "";
-    } else {
-        alert("Please enter a valid amount.");
     }
 };
 
@@ -162,11 +158,9 @@ window.saveManualBalance = function() {
 
 window.updateClientField = function(f, v) { clients[currentIndex][f] = v; saveData(); };
 window.closeDetails = function() { currentIndex = null; document.getElementById('detailWindow').classList.add('hidden'); };
-window.deleteClient = function(i) { if(confirm("Delete Profile?")) { clients.splice(i, 1); saveData(); closeDetails(); }};
-window.markAsCleared = function() { if(confirm("Settle Loan?")) { clients[currentIndex].balance = 0; clients[currentIndex].status = "Cleared"; saveData(); }};
+window.deleteClient = function(i) { if(confirm("Permanently delete this profile?")) { clients.splice(i, 1); saveData(); closeDetails(); }};
+window.markAsCleared = function() { if(confirm("Mark loan as settled?")) { clients[currentIndex].balance = 0; clients[currentIndex].status = "Cleared"; saveData(); }};
 window.searchClients = function() {
     const term = document.getElementById('globalSearch').value.toLowerCase();
-    document.querySelectorAll('#clientTableBody tr').forEach(row => {
-        row.style.display = row.cells[1].innerText.toLowerCase().includes(term) ? "" : "none";
-    });
+    document.querySelectorAll('#clientTableBody tr').forEach(row => { row.style.display = row.cells[1].innerText.toLowerCase().includes(term) ? "" : "none"; });
 };
