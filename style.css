@@ -1,57 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
 :root {
-    --primary: #0f172a;
-    --accent: #2563eb;
-    --bg: #f8fafc;
-    --text: #1e293b;
-    --card: #ffffff;
-    --border: #e2e8f0;
-    --danger: #ef4444;
-    --success: #22c55e;
+    --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --text: #1e293b;
+    --card: #ffffff; --border: #e2e8f0; --sidebar: #1e293b;
 }
 
-/* Dark Mode Variables */
 body.dark-mode {
-    --bg: #0f172a;
-    --text: #f8fafc;
-    --card: #1e293b;
-    --border: #334155;
-    --primary: #1e293b;
+    --bg: #0f172a; --text: #f8fafc; --card: #1e293b; --border: #334155; --sidebar: #020617;
 }
 
 body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; }
 .app-container { display: flex; height: 100vh; overflow: hidden; }
 
-/* Sidebar Drawer */
-.sidebar { width: 260px; background: var(--primary); color: white; transition: 0.3s; flex-shrink: 0; z-index: 2000; }
-.sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
+/* Sidebar */
+.sidebar { width: 260px; background: var(--sidebar); color: white; transition: 0.3s; flex-shrink: 0; z-index: 1000; }
+.sidebar.minimized { width: 0; overflow: hidden; }
 
-@media (max-width: 768px) {
-    .sidebar { position: fixed; left: -260px; height: 100%; }
-    .sidebar.open { left: 0; }
-}
+.nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; }
+.nav-item:hover { background: rgba(255,255,255,0.1); }
 
-/* Main Table Styling */
-.table-container { margin: 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; }
-.styled-table { width: 100%; border-collapse: collapse; min-width: 500px; }
-.styled-table th { background: rgba(0,0,0,0.02); padding: 12px; text-align: left; font-size: 0.8rem; color: #64748b; }
-.styled-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+/* Main Content */
+.main-content { flex: 1; overflow-y: auto; padding: 20px; }
+.top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--card); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
 
-/* Financial Cards */
-.finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; padding: 15px; }
-.stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+/* Professional Table */
+.table-container { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+.styled-table { width: 100%; border-collapse: collapse; text-align: left; }
+.styled-table th { background: rgba(0,0,0,0.05); padding: 15px; font-size: 12px; text-transform: uppercase; color: #64748b; }
+.styled-table td { padding: 15px; border-top: 1px solid var(--border); }
 
-/* Modal */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; overflow-y: auto; padding: 10px; }
-.modal-content { background: var(--card); width: 100%; max-width: 600px; border-radius: 16px; padding: 20px; margin: auto; position: relative; }
+/* Modal & Profile */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; z-index: 2000; padding: 20px; overflow-y: auto; }
+.modal-content { background: var(--card); width: 100%; max-width: 600px; border-radius: 20px; padding: 25px; height: fit-content; }
 
-/* Action Buttons */
-.btn-post { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-.btn-settle { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-.btn-delete { color: var(--danger); background: transparent; border: none; cursor: pointer; text-decoration: underline; margin-top: 10px; display: block; width: 100%; text-align: center; }
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+.metric-card { background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border); }
+.metric-card small { color: #64748b; font-weight: 600; }
+.metric-card h3 { margin: 5px 0; color: var(--accent); }
 
-.late-time { color: var(--danger); font-weight: bold; }
-.hidden { display: none !important; }
+/* Buttons */
+.btn-primary { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; }
+.btn-settle { background: #10b981; margin-top: 10px; }
+.btn-delete { background: #ef4444; margin-top: 10px; }
+.hidden { display: none; }
+
 
 
