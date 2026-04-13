@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,13 +55,7 @@
                 <div class="card table-card">
                     <table class="styled-table">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>Balance</th>
-                                <th>Action</th>
-                            </tr>
+                            <tr><th>#</th><th>Name</th><th>Phone</th><th>Balance</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
@@ -83,14 +76,8 @@
                             <div class="full-row">
                                 <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required>
                             </div>
-                            <div class="date-group">
-                                <label>Start Date</label>
-                                <input type="date" id="f-start" required>
-                            </div>
-                            <div class="date-group">
-                                <label>End Date</label>
-                                <input type="date" id="f-end" required>
-                            </div>
+                            <div class="date-group"><label>Start Date</label><input type="date" id="f-start" required></div>
+                            <div class="date-group"><label>End Date</label><input type="date" id="f-end" required></div>
                         </div>
                         <button type="submit" class="btn-save-main">Save Client Details</button>
                     </form>
@@ -111,22 +98,10 @@
                     </div>
 
                     <div class="loan-metrics">
-                        <div class="metric-box">
-                            <small>Principal</small>
-                            <p id="d-principal">0</p>
-                        </div>
-                        <div class="metric-box">
-                            <small>Total + Int</small>
-                            <p id="d-total-int">0</p>
-                        </div>
-                        <div class="metric-box bal-box">
-                            <small>Balance</small>
-                            <input type="number" id="d-bal-input" onchange="saveManualBalance()">
-                        </div>
-                        <div class="metric-box pay-box">
-                            <small>Total Paid</small>
-                            <p id="d-total-paid">0</p>
-                        </div>
+                        <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
+                        <div class="metric-box"><small>Total + Int</small><p id="d-total-int">0</p></div>
+                        <div class="metric-box bal-box"><small>Balance</small><input type="number" id="d-bal-input" onchange="saveManualBalance()"></div>
+                        <div class="metric-box pay-box"><small>Total Paid</small><p id="d-total-paid">0</p></div>
                     </div>
 
                     <div class="extra-info">
@@ -139,7 +114,12 @@
                         <div class="table-scroll">
                             <table class="activity-table">
                                 <thead>
-                                    <tr><th>Date</th><th>Time</th><th>Details</th></tr>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Activity</th>
+                                        <th>Details</th>
+                                        <th>By</th>
+                                    </tr>
                                 </thead>
                                 <tbody id="activityTableBody"></tbody>
                             </table>
@@ -147,17 +127,18 @@
                     </div>
 
                     <div class="post-payment">
-                        <h3>Record Payment</h3>
-                        <div class="pay-row">
-                            <input type="number" id="dailyPay" placeholder="Amount">
-                            <input type="time" id="payTime" value="12:00">
-                            <button onclick="updatePayment()">Post</button>
+                        <div class="pay-container">
+                            <h3>Record Payment</h3>
+                            <div class="pay-row">
+                                <input type="number" id="dailyPay" placeholder="Amount">
+                                <button onclick="updatePayment()" class="btn-post-pay">Post Payment</button>
+                            </div>
                         </div>
                     </div>
 
                     <div class="modal-footer">
                         <button class="btn-clear" onclick="markAsCleared()">Close Loan (Settled)</button>
-                        <button class="btn-delete-link" onclick="deleteClient(currentIndex)">Delete Profile</button>
+                        <button class="btn-delete-link" onclick="deleteClient(currentIndex)"><i class="fas fa-trash"></i> Delete Client Profile</button>
                     </div>
                 </div>
             </div>
@@ -166,5 +147,6 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
 
