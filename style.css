@@ -7,58 +7,51 @@
     --text: #1e293b;
     --card: #ffffff;
     --border: #e2e8f0;
-    --success: #10b981;
     --danger: #ef4444;
+    --success: #22c55e;
 }
 
 /* Dark Mode Variables */
 body.dark-mode {
-    --primary: #1e293b;
-    --accent: #3b82f6;
     --bg: #0f172a;
     --text: #f8fafc;
     --card: #1e293b;
     --border: #334155;
+    --primary: #1e293b;
 }
 
-body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: background 0.3s; }
-.app-container { display: flex; height: 100vh; }
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; }
+.app-container { display: flex; height: 100vh; overflow: hidden; }
 
-/* Sidebar Logic */
-.sidebar { 
-    width: 260px; background: var(--primary); color: white; 
-    transition: 0.3s ease; flex-shrink: 0; z-index: 2000;
-}
-
+/* Sidebar Drawer */
+.sidebar { width: 260px; background: var(--primary); color: white; transition: 0.3s; flex-shrink: 0; z-index: 2000; }
 .sidebar-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-.nav-item { padding: 15px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
-.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
-
-/* Tables */
-.table-container { margin: 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; }
-.styled-table { width: 100%; border-collapse: collapse; min-width: 500px; }
-.styled-table th { background: rgba(0,0,0,0.05); padding: 12px; text-align: left; font-size: 12px; color: var(--text); opacity: 0.7; }
-.styled-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
-
-/* Dashboard Cards */
-.loan-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
-.metric-box { background: var(--bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border); }
-.metric-box small { font-size: 11px; opacity: 0.7; }
-.metric-box p { font-weight: 700; margin: 5px 0 0; color: var(--accent); }
-
-/* Modal */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; padding: 10px; overflow-y: auto; }
-.modal-content { background: var(--card); width: 100%; max-width: 600px; border-radius: 20px; padding: 20px; margin: auto; }
-
-/* Buttons */
-.btn-process { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: 600; cursor: pointer; }
-.btn-settle { background: var(--success); color: white; border: none; padding: 10px; border-radius: 8px; flex: 1; }
-.btn-delete { color: var(--danger); background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 12px; }
 
 @media (max-width: 768px) {
     .sidebar { position: fixed; left: -260px; height: 100%; }
     .sidebar.open { left: 0; }
-    .top-header { background: var(--card); padding: 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); }
 }
+
+/* Main Table Styling */
+.table-container { margin: 15px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow-x: auto; }
+.styled-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.styled-table th { background: rgba(0,0,0,0.02); padding: 12px; text-align: left; font-size: 0.8rem; color: #64748b; }
+.styled-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+
+/* Financial Cards */
+.finance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; padding: 15px; }
+.stat-card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+/* Modal */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; overflow-y: auto; padding: 10px; }
+.modal-content { background: var(--card); width: 100%; max-width: 600px; border-radius: 16px; padding: 20px; margin: auto; position: relative; }
+
+/* Action Buttons */
+.btn-post { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+.btn-settle { background: var(--success); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+.btn-delete { color: var(--danger); background: transparent; border: none; cursor: pointer; text-decoration: underline; margin-top: 10px; display: block; width: 100%; text-align: center; }
+
+.late-time { color: var(--danger); font-weight: bold; }
 .hidden { display: none !important; }
+
 
