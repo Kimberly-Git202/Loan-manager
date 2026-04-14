@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+/* K@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
 :root {
     --primary: #0f172a;
@@ -62,3 +62,33 @@ body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color
 .btn-delete { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
 
 .hidden { display: none !important; }
+eep your root and main styles from before, adding these: */
+:root {
+    --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --text: #1e293b;
+    --card: #ffffff; --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
+}
+body.dark-mode {
+    --bg: #0f172a; --text: #f1f5f9; --card: #1e293b; --border: #334155;
+}
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+.hidden { display: none !important; }
+.app-container { display: flex; height: 100vh; }
+.sidebar { width: 260px; background: var(--primary); color: white; transition: 0.3s; }
+.main-content { flex: 1; overflow-y: auto; padding: 20px; }
+.stat-card { background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border); margin-bottom: 20px; }
+.styled-table { width: 100%; border-collapse: collapse; }
+.styled-table th, .styled-table td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.modal-content { background: var(--card); padding: 30px; border-radius: 20px; width: 100%; max-width: 700px; position: relative; }
+input { padding: 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 5px; }
+.btn-save { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+.loan-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+.metric-box { padding: 10px; border: 1px solid var(--border); border-radius: 10px; text-align: center; }
+
+/* New Styles for request */
+.time-late { color: var(--danger); font-weight: bold; }
+.skipped-day { background: rgba(239, 68, 68, 0.1); border-left: 4px solid var(--danger); }
+.reloan-highlight { border: 2px solid var(--accent) !important; animation: pulse 2s infinite; }
+@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+.accordion-item { border: 1px solid var(--border); margin-bottom: 5px; border-radius: 8px; }
+.accordion-header { padding: 15px; background: var(--bg); cursor: pointer; font-weight: bold; }
