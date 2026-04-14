@@ -2,10 +2,21 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebas
 import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-const firebaseConfig = { /* Paste your config here */ };
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
+  authDomain: "jml-loans-560d8.firebaseapp.com",
+  projectId: "jml-loans-560d8",
+  storageBucket: "jml-loans-560d8.firebasestorage.app",
+  databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app", 
+  messagingSenderId: "425047270355",
+  appId: "1:425047270355:web:6ccd08365ca1cde7354526"
+};
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
 
 let clients = [];
 let allStaffData = {}; 
