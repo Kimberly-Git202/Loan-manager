@@ -56,8 +56,19 @@ window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    // Fixed event issue for mobile
+    if(event) event.currentTarget.classList.add('active');
     if(window.innerWidth < 768) toggleSidebar();
+};
+
+// SEARCH FUNCTION ADDED HERE
+window.searchClients = () => {
+    const term = document.getElementById('globalSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('#clientTableBody tr');
+    rows.forEach(row => {
+        const name = row.cells[1].innerText.toLowerCase();
+        row.style.display = name.includes(term) ? "" : "none";
+    });
 };
 
 function updateFinancials() {
@@ -99,6 +110,10 @@ window.openDashboard = (i) => {
     document.getElementById('d-total').innerText = `KSh ${totalDue.toLocaleString()}`;
     document.getElementById('d-balance').innerText = `KSh ${c.balance.toLocaleString()}`;
     document.getElementById('d-paid').innerText = `KSh ${(totalDue - c.balance).toLocaleString()}`;
+    
+    // START AND END DATE DISPLAY ADDED HERE
+    document.getElementById('d-start-val').innerText = c.startDate || "---";
+    document.getElementById('d-end-val').innerText = c.endDate || "---";
 
     document.getElementById('historyBody').innerHTML = (c.history || []).slice().reverse().map(h => `
         <tr>
@@ -155,6 +170,9 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     clients.push({
         name: document.getElementById('f-name').value,
         phone: document.getElementById('f-phone').value,
+        // START AND END DATE SAVING ADDED HERE
+        startDate: document.getElementById('f-start').value,
+        endDate: document.getElementById('f-end').value,
         loan: p, balance: p * 1.25,
         history: [{
             date: new Date().toLocaleDateString('en-GB'),
