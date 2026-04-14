@@ -35,6 +35,12 @@
         <main class="main-content">
             <header class="top-bar">
                 <i class="fas fa-bars menu-btn" onclick="toggleSidebar()"></i>
+                <div class="search-container" style="flex: 1; margin: 0 20px;">
+                    <div style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #64748b;"></i>
+                        <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search clients..." style="width: 100%; padding: 10px 10px 10px 35px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text);">
+                    </div>
+                </div>
                 <div style="text-align: right;">
                     <small>Today's Collection</small>
                     <div id="top-today" style="font-weight: bold; color: var(--success);">KSh 0</div>
@@ -72,11 +78,21 @@
                     <form id="clientForm">
                         <input type="text" id="f-name" placeholder="Full Name" required style="width:100%; padding:12px; margin-bottom:10px;">
                         <input type="text" id="f-phone" placeholder="Phone (e.g. 07...)" style="width:100%; padding:12px; margin-bottom:10px;">
-                        <input type="text" id="f-ID number" placeholder ="ID Number" required style="width:100%; padding:12px; margin-bottom:10px;">
-                        <input type="text" id="f-location" placeholder ="Location" required style="width:100%; padding:12px; margin-bottom: 10px;">
-                        <input type="text" id="f-occupation" placeholder ="Occupation" required style="width:100%; padding:12px; margin-bottom: 10px;">
-                        <input type="text" id="f-Referral" placeholder ="Referral" required style="width:100%;  padding:12px; margin-bottom: 10px;">   
-                        <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required style="width:100%; padding:12px; margin-bottom:15px;">
+                        <input type="text" id="f-ID Number" placeholder="ID Number" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <input  type="text" id="f-location" placeholder="Location" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <input type="text" id="f-Occupation" placeholder="Occupation" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <input type="text" id="f-Referral" placeholder="Referral" required style=width:100%; padding:12px; margin-bottom:10px;">
+                        <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required style="width:100%; padding:12px; margin-bottom:10px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: #64748b;">Start Date</label>
+                                <input type="date" id="f-start" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: #64748b;">End Date</label>
+                                <input type="date" id="f-end" required style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                            </div>
+                        </div>
                         <button type="submit" class="btn-save">Open Account</button>
                     </form>
                 </div>
@@ -88,6 +104,9 @@
         <div class="modal-content">
             <span style="position:absolute; top:20px; right:25px; cursor:pointer; font-size:1.5rem;" onclick="closeDetails()">&times;</span>
             <h2 id="d-name">Client Name</h2>
+            <div id="d-dates" style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">
+                <i class="fas fa-calendar-alt"></i> Period: <span id="d-start-val">--</span> to <span id="d-end-val">--</span>
+            </div>
             <hr style="opacity: 0.1;">
             
             <div class="loan-metrics">
@@ -124,3 +143,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
