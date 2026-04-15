@@ -15,11 +15,11 @@
             <div class="input-group">
                 <input type="email" id="login-email" placeholder="Email">
             </div>
-            <div class="input-group password-wrapper">
+            <div class="input-group password-wrapper" style="margin-top:10px;">
                 <input type="password" id="login-password" placeholder="Password">
-                <i class="fas fa-eye" onclick="togglePass('login-password', this)"></i>
+                <i class="fas fa-eye" id="eyeIcon" onclick="togglePass('login-password', this)"></i>
             </div>
-            <button onclick="handleLogin()" class="btn-save">Access System</button>
+            <button onclick="handleLogin()" class="btn-save" style="margin-top:15px;">Access System</button>
         </div>
     </div>
 
@@ -35,7 +35,6 @@
             <div class="nav-item" onclick="showSection('debt-sec')"><i class="fas fa-hand-holding-usd"></i> Debts</div>
             <div class="nav-item" onclick="showSection('finance-sec')"><i class="fas fa-chart-line"></i> Financials</div>
             <div class="nav-item" onclick="showSection('settings-sec')"><i class="fas fa-cog"></i> Settings</div>
-            
             <div class="nav-item" onclick="toggleTheme()" style="margin-top: auto;"><i class="fas fa-adjust"></i> Theme</div>
             <div class="nav-item" onclick="handleLogout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</div>
         </nav>
@@ -57,35 +56,34 @@
                 </div>
             </section>
 
-            <section id="debt-sec" class="content-section hidden">
-                <h2>Debt Management</h2>
-                <div class="table-container">
-                    <table class="styled-table">
-                        <thead>
-                            <tr><th>Client Name</th><th>Debt Amount</th><th>Reason</th><th>Action</th></tr>
-                        </thead>
-                        <tbody id="debtTableBody"></tbody>
-                    </table>
-                </div>
-                <button class="btn-save" style="margin-top:10px;" onclick="addDebtRow()">+ Add Debt Entry</button>
-            </section>
-
             <section id="settings-sec" class="content-section hidden">
-                <h2>System Settings</h2>
-                <div id="admin-settings" class="hidden">
+                <h2>Settings & Security</h2>
+                <div id="admin-controls" class="hidden">
                     <div class="stat-card">
                         <h3>Reset Employee Password</h3>
-                        <input type="text" id="reset-email" placeholder="Employee Email">
+                        <input type="email" id="reset-email" placeholder="Employee Email">
                         <button class="btn-save" onclick="adminResetPassword()">Send Reset Link</button>
                     </div>
                     <div class="stat-card" style="margin-top:20px;">
-                        <h3>Access Control (Deny/Allow)</h3>
+                        <h3>Access Control</h3>
                         <div id="employee-access-list"></div>
                     </div>
                 </div>
-                <div id="staff-settings">
-                    <p>Contact Admin to change your access levels.</p>
+                <div id="staff-controls">
+                    <p>Current User: <span id="user-role-display">Loading...</span></p>
+                    <p>Contact Administrator for access modifications.</p>
                 </div>
+            </section>
+
+            <section id="debt-sec" class="content-section hidden">
+                <h2>Client Debts</h2>
+                <div class="table-container">
+                    <table class="styled-table">
+                        <thead><tr><th>Name</th><th>Amount</th><th>Reason</th><th>Action</th></tr></thead>
+                        <tbody id="debtTableBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn-save" style="margin-top:10px;" onclick="addDebtRow()">+ New Debt Entry</button>
             </section>
 
             <section id="add-sec" class="content-section hidden">
@@ -107,15 +105,7 @@
             </section>
 
             <section id="given-sec" class="content-section hidden">
-                <h2>Loans Given History</h2>
                 <div id="givenAccordion"></div>
-            </section>
-
-            <section id="finance-sec" class="content-section hidden">
-                <div class="finance-grid">
-                    <div class="stat-card"><h3>Total Outstanding</h3><h2 id="total-out">0</h2></div>
-                    <div class="stat-card"><h3>Collected Today</h3><h2 id="total-today">0</h2></div>
-                </div>
             </section>
         </main>
     </div>
@@ -126,33 +116,39 @@
             <h2 id="d-name">---</h2>
             <div class="info-grid">
                 <div class="info-card">
-                    <h3>Details</h3>
+                    <h3>Personal Info</h3>
                     <p>ID: <span id="d-id"></span></p>
-                    <p>Phone: <span id="d-phone"></span></p>
                     <p>Occupation: <span id="d-occ"></span></p>
                 </div>
                 <div class="info-card">
                     <h3>Dates</h3>
-                    <p>Start: <input type="date" id="ed-start" onchange="updateClientField('startDate', this.value)"></p>
-                    <p>End: <input type="date" id="ed-end" onchange="updateClientField('endDate', this.value)"></p>
+                    <p>Start: <input type="date" id="ed-start"></p>
+                    <p>End: <input type="date" id="ed-end"></p>
+                </div>
+                <div class="info-card">
+                    <h3>Principal</h3>
+                    <input type="number" id="ed-princ" style="width: 80%;">
+                    <button class="view-btn" onclick="saveEdits()">Update</button>
                 </div>
             </div>
             <div class="loan-metrics">
-                <div class="metric-box">Principal: <input type="number" id="ed-princ" onchange="updateClientField('principal', this.value)"></div>
-                <div class="metric-box highlight">Balance: <span id="d-balance"></span></div>
+                <div class="metric-box highlight">Current Balance: <span id="d-balance"></span></div>
             </div>
             <div class="dashboard-split">
                 <div class="history-side">
-                    <h3>History</h3>
-                    <table class="styled-table"><tbody id="historyBody"></tbody></table>
+                    <h3>Payment History</h3>
+                    <table class="styled-table">
+                        <thead><tr><th>Date</th><th>Amount</th><th>By</th></tr></thead>
+                        <tbody id="historyBody"></tbody>
+                    </table>
                 </div>
                 <div class="action-side">
-                    <h3>Pay</h3>
-                    <input type="number" id="payAmt">
-                    <button class="btn-save" onclick="processPayment()">Post</button>
+                    <h3>Post Payment</h3>
+                    <input type="number" id="payAmt" placeholder="KSh">
+                    <button class="btn-save" onclick="processPayment()">Record Payment</button>
                 </div>
             </div>
-            <button onclick="settleAndReset()" class="btn-settle" style="margin-top:10px;">Settle & Re-Loan</button>
+            <button onclick="settleAndReset()" class="btn-settle" style="margin-top:20px;">Settle & Re-Loan</button>
         </div>
     </div>
 
