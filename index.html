@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JML LIMITED | Enterprise Loan Manager</title>
+    <title>JML LIMITED | Enterprise</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="light-mode">
 
     <div id="login-overlay" class="modal">
-        <div class="modal-content" style="max-width: 380px; text-align: center;">
-            <h2 style="color: var(--accent);">JML LIMITED</h2>
-            <p>Staff Secure Portal</p>
+        <div class="modal-content" style="max-width: 380px;">
+            <h2 style="text-align:center; color: var(--accent);">JML LIMITED</h2>
             <div class="input-group">
-                <input type="email" id="login-email" placeholder="Work Email">
+                <input type="email" id="login-email" placeholder="Email">
             </div>
-            <div class="input-group password-wrapper" style="margin-top:10px;">
+            <div class="input-group password-wrapper">
                 <input type="password" id="login-password" placeholder="Password">
                 <i class="fas fa-eye" onclick="togglePass('login-password', this)"></i>
             </div>
-            <button onclick="handleLogin()" class="btn-save" style="margin-top:15px;">Access System</button>
+            <button onclick="handleLogin()" class="btn-save">Access System</button>
         </div>
     </div>
 
@@ -28,76 +27,95 @@
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span>JML LIMITED</span>
-                <i class="fas fa-bars" onclick="toggleSidebar()" style="cursor:pointer"></i>
+                <i class="fas fa-bars" onclick="toggleSidebar()"></i>
             </div>
-            <div class="nav-item active" onclick="showSection('list-sec')"><i class="fas fa-users"></i> Clients</div>
+            <div class="nav-item active" onclick="showSection('list-sec')"><i class="fas fa-briefcase"></i> My Portfolio</div>
+            <div class="nav-item" onclick="showSection('add-sec')"><i class="fas fa-user-plus"></i> Add Client</div>
             <div class="nav-item" onclick="showSection('given-sec')"><i class="fas fa-calendar-alt"></i> Loans Given</div>
+            <div class="nav-item" onclick="showSection('debt-sec')"><i class="fas fa-hand-holding-usd"></i> Debts</div>
             <div class="nav-item" onclick="showSection('finance-sec')"><i class="fas fa-chart-line"></i> Financials</div>
-            <div class="nav-item" onclick="showSection('add-sec')"><i class="fas fa-user-plus"></i> New Enrollment</div>
+            <div class="nav-item" onclick="showSection('settings-sec')"><i class="fas fa-cog"></i> Settings</div>
             
-            <div id="admin-nav" class="hidden">
-                <hr style="opacity: 0.1; margin: 10px 0;">
-                <div class="nav-item" onclick="showSection('admin-sec')"><i class="fas fa-user-shield"></i> Admin Panel</div>
-            </div>
-
-            <div class="nav-item" onclick="toggleTheme()" style="margin-top: auto;"><i class="fas fa-adjust"></i> Appearance</div>
+            <div class="nav-item" onclick="toggleTheme()" style="margin-top: auto;"><i class="fas fa-adjust"></i> Theme</div>
             <div class="nav-item" onclick="handleLogout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</div>
         </nav>
 
         <main class="main-content">
             <header class="top-bar">
-                <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search Name or ID...">
-                <div id="top-today" style="font-weight: bold; color: var(--success);">KSh 0 Collected Today</div>
+                <input type="text" id="globalSearch" placeholder="Search Client Name or ID...">
+                <div id="top-today" style="font-weight: bold; color: var(--success);">Today: KSh 0</div>
             </header>
 
             <section id="list-sec" class="content-section">
                 <div class="table-container">
                     <table class="styled-table">
                         <thead>
-                            <tr><th>Name</th><th>ID Number</th><th>Paid</th><th>Balance</th><th>Action</th></tr>
+                            <tr><th>#</th><th>Name</th><th>ID</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
-            <section id="given-sec" class="content-section hidden">
-                <h2>Loans Given (Monthly/Weekly)</h2>
-                <div id="givenAccordion"></div>
+            <section id="debt-sec" class="content-section hidden">
+                <h2>Debt Management</h2>
+                <div class="table-container">
+                    <table class="styled-table">
+                        <thead>
+                            <tr><th>Client Name</th><th>Debt Amount</th><th>Reason</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="debtTableBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn-save" style="margin-top:10px;" onclick="addDebtRow()">+ Add Debt Entry</button>
+            </section>
+
+            <section id="settings-sec" class="content-section hidden">
+                <h2>System Settings</h2>
+                <div id="admin-settings" class="hidden">
+                    <div class="stat-card">
+                        <h3>Reset Employee Password</h3>
+                        <input type="text" id="reset-email" placeholder="Employee Email">
+                        <button class="btn-save" onclick="adminResetPassword()">Send Reset Link</button>
+                    </div>
+                    <div class="stat-card" style="margin-top:20px;">
+                        <h3>Access Control (Deny/Allow)</h3>
+                        <div id="employee-access-list"></div>
+                    </div>
+                </div>
+                <div id="staff-settings">
+                    <p>Contact Admin to change your access levels.</p>
+                </div>
             </section>
 
             <section id="add-sec" class="content-section hidden">
-                <div class="stat-card" style="max-width: 650px; margin: auto;">
-                    <h2>Register New Client</h2>
+                <div class="stat-card" style="max-width: 600px; margin: auto;">
+                    <h2>Enroll Client</h2>
                     <form id="clientForm" class="form-grid">
-                        <input type="text" id="f-name" placeholder="Full Name" required>
+                        <input type="text" id="f-name" placeholder="Name" required>
                         <input type="text" id="f-id" placeholder="ID Number" required>
-                        <input type="text" id="f-phone" placeholder="Phone Number">
+                        <input type="text" id="f-phone" placeholder="Phone">
                         <input type="text" id="f-loc" placeholder="Location">
                         <input type="text" id="f-occ" placeholder="Occupation">
-                        <input type="text" id="f-ref" placeholder="Referral Person">
-                        <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required style="grid-column: span 2;">
-                        <div><label><small>Start Date (Optional)</small></label><input type="date" id="f-start"></div>
-                        <div><label><small>End Date (Optional)</small></label><input type="date" id="f-end"></div>
-                        <button type="submit" class="btn-save" style="grid-column: span 2;">Enroll Client</button>
+                        <input type="text" id="f-ref" placeholder="Referral">
+                        <input type="number" id="f-loan" placeholder="Amount" required style="grid-column: span 2;">
+                        <input type="date" id="f-start" title="Start Date">
+                        <input type="date" id="f-end" title="End Date">
+                        <button type="submit" class="btn-save" style="grid-column: span 2;">Submit</button>
                     </form>
                 </div>
             </section>
 
-            <section id="finance-sec" class="content-section hidden">
-                <div class="finance-grid">
-                    <div class="stat-card"><h3>Outstanding</h3><h2 id="total-out">0</h2></div>
-                    <div class="stat-card"><h3>Total Recovered</h3><h2 id="total-paid">0</h2></div>
-                    <div class="stat-card highlight-card">
-                        <h3>Grand Total in Account</h3>
-                        <input type="number" id="grand-total-val" onchange="saveGrandTotal()">
-                    </div>
-                </div>
+            <section id="given-sec" class="content-section hidden">
+                <h2>Loans Given History</h2>
+                <div id="givenAccordion"></div>
             </section>
 
-            <section id="admin-sec" class="content-section hidden">
-                <h2>Admin Management</h2>
-                <div id="staffList" class="finance-grid"></div>
+            <section id="finance-sec" class="content-section hidden">
+                <div class="finance-grid">
+                    <div class="stat-card"><h3>Total Outstanding</h3><h2 id="total-out">0</h2></div>
+                    <div class="stat-card"><h3>Collected Today</h3><h2 id="total-today">0</h2></div>
+                </div>
             </section>
         </main>
     </div>
@@ -105,58 +123,43 @@
     <div id="detailWindow" class="modal hidden">
         <div class="modal-content large">
             <span class="close-btn" onclick="closeDetails()">&times;</span>
-            <h2 id="d-name">Client Name</h2>
-            
+            <h2 id="d-name">---</h2>
             <div class="info-grid">
                 <div class="info-card">
-                    <h3>Personal Info</h3>
+                    <h3>Details</h3>
                     <p>ID: <span id="d-id"></span></p>
-                    <p>Loc: <span id="d-loc"></span></p>
-                    <p>Occ: <span id="d-occ"></span></p>
-                </div>
-                <div class="info-card">
-                    <h3>Contact & Referral</h3>
                     <p>Phone: <span id="d-phone"></span></p>
-                    <p>Ref: <span id="d-ref"></span></p>
+                    <p>Occupation: <span id="d-occ"></span></p>
                 </div>
                 <div class="info-card">
-                    <h3>Editable Loan Dates</h3>
-                    <p>Start: <input type="date" id="ed-start" onchange="updateDates()"> </p>
-                    <p>End: <input type="date" id="ed-end" onchange="updateDates()"> </p>
+                    <h3>Dates</h3>
+                    <p>Start: <input type="date" id="ed-start" onchange="updateClientField('startDate', this.value)"></p>
+                    <p>End: <input type="date" id="ed-end" onchange="updateClientField('endDate', this.value)"></p>
                 </div>
             </div>
-
             <div class="loan-metrics">
-                <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
-                <div class="metric-box highlight"><small>Balance Due</small><p id="d-balance">0</p></div>
+                <div class="metric-box">Principal: <input type="number" id="ed-princ" onchange="updateClientField('principal', this.value)"></div>
+                <div class="metric-box highlight">Balance: <span id="d-balance"></span></div>
             </div>
-
             <div class="dashboard-split">
                 <div class="history-side">
                     <h3>History</h3>
-                    <div class="table-container small-table">
-                        <table class="styled-table">
-                            <tbody id="historyBody"></tbody>
-                        </table>
-                    </div>
+                    <table class="styled-table"><tbody id="historyBody"></tbody></table>
                 </div>
                 <div class="action-side">
-                    <h3>Post Payment</h3>
-                    <input type="number" id="payAmt" placeholder="KSh">
-                    <button class="btn-save" onclick="processPayment()">Record Payment</button>
+                    <h3>Pay</h3>
+                    <input type="number" id="payAmt">
+                    <button class="btn-save" onclick="processPayment()">Post</button>
                 </div>
             </div>
-
-            <div class="btn-group" style="margin-top: 25px;">
-                <button onclick="settleAndReset()" class="btn-settle">Settle & Issue New Loan</button>
-                <button class="btn-delete" onclick="deleteClient()"><i class="fas fa-trash"></i> Delete</button>
-            </div>
+            <button onclick="settleAndReset()" class="btn-settle" style="margin-top:10px;">Settle & Re-Loan</button>
         </div>
     </div>
 
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
 
 
