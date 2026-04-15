@@ -12,6 +12,7 @@
     <div id="login-overlay" class="modal">
         <div class="modal-content" style="max-width: 380px; text-align: center;">
             <h2 style="color: var(--accent);">JML LIMITED</h2>
+            <p>Staff Secure Portal</p>
             <div class="input-group">
                 <input type="email" id="login-email" placeholder="Work Email">
             </div>
@@ -35,17 +36,18 @@
             <div class="nav-item" onclick="showSection('add-sec')"><i class="fas fa-user-plus"></i> New Enrollment</div>
             
             <div id="admin-nav" class="hidden">
+                <hr style="opacity: 0.1; margin: 10px 0;">
                 <div class="nav-item" onclick="showSection('admin-sec')"><i class="fas fa-user-shield"></i> Admin Panel</div>
             </div>
 
-            <div class="nav-item" onclick="toggleTheme()" style="margin-top: auto;"><i class="fas fa-adjust"></i> Theme</div>
+            <div class="nav-item" onclick="toggleTheme()" style="margin-top: auto;"><i class="fas fa-adjust"></i> Appearance</div>
             <div class="nav-item" onclick="handleLogout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</div>
         </nav>
 
         <main class="main-content">
             <header class="top-bar">
                 <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search Name or ID...">
-                <div id="top-today" style="font-weight: bold; color: var(--success);">Today: KSh 0</div>
+                <div id="top-today" style="font-weight: bold; color: var(--success);">KSh 0 Collected Today</div>
             </header>
 
             <section id="list-sec" class="content-section">
@@ -60,23 +62,23 @@
             </section>
 
             <section id="given-sec" class="content-section hidden">
-                <h2>Loans Given (Weekly Analysis)</h2>
+                <h2>Loans Given (Monthly/Weekly)</h2>
                 <div id="givenAccordion"></div>
             </section>
 
             <section id="add-sec" class="content-section hidden">
-                <div class="stat-card" style="max-width: 600px; margin: auto;">
-                    <h2>Register Client</h2>
+                <div class="stat-card" style="max-width: 650px; margin: auto;">
+                    <h2>Register New Client</h2>
                     <form id="clientForm" class="form-grid">
                         <input type="text" id="f-name" placeholder="Full Name" required>
                         <input type="text" id="f-id" placeholder="ID Number" required>
-                        <input type="text" id="f-phone" placeholder="Phone">
+                        <input type="text" id="f-phone" placeholder="Phone Number">
                         <input type="text" id="f-loc" placeholder="Location">
                         <input type="text" id="f-occ" placeholder="Occupation">
-                        <input type="text" id="f-ref" placeholder="Referral">
-                        <input type="number" id="f-loan" placeholder="Principal (KSh)" required style="grid-column: span 2;">
-                        <input type="date" id="f-start" placeholder="Start Date">
-                        <input type="date" id="f-end" placeholder="End Date">
+                        <input type="text" id="f-ref" placeholder="Referral Person">
+                        <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required style="grid-column: span 2;">
+                        <div><label><small>Start Date (Optional)</small></label><input type="date" id="f-start"></div>
+                        <div><label><small>End Date (Optional)</small></label><input type="date" id="f-end"></div>
                         <button type="submit" class="btn-save" style="grid-column: span 2;">Enroll Client</button>
                     </form>
                 </div>
@@ -85,8 +87,17 @@
             <section id="finance-sec" class="content-section hidden">
                 <div class="finance-grid">
                     <div class="stat-card"><h3>Outstanding</h3><h2 id="total-out">0</h2></div>
-                    <div class="stat-card"><h3>Collected Today</h3><h2 id="total-today">0</h2></div>
+                    <div class="stat-card"><h3>Total Recovered</h3><h2 id="total-paid">0</h2></div>
+                    <div class="stat-card highlight-card">
+                        <h3>Grand Total in Account</h3>
+                        <input type="number" id="grand-total-val" onchange="saveGrandTotal()">
+                    </div>
                 </div>
+            </section>
+
+            <section id="admin-sec" class="content-section hidden">
+                <h2>Admin Management</h2>
+                <div id="staffList" class="finance-grid"></div>
             </section>
         </main>
     </div>
@@ -104,20 +115,20 @@
                     <p>Occ: <span id="d-occ"></span></p>
                 </div>
                 <div class="info-card">
-                    <h3>Contact</h3>
+                    <h3>Contact & Referral</h3>
                     <p>Phone: <span id="d-phone"></span></p>
                     <p>Ref: <span id="d-ref"></span></p>
                 </div>
                 <div class="info-card">
-                    <h3>Dates</h3>
-                    <p>Start: <input type="date" id="ed-start" onchange="updateClientDates()"></p>
-                    <p>End: <input type="date" id="ed-end" onchange="updateClientDates()"></p>
+                    <h3>Editable Loan Dates</h3>
+                    <p>Start: <input type="date" id="ed-start" onchange="updateDates()"> </p>
+                    <p>End: <input type="date" id="ed-end" onchange="updateDates()"> </p>
                 </div>
             </div>
 
             <div class="loan-metrics">
                 <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
-                <div class="metric-box highlight"><small>Balance</small><p id="d-balance">0</p></div>
+                <div class="metric-box highlight"><small>Balance Due</small><p id="d-balance">0</p></div>
             </div>
 
             <div class="dashboard-split">
@@ -130,14 +141,15 @@
                     </div>
                 </div>
                 <div class="action-side">
-                    <h3>Record Payment</h3>
-                    <input type="number" id="payAmt" placeholder="Amount">
-                    <button class="btn-save" onclick="processPayment()">Post Payment</button>
+                    <h3>Post Payment</h3>
+                    <input type="number" id="payAmt" placeholder="KSh">
+                    <button class="btn-save" onclick="processPayment()">Record Payment</button>
                 </div>
             </div>
 
-            <div class="btn-group" style="margin-top:20px;">
-                <button onclick="settleAndReset()" class="btn-settle">Settle & New Loan</button>
+            <div class="btn-group" style="margin-top: 25px;">
+                <button onclick="settleAndReset()" class="btn-settle">Settle & Issue New Loan</button>
+                <button class="btn-delete" onclick="deleteClient()"><i class="fas fa-trash"></i> Delete</button>
             </div>
         </div>
     </div>
@@ -145,6 +157,7 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
 
 
 
