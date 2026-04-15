@@ -14,56 +14,59 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 let allClients = [];
-let activeClientID = null;
 let isAdmin = false;
+let activeID = null;
 
-// --- Auth Check ---
+// --- Authentication ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const snap = await get(ref(db, `jml_users/${user.uid}`));
-        const uData = snap.val() || { role: 'staff' };
-        isAdmin = uData.role === 'admin';
+        const uData = snap.val() || { role: 'staff', status: 'active' };
+        if(uData.status === 'denied') { alert("Access Denied"); signOut(auth); return; }
         
-        document.getElementById('user-role-display').innerText = isAdmin ? "Administrator" : "Staff Member";
+        isAdmin = uData.role === 'admin';
         document.getElementById('login-overlay').classList.add('hidden');
-        if(isAdmin) document.getElementById('admin-controls').classList.remove('hidden');
+        if(isAdmin) document.getElementById('admin-panel').classList.remove('hidden');
+        document.getElementById('user-display-role').innerText = isAdmin ? "Administrator" : "Staff Member";
         
         loadData();
+        loadDebts();
+        loadSettledMaster();
     } else {
         document.getElementById('login-overlay').classList.remove('hidden');
     }
 });
 
-// --- Data Loading ---
+// --- Data Core ---
 function loadData() {
     onValue(ref(db, 'jml_data'), (snap) => {
         const data = snap.val() || {};
         allClients = [];
         Object.keys(data).forEach(uid => {
             Object.values(data[uid]).forEach(c => {
-                // If admin, add all. If staff, only add if ownerId matches.
-                if(isAdmin || c.ownerId === auth.currentUser.uid) {
-                    allClients.push(c);
-                }
+                if(isAdmin || c.ownerId === auth.currentUser.uid) allClients.push(c);
             });
         });
         renderTable(allClients);
+        renderAccordion();
     });
 }
 
-// --- Table Rendering ---
 function renderTable(list) {
     const tbody = document.getElementById('clientTableBody');
     const today = new Date().toLocaleDateString('en-GB');
-    
+    let dailyTotal = 0;
+
     tbody.innerHTML = list.map((c, i) => {
-        const lastPay = (c.history && c.history.length > 0) ? c.history[c.history.length-1].date : 'Never';
+        const history = c.history || [];
+        const lastPay = history.length > 0 ? history[history.length-1].date : 'None';
         const isSkipped = lastPay !== today;
-        const rowStyle = isSkipped ? 'style="background: #fff5f5; border-left: 4px solid #ef4444;"' : '';
+        
+        history.forEach(h => { if(h.date === today) dailyTotal += h.amt; });
 
         return `
-            <tr ${rowStyle}>
-                <td>${i+1}</td>
+            <tr style="${isSkipped ? 'background: #fff0f0; border-left: 5px solid red;' : ''}">
+                <td>${i + 1}</td>
                 <td><strong>${c.name}</strong></td>
                 <td>${c.idNumber}</td>
                 <td>${c.totalPaid || 0}</td>
@@ -73,113 +76,136 @@ function renderTable(list) {
             </tr>
         `;
     }).join('');
+    document.getElementById('top-today').innerText = `Today: KSh ${dailyTotal.toLocaleString()}`;
 }
 
-// --- Dashboard Logic (Fixed) ---
+// --- Dashboard Logic ---
 window.openDashboard = (id) => {
-    activeClientID = id;
+    activeID = id;
     const c = allClients.find(x => x.idNumber === id);
     if(!c) return;
 
     document.getElementById('d-name').innerText = c.name;
-    document.getElementById('d-id').innerText = c.idNumber;
-    document.getElementById('d-occ').innerText = c.occupation;
+    document.getElementById('d-id').innerText = `ID: ${c.idNumber}`;
+    document.getElementById('d-phone').innerText = `Phone: ${c.phone}`;
+    document.getElementById('d-occ').innerText = `Occ: ${c.occupation}`;
     document.getElementById('ed-start').value = c.startDate || "";
     document.getElementById('ed-end').value = c.endDate || "";
     document.getElementById('ed-princ').value = c.principal;
     document.getElementById('d-balance').innerText = `KSh ${c.balance}`;
-
+    
     document.getElementById('historyBody').innerHTML = (c.history || []).map(h => `
-        <tr><td>${h.date}</td><td>KSh ${h.amt}</td><td>${h.by}</td></tr>
+        <tr><td>${h.date}</td><td>${h.amt}</td><td>${h.by}</td></tr>
     `).join('');
+
+    const pastCon = document.getElementById('pastLoansContainer');
+    pastCon.innerHTML = (c.pastLoans || []).map(p => `
+        <div class="info-card" style="margin-bottom:5px;">
+            Cleared ${p.clearedDate}: KSh ${p.principal} (Paid ${p.totalPaid})
+        </div>
+    `).join('') || "No archived loans.";
 
     document.getElementById('detailWindow').classList.remove('hidden');
 };
 
 window.processPayment = async () => {
     const amt = parseFloat(document.getElementById('payAmt').value);
-    const c = allClients.find(x => x.idNumber === activeClientID);
+    const c = allClients.find(x => x.idNumber === activeID);
     if(!amt || !c) return;
-
     c.balance -= amt;
     c.totalPaid = (c.totalPaid || 0) + amt;
     if(!c.history) c.history = [];
-    c.history.push({
-        date: new Date().toLocaleDateString('en-GB'),
-        amt: amt,
-        by: auth.currentUser.email.split('@')[0]
-    });
-
+    c.history.push({ date: new Date().toLocaleDateString('en-GB'), amt: amt, by: auth.currentUser.email.split('@')[0] });
     await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
     document.getElementById('payAmt').value = "";
-    openDashboard(activeClientID); // Refresh view
+    openDashboard(activeID);
 };
 
-window.saveEdits = async () => {
-    const c = allClients.find(x => x.idNumber === activeClientID);
-    c.startDate = document.getElementById('ed-start').value;
-    c.endDate = document.getElementById('ed-end').value;
-    c.principal = parseFloat(document.getElementById('ed-princ').value);
-    c.balance = c.principal * 1.25 - (c.totalPaid || 0); // Recalculate based on edit
-    
+window.updateField = async (field, val) => {
+    const c = allClients.find(x => x.idNumber === activeID);
+    c[field] = val;
+    if(field === 'principal') c.balance = (parseFloat(val) * 1.25) - (c.totalPaid || 0);
     await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
-    alert("Saved successfully!");
-    openDashboard(activeClientID);
 };
 
 window.settleAndReset = async () => {
-    const c = allClients.find(x => x.idNumber === activeClientID);
-    if(!confirm("Settle and re-loan?")) return;
+    const c = allClients.find(x => x.idNumber === activeID);
+    if(!confirm("Settle this loan? Old data stays on profile.")) return;
+    
+    const archive = { principal: c.principal, totalPaid: c.totalPaid, clearedDate: new Date().toLocaleDateString('en-GB') };
+    if(!c.pastLoans) c.pastLoans = [];
+    c.pastLoans.push(archive);
+    
+    await set(ref(db, `jml_settled_master/${c.idNumber}_${Date.now()}`), { ...archive, name: c.name, idNumber: c.idNumber, ownerId: c.ownerId });
 
-    // Archive
-    await set(ref(db, `jml_settled/${c.ownerId}/${c.idNumber}_${Date.now()}`), {...c, settled: true});
-
-    // Reset
     c.principal = parseFloat(prompt("New Principal:", c.principal)) || c.principal;
-    c.balance = c.principal * 1.25;
-    c.totalPaid = 0;
-    c.history = [];
-    c.startDate = "";
-    c.endDate = "";
-
+    c.balance = c.principal * 1.25; c.totalPaid = 0; c.history = []; c.startDate = ""; c.endDate = "";
     await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
     closeDetails();
 };
 
-// --- Search Bar ---
+// --- Grouping (Accordion) ---
+function renderAccordion() {
+    const container = document.getElementById('givenAccordion');
+    container.innerHTML = "";
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    let groups = {};
+    allClients.forEach(c => {
+        if(!c.startDate) return;
+        const d = new Date(c.startDate);
+        const m = months[d.getMonth()], w = `Week ${Math.ceil(d.getDate()/7)}`;
+        if(!groups[m]) groups[m] = {}; if(!groups[m][w]) groups[m][w] = [];
+        groups[m][w].push(c);
+    });
+    for(let m in groups){
+        let html = `<details><summary>${m}</summary>`;
+        for(let w in groups[m]){
+            html += `<details style="margin-left:20px;"><summary>${w}</summary><ul>`;
+            groups[m][w].forEach(c => html += `<li>${c.name} - KSh ${c.principal}</li>`);
+            html += `</ul></details>`;
+        }
+        container.innerHTML += html + `</details>`;
+    }
+}
+
+// --- Debts & Search ---
+window.addDebtRow = async () => {
+    const n = prompt("Name:"), a = prompt("Amount:");
+    if(n && a) await set(ref(db, `jml_debts/${Date.now()}`), {name: n, amt: a, reason: "Manual Entry"});
+};
+function loadDebts() {
+    onValue(ref(db, 'jml_debts'), (snap) => {
+        const d = snap.val() || {};
+        document.getElementById('debtTableBody').innerHTML = Object.entries(d).map(([id, val]) => `
+            <tr><td>${val.name}</td><td>${val.amt}</td><td>${val.reason}</td>
+            <td><button onclick="removeDebt('${id}')">Clear</button></td></tr>`).join('');
+    });
+}
+window.removeDebt = (id) => remove(ref(db, `jml_debts/${id}`));
+
 document.getElementById('globalSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase();
-    const filtered = allClients.filter(c => 
-        c.name.toLowerCase().includes(term) || c.idNumber.includes(term)
-    );
+    const filtered = allClients.filter(c => c.name.toLowerCase().includes(term) || c.idNumber.includes(term));
     renderTable(filtered);
 });
 
-// --- Settings Fix ---
-window.adminResetPassword = () => {
-    const email = document.getElementById('reset-email').value;
-    sendPasswordResetEmail(auth, email).then(() => alert("Reset email sent!")).catch(e => alert(e.message));
+// --- UI Helpers ---
+document.getElementById('loginBtn').onclick = () => {
+    signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value);
 };
-
-// --- Boilerplate ---
-window.handleLogin = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Failed: " + err.message));
+document.getElementById('toggleLoginPass').onclick = function() {
+    const p = document.getElementById('login-password');
+    p.type = p.type === "password" ? "text" : "password";
+    this.classList.toggle('fa-eye-slash');
 };
 window.handleLogout = () => signOut(auth);
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
-window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
 };
-window.togglePass = (id, icon) => {
-    const el = document.getElementById(id);
-    el.type = el.type === "password" ? "text" : "password";
-    icon.classList.toggle('fa-eye-slash');
-};
+window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
 window.toggleTheme = () => document.body.classList.toggle('dark-mode');
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
 
 
 
