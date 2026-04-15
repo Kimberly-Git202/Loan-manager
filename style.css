@@ -7,23 +7,25 @@
     --primary: #1e293b; --accent: #3b82f6; --bg: #0f172a;
     --text: #f1f5f9; --card: #1e293b; --border: #334155;
 }
-body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
 .app-container { display: flex; height: 100vh; }
 .sidebar { width: 250px; background: var(--primary); color: white; display: flex; flex-direction: column; transition: 0.3s; }
 .sidebar.minimized { width: 60px; overflow: hidden; }
-.nav-item { padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; }
-.main-content { flex: 1; padding: 25px; overflow-y: auto; }
+.nav-item { padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); border-left: 4px solid var(--accent); }
+.main-content { flex: 1; padding: 20px; overflow-y: auto; }
 
-/* Password Wrapper Fix */
-.password-wrapper { position: relative; }
-.password-wrapper input { width: 100%; padding: 10px; box-sizing: border-box; }
-#eyeIcon { position: absolute; right: 10px; top: 12px; cursor: pointer; color: #64748b; }
+/* Fixed Eye Alignment */
+.password-wrapper { position: relative; display: flex; align-items: center; margin-top: 10px; }
+.password-wrapper input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border); }
+.password-wrapper i { position: absolute; right: 15px; cursor: pointer; color: #64748b; }
 
-.styled-table { width: 100%; border-collapse: collapse; background: var(--card); margin-top: 10px; }
+.styled-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 8px; margin-top: 10px; }
 .styled-table th, .styled-table td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.modal-content.large { width: 90%; max-width: 850px; background: var(--card); padding: 30px; border-radius: 12px; position: relative; }
+.modal-content.large { width: 90%; max-width: 850px; background: var(--card); padding: 25px; border-radius: 12px; position: relative; max-height: 90vh; overflow-y: auto; }
 .hidden { display: none !important; }
-.btn-save { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; }
+.btn-save { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
 .btn-settle { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; }
-.metric-box.highlight { border: 2px solid var(--accent); padding: 15px; border-radius: 10px; font-weight: bold; }
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+.info-card { background: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; }
