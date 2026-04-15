@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-
+import { getDatabase, ref, set, onValue, update, get, remove } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
@@ -17,28 +16,32 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-
 let clients = [];
-let allStaffData = {}; 
 let currentUser = null;
 let currentIndex = null;
 let isAdmin = false;
 
-// 1. Auth & Access Control
+// --- AUTH & ACCESS CONTROL ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const staffRef = ref(db, `jml_users/${user.uid}`);
         const snap = await get(staffRef);
-        const userData = snap.val();
+        let userData = snap.val();
         
-        if (userData && userData.disabled) {
-            alert("Your access has been denied by Admin.");
+        // Auto-create profile if missing
+        if (!userData) {
+            userData = { email: user.email, role: 'staff', disabled: false };
+            await set(staffRef, userData);
+        }
+
+        if (userData.disabled) {
+            alert("Access Denied by Admin.");
             handleLogout();
             return;
         }
 
         currentUser = user;
-        isAdmin = userData?.role === 'admin';
+        isAdmin = userData.role === 'admin';
         document.getElementById('user-display').innerText = user.email.split('@')[0];
         document.getElementById('login-overlay').classList.add('hidden');
         if (isAdmin) document.getElementById('admin-nav').classList.remove('hidden');
@@ -48,7 +51,27 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// 2. Data Handling (Separate DB per User)
+window.handleLogin = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-password').value;
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Failed: " + err.message));
+};
+
+window.handleLogout = () => signOut(auth);
+
+window.togglePasswordVisibility = () => {
+    const pInput = document.getElementById('login-password');
+    const pIcon = document.getElementById('togglePassword');
+    if (pInput.type === "password") {
+        pInput.type = "text";
+        pIcon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        pInput.type = "password";
+        pIcon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+};
+
+// --- DATA HANDLING ---
 function loadData() {
     const dataPath = isAdmin ? 'jml_data/' : `jml_data/${currentUser.uid}`;
     onValue(ref(db, dataPath), (snap) => {
@@ -60,38 +83,179 @@ function loadData() {
         renderLoansGiven();
     });
     
-    if (isAdmin) {
-        onValue(ref(db, 'jml_users'), (snap) => { renderAdminPanel(snap.val()); });
-    }
-
+    onValue(ref(db, 'jml_debts'), (snap) => renderDebts(snap.val()));
     onValue(ref(db, 'jml_finance/grand_total'), (snap) => {
         document.getElementById('grand-total-val').value = snap.val() || 0;
     });
+
+    if (isAdmin) {
+        onValue(ref(db, 'jml_users'), (snap) => renderAdminPanel(snap.val()));
+    }
 }
 
 function saveData() {
+    // Only save to the logged-in user's path to ensure separation
     set(ref(db, `jml_data/${currentUser.uid}`), clients);
 }
 
-// 3. Formatting Date
+// --- UTILITIES ---
 function formatDate(dateStr) {
     if (!dateStr) return "---";
     const d = new Date(dateStr);
     const day = d.getDate();
     const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const suffix = (day) => {
-        if (day > 3 && day < 21) return 'th';
-        switch (day % 10) { case 1: return "st"; case 2: return "nd"; case 3: return "rd"; default: return "th"; }
-    };
-    return `${day}${suffix(day)} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    const suffix = (day % 10 == 1 && day != 11) ? 'st' : (day % 10 == 2 && day != 12) ? 'nd' : (day % 10 == 3 && day != 13) ? 'rd' : 'th';
+    return `${day}${suffix} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// 4. Enrollment & Re-Loan logic
+// --- MAIN FEATURES ---
+window.renderTable = () => {
+    const tbody = document.getElementById('clientTableBody');
+    tbody.innerHTML = clients.filter(c => !c.settled).map((c, i) => `
+        <tr class="${c.isNewLoan ? 'reloan-highlight' : ''}">
+            <td>${i+1}</td>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.idNumber}</td>
+            <td>KSh ${c.totalPaid.toLocaleString()}</td>
+            <td style="color:var(--accent); font-weight:bold">KSh ${c.balance.toLocaleString()}</td>
+            <td><button class="view-btn" onclick="openDashboard(${i})">Open</button></td>
+        </tr>
+    `).join('');
+};
+
+window.openDashboard = (i) => {
+    currentIndex = i;
+    const c = clients[i];
+    document.getElementById('d-name').innerText = c.name;
+    document.getElementById('d-meta').innerHTML = `
+        ID: ${c.idNumber} | Referral: ${c.referral || 'None'}<br>
+        Period: ${formatDate(c.startDate)} - ${formatDate(c.endDate)}
+    `;
+    document.getElementById('d-principal').innerText = `KSh ${c.principal.toLocaleString()}`;
+    document.getElementById('d-balance').innerText = `KSh ${c.balance.toLocaleString()}`;
+    document.getElementById('d-notes').value = c.notes || "";
+    
+    document.getElementById('historyBody').innerHTML = (c.history || []).map((h, hi) => `
+        <tr class="${h.act === 'SKIPPED' ? 'skipped-day' : ''}">
+            <td>${h.date}</td>
+            <td class="${parseInt(h.time.split(':')[0]) >= 18 ? 'time-late' : ''}">${h.time}</td>
+            <td contenteditable="true" onblur="editHistory(${hi}, this.innerText)">${h.amt}</td>
+            <td>${h.by}</td>
+        </tr>
+    `).join('');
+    document.getElementById('detailWindow').classList.remove('hidden');
+};
+
+window.processPayment = () => {
+    const amt = parseFloat(document.getElementById('payAmt').value);
+    const time = document.getElementById('payTime').value;
+    const client = clients[currentIndex];
+    const today = new Date().toLocaleDateString('en-GB');
+
+    if (isNaN(amt)) return;
+
+    if (!client.history) client.history = [];
+    
+    // Check for skipped days
+    if (client.history.length > 0) {
+        const lastDate = client.history[client.history.length-1].date;
+        if (lastDate !== today) {
+            client.history.push({ date: lastDate, time: "00:00", amt: 0, by: "System", act: "SKIPPED" });
+        }
+    }
+
+    client.balance -= amt;
+    client.totalPaid += amt;
+    client.history.push({
+        date: today, time: time, amt: amt, by: currentUser.email.split('@')[0], act: "PAYMENT"
+    });
+    
+    saveData();
+    document.getElementById('payAmt').value = "";
+    openDashboard(currentIndex);
+};
+
+window.editHistory = (historyIndex, newVal) => {
+    const val = parseFloat(newVal);
+    if (isNaN(val)) return;
+    
+    const client = clients[currentIndex];
+    const oldAmt = client.history[historyIndex].amt;
+    const diff = oldAmt - val;
+    
+    client.history[historyIndex].amt = val;
+    client.balance += diff;
+    client.totalPaid -= diff;
+    saveData();
+};
+
+window.saveNotes = () => {
+    clients[currentIndex].notes = document.getElementById('d-notes').value;
+    saveData();
+};
+
+window.settleAndReset = () => {
+    if(!confirm("Settle this loan?")) return;
+    const c = clients[currentIndex];
+    c.settled = true;
+    c.settledDate = new Date().toLocaleDateString('en-GB');
+    
+    // Create new loan entry
+    const newLoan = JSON.parse(JSON.stringify(c)); // Copy
+    newLoan.settled = false;
+    newLoan.history = [];
+    newLoan.totalPaid = 0;
+    newLoan.isNewLoan = true; // For highlighting
+    clients.push(newLoan);
+    
+    saveData();
+    closeDetails();
+};
+
+window.deleteClient = () => {
+    if(confirm("Delete this client permanently?")) {
+        clients.splice(currentIndex, 1);
+        saveData();
+        closeDetails();
+    }
+};
+
+window.addDebt = () => {
+    const d = document.getElementById('debt-date').value;
+    const desc = document.getElementById('debt-desc').value;
+    const amt = document.getElementById('debt-amt').value;
+    if(!d || !amt) return;
+    const newDebtRef = ref(db, `jml_debts/${Date.now()}`);
+    set(newDebtRef, { date: d, desc, amt, by: currentUser.email });
+};
+
+function renderDebts(data) {
+    const list = document.getElementById('debtList');
+    list.innerHTML = "";
+    if(!data) return;
+    Object.values(data).forEach(d => {
+        list.innerHTML += `<div class="stat-card" style="padding:10px; margin-bottom:5px;">
+            <small>${d.date}</small> <br> <strong>${d.desc}</strong>: KSh ${d.amt}
+        </div>`;
+    });
+}
+
+// Sidebar logic
+window.showSection = (id) => {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if(event) event.currentTarget.classList.add('active');
+};
+
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
+window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
+
+// Initialize logic
 document.getElementById('clientForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const loan = parseFloat(document.getElementById('f-loan').value);
-    const newClient = {
-        id: Date.now(),
+    clients.push({
         name: document.getElementById('f-name').value,
         idNumber: document.getElementById('f-id').value,
         phone: document.getElementById('f-phone').value,
@@ -104,127 +268,9 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
         history: [],
         settled: false,
         notes: ""
-    };
-    clients.push(newClient);
+    });
     saveData();
     showSection('list-sec');
     e.target.reset();
 });
 
-// 5. Daily Skip logic + Payment
-window.processPayment = () => {
-    const amt = parseFloat(document.getElementById('payAmt').value);
-    const time = document.getElementById('payTime').value;
-    const client = clients[currentIndex];
-    
-    // Check if skipped days (Simple logic: check last history date)
-    const today = new Date().toLocaleDateString('en-GB');
-    if (client.history.length > 0) {
-        const lastDate = client.history[client.history.length - 1].date;
-        if (lastDate !== today) {
-            // Add placeholder for missing day
-            client.history.push({ date: lastDate, act: "SKIPPED", amt: 0, time: "00:00", by: "System" });
-        }
-    }
-
-    client.balance -= amt;
-    client.totalPaid += amt;
-    client.history.push({
-        date: today,
-        time: time,
-        amt: amt,
-        by: currentUser.email.split('@')[0],
-        act: "PAYMENT"
-    });
-    saveData();
-};
-
-// 6. Sidebar Sections: Loans Given (Monthly/Weekly)
-function renderLoansGiven() {
-    const container = document.getElementById('givenAccordion');
-    container.innerHTML = "";
-    const grouped = {};
-
-    clients.forEach(c => {
-        if (!c.startDate) return;
-        const d = new Date(c.startDate);
-        const month = d.toLocaleString('default', { month: 'long' });
-        const week = Math.ceil(d.getDate() / 7);
-        if (!grouped[month]) grouped[month] = {};
-        if (!grouped[month][`Week ${week}`]) grouped[month][`Week ${week}`] = [];
-        grouped[month][`Week ${week}`].push(c);
-    });
-
-    for (let m in grouped) {
-        let html = `<div class="accordion-item"><div class="accordion-header">${m}</div><div class="accordion-content">`;
-        for (let w in grouped[m]) {
-            html += `<p><strong>${w}:</strong> ${grouped[m][w].map(c => c.name).join(', ')}</p>`;
-        }
-        container.innerHTML += html + `</div></div>`;
-    }
-}
-
-// 7. Search (Name & ID)
-window.searchClients = () => {
-    const term = document.getElementById('globalSearch').value.toLowerCase();
-    const rows = document.querySelectorAll('#clientTableBody tr');
-    rows.forEach(row => {
-        const text = row.innerText.toLowerCase();
-        row.style.display = text.includes(term) ? "" : "none";
-    });
-};
-
-// 8. Admin Panel: Deny Access & Change Pwd
-function renderAdminPanel(users) {
-    const container = document.getElementById('staffList');
-    container.innerHTML = "";
-    for (let id in users) {
-        const u = users[id];
-        container.innerHTML += `
-            <div class="stat-card">
-                <h3>${u.email}</h3>
-                <p>Status: ${u.disabled ? 'DENIED' : 'ACTIVE'}</p>
-                <button onclick="toggleAccess('${id}', ${u.disabled})">${u.disabled ? 'Enable' : 'Deny Access'}</button>
-                <button onclick="adminChangePwd('${id}')">Reset Password</button>
-            </div>`;
-    }
-}
-
-window.toggleAccess = (uid, curStatus) => {
-    update(ref(db, `jml_users/${uid}`), { disabled: !curStatus });
-};
-
-// ... Rest of UI logic (toggleSidebar, showSection, openDashboard)
-window.openDashboard = (i) => {
-    currentIndex = i;
-    const c = clients[i];
-    document.getElementById('d-name').innerText = c.name;
-    document.getElementById('d-meta').innerHTML = `ID: ${c.idNumber} | Referral: ${c.referral || 'None'}<br>Dates: ${formatDate(c.startDate)} to ${formatDate(c.endDate)}`;
-    document.getElementById('d-principal').innerText = c.principal.toLocaleString();
-    document.getElementById('d-balance').innerText = c.balance.toLocaleString();
-    document.getElementById('d-notes').value = c.notes || "";
-    
-    document.getElementById('historyBody').innerHTML = c.history.map(h => `
-        <tr class="${h.amt === 0 ? 'skipped-day' : ''}">
-            <td>${h.date}</td>
-            <td class="${parseInt(h.time) >= 18 ? 'time-late' : ''}">${h.time}</td>
-            <td contenteditable="true" onblur="editHistory(${i}, '${h.date}', this.innerText)">${h.amt}</td>
-            <td>${h.by}</td>
-        </tr>
-    `).join('');
-    document.getElementById('detailWindow').classList.remove('hidden');
-};
-
-window.handleLogin = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
-};
-window.handleLogout = () => signOut(auth);
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
-window.showSection = (id) => {
-    document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-};
-window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
-window.saveGrandTotal = () => set(ref(db, 'jml_finance/grand_total'), document.getElementById('grand-total-val').value);
