@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, set, onValue, get, remove } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { getDatabase, ref, set, onValue, get, push } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
@@ -15,135 +15,153 @@ const auth = getAuth(app);
 
 let allClients = [];
 let activeID = null;
-let isAdmin = false;
 
-// 1. AUTHENTICATION (First step)
-onAuthStateChanged(auth, async (user) => {
+// --- AUTH LOGIC ---
+onAuthStateChanged(auth, (user) => {
     if (user) {
-        document.getElementById('login-overlay').style.display = 'none';
+        document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
         document.getElementById('user-email-display').innerText = user.email;
-        const snap = await get(ref(db, `jml_users/${user.uid}`));
-        isAdmin = (snap.val()?.role === 'admin');
-        if(isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
         loadData();
     } else {
-        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('login-overlay').classList.remove('hidden');
         document.getElementById('main-app').classList.add('hidden');
     }
 });
 
-// 2. LOAD & FINANCIALS
+window.handleLogin = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-password').value;
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Failed: " + err.message));
+};
+
+// --- DATA LOGIC ---
 function loadData() {
-    onValue(ref(db, 'jml_data'), (snap) => {
-        const data = snap.val() || {};
+    // Listen for data changes in real-time
+    onValue(ref(db, 'jml_data'), (snapshot) => {
+        const data = snapshot.val();
         allClients = [];
-        Object.keys(data).forEach(uid => {
-            Object.values(data[uid]).forEach(c => allClients.push(c));
-        });
+        if (data) {
+            Object.values(data).forEach(userLoans => {
+                Object.values(userLoans).forEach(client => allClients.push(client));
+            });
+        }
         renderTable(allClients);
         calculateFinancials();
     });
 }
 
-// 3. RENDER TABLE WITH 6PM RULE
 function renderTable(list) {
     const tbody = document.getElementById('clientTableBody');
-    const now = new Date();
-    const isLateTime = now.getHours() >= 18; // 6 PM
-    const today = now.toLocaleDateString('en-GB');
+    const today = new Date().toLocaleDateString('en-GB');
+    const isLate = new Date().getHours() >= 18;
 
     tbody.innerHTML = list.map((c, i) => {
-        const hasPaidToday = (c.history || []).some(h => h.date === today && h.activity === 'Payment');
-        const lateClass = (isLateTime && !hasPaidToday) ? 'late-row' : '';
-
-        return `<tr class="${lateClass}">
-            <td>${i+1}</td>
-            <td><strong>${c.name}</strong></td>
-            <td>${c.idNumber}</td>
-            <td>KSh ${c.balance.toLocaleString()}</td>
-            <td>${hasPaidToday ? '✅ Updated' : '❌ Pending'}</td>
-            <td><button class="btn-save" onclick="openDashboard('${c.idNumber}')">View</button></td>
-        </tr>`;
+        const hasPaid = (c.history || []).some(h => h.date === today && h.activity === 'Payment');
+        return `
+            <tr class="${isLate && !hasPaid ? 'late-row' : ''}">
+                <td>${i+1}</td>
+                <td><strong>${c.name}</strong></td>
+                <td>${c.idNumber}</td>
+                <td>KSh ${Number(c.balance).toLocaleString()}</td>
+                <td><span class="status-dot ${hasPaid ? 'paid' : 'pending'}"></span> ${hasPaid ? 'Updated' : 'Pending'}</td>
+                <td><button class="btn-save" onclick="openDashboard('${c.idNumber}')">View Details</button></td>
+            </tr>
+        `;
     }).join('');
 }
 
-// 4. POST UPDATE (Manual Time Entry)
-window.processUpdate = async () => {
-    const amt = parseFloat(document.getElementById('payAmt').value) || 0;
-    const time = document.getElementById('payTime').value;
-    const activity = document.getElementById('payActivity').value;
-    const c = allClients.find(x => x.idNumber === activeID);
-
-    if(!time) return alert("You MUST enter the time of transaction manually.");
-
-    if(activity === 'Payment') c.balance -= amt;
+// --- ADD CLIENT LOGIC ---
+document.getElementById('clientForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const idNum = document.getElementById('f-id').value;
+    const principal = parseFloat(document.getElementById('f-loan').value);
     
-    if(!c.history) c.history = [];
-    c.history.push({
-        date: new Date().toLocaleDateString('en-GB'),
-        activity: activity,
-        time: time,
-        amt: amt,
-        by: auth.currentUser.email.split('@')[0]
-    });
+    const newClient = {
+        name: document.getElementById('f-name').value,
+        idNumber: idNum,
+        phone: document.getElementById('f-phone').value,
+        location: document.getElementById('f-loc').value,
+        occupation: document.getElementById('f-occ').value,
+        referral: document.getElementById('f-ref').value,
+        principal: principal,
+        balance: principal * 1.2, // Example interest
+        startDate: document.getElementById('f-start').value,
+        endDate: document.getElementById('f-end').value,
+        ownerId: auth.currentUser.uid,
+        history: [{
+            date: new Date().toLocaleDateString('en-GB'),
+            activity: 'Loan Started',
+            time: new Date().toLocaleTimeString(),
+            amt: principal,
+            by: auth.currentUser.email.split('@')[0]
+        }]
+    };
 
-    await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
-    document.getElementById('payAmt').value = "";
-    openDashboard(activeID);
+    await set(ref(db, `jml_data/${auth.currentUser.uid}/${idNum}`), newClient);
+    alert("Client Added Successfully!");
+    e.target.reset();
+    showSection('list-sec', document.querySelector('.nav-item')); // Go back to portfolio
 };
 
-// 5. SETTLE & RE-LOAN (Separated)
-window.settleOnly = async () => {
-    const c = allClients.find(x => x.idNumber === activeID);
-    if(!confirm("Settle this loan? No new loan will be started.")) return;
-    
-    c.balance = 0;
-    c.status = "Settled/Inactive";
-    c.history.push({ date: new Date().toLocaleDateString('en-GB'), activity: 'Cleared Loan', time: '--', amt: 0, by: 'System' });
-    
-    await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
-    closeDetails();
+// --- DASHBOARD LOGIC ---
+window.openDashboard = (id) => {
+    const c = allClients.find(x => x.idNumber === id);
+    if(!c) return;
+    activeID = id;
+
+    document.getElementById('d-name').innerText = c.name;
+    document.getElementById('d-id-sub').innerText = `ID: ${c.idNumber}`;
+    document.getElementById('d-phone').innerText = c.phone;
+    document.getElementById('d-loc').innerText = c.location || 'N/A';
+    document.getElementById('d-occ').innerText = c.occupation || 'N/A';
+    document.getElementById('d-princ').innerText = c.principal.toLocaleString();
+    document.getElementById('ed-balance').value = c.balance;
+
+    const histBody = document.getElementById('historyBody');
+    histBody.innerHTML = (c.history || []).map(h => `
+        <tr>
+            <td>${h.date}</td>
+            <td>${h.activity}</td>
+            <td>${h.time}</td>
+            <td>KSh ${h.amt}</td>
+            <td>${h.by}</td>
+        </tr>
+    `).reverse().join('');
+
+    document.getElementById('detailWindow').classList.remove('hidden');
 };
 
-window.settleAndNew = async () => {
-    const c = allClients.find(x => x.idNumber === activeID);
-    const newPrinc = parseFloat(prompt("Enter NEW Principal Amount:"));
-    if(!newPrinc) return;
-
-    // Archive current
-    if(!c.pastLoans) c.pastLoans = [];
-    c.pastLoans.push({ principal: c.principal, cleared: new Date().toLocaleDateString('en-GB') });
-
-    // Reset for new
-    c.principal = newPrinc;
-    c.balance = newPrinc * 1.25;
-    c.history = [{ date: new Date().toLocaleDateString('en-GB'), activity: 'Loan Started', time: 'New', amt: 0, by: 'Admin' }];
-    
-    await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
-    openDashboard(activeID);
+// --- UI UTILS ---
+window.toggleSidebar = () => {
+    document.getElementById('sidebar').classList.toggle('minimized');
 };
 
-// 6. SEARCH
-window.doSearch = () => {
-    const term = document.getElementById('globalSearch').value.toLowerCase();
-    const filtered = allClients.filter(c => c.name.toLowerCase().includes(term) || c.idNumber.includes(term));
-    renderTable(filtered);
-};
-
-// UTILITIES
-window.showSection = (id) => {
+window.showSection = (id, el) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if(el) el.classList.add('active');
 };
-window.handleLogin = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
-};
-window.handleLogout = () => signOut(auth);
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
-window.toggleTheme = () => document.body.classList.toggle('dark-mode');
-window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
 
+window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
+window.handleLogout = () => signOut(auth);
+window.toggleTheme = () => document.body.classList.toggle('dark-mode');
+
+// Financial Calculations
+function calculateFinancials() {
+    let totalOut = 0;
+    let paidToday = 0;
+    const today = new Date().toLocaleDateString('en-GB');
+
+    allClients.forEach(c => {
+        totalOut += Number(c.balance);
+        (c.history || []).forEach(h => {
+            if(h.date === today && h.activity === 'Payment') paidToday += Number(h.amt);
+        });
+    });
+
+    document.getElementById('fin-out').innerText = `KSh ${totalOut.toLocaleString()}`;
+    document.getElementById('fin-today').innerText = `KSh ${paidToday.toLocaleString()}`;
+    document.getElementById('top-today-val').innerText = `Paid Today: KSh ${paidToday.toLocaleString()}`;
+}
