@@ -17,20 +17,15 @@ let allClients = [];
 let activeID = null;
 let isAdmin = false;
 
-// AUTH MONITOR
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        document.getElementById('login-overlay').style.display = 'none';
-        document.getElementById('main-app').classList.remove('hidden');
-        document.getElementById('user-email-display').innerText = user.email;
+        document.getElementById('login-overlay').classList.add('hidden');
         const snap = await get(ref(db, `jml_users/${user.uid}`));
         isAdmin = (snap.val()?.role === 'admin');
-        if(isAdmin) document.getElementById('admin-panel').classList.remove('hidden');
+        if(isAdmin) document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
         loadData();
-        setupSettledMonths();
     } else {
-        document.getElementById('login-overlay').style.display = 'flex';
-        document.getElementById('main-app').classList.add('hidden');
+        document.getElementById('login-overlay').classList.remove('hidden');
     }
 });
 
@@ -42,70 +37,46 @@ function loadData() {
             Object.values(data[uid]).forEach(c => allClients.push(c));
         });
         renderTable(allClients);
-        updateFinancials();
     });
 }
 
-// RENDER MAIN TABLE WITH 6PM LOGIC
 function renderTable(list) {
     const tbody = document.getElementById('clientTableBody');
-    const todayStr = new Date().toLocaleDateString('en-GB');
     const now = new Date();
+    const todayStr = now.toLocaleDateString('en-GB');
     const isPast6PM = now.getHours() >= 18;
 
     tbody.innerHTML = list.map((c, i) => {
-        const lastPay = (c.history || []).filter(h => h.activity === 'Payment').slice(-1)[0];
-        const hasPaidToday = lastPay && lastPay.date === todayStr;
-        
-        // Highlight logic: If past 6PM and no payment recorded today
-        const shouldHighlight = isPast6PM && !hasPaidToday;
+        const history = c.history || [];
+        const paidToday = history.some(h => h.date === todayStr && h.type === 'Payment');
+        const shouldHighlight = isPast6PM && !paidToday;
 
         return `
-            <tr style="${shouldHighlight ? 'background: #ffdce0; border-left: 5px solid red;' : ''}">
+            <tr style="${shouldHighlight ? 'background:#ffebee; border-left: 5px solid red;' : ''}">
                 <td>${i+1}</td>
-                <td style="font-weight:bold">${c.name}</td>
+                <td><strong>${c.name}</strong></td>
                 <td>${c.idNumber}</td>
-                <td>KSh ${c.balance.toLocaleString()}</td>
-                <td><span class="badge ${hasPaidToday ? 'success' : 'danger'}">${hasPaidToday ? 'Updated' : 'Pending'}</span></td>
-                <td><button class="btn-view" onclick="openDashboard('${c.idNumber}')">View</button></td>
+                <td>${c.balance}</td>
+                <td>${paidToday ? '✅ Updated' : '❌ Pending'}</td>
+                <td><button onclick="openDashboard('${c.idNumber}')">View</button></td>
             </tr>
         `;
     }).join('');
 }
 
-// SEARCH
-window.searchClients = () => {
-    const term = document.getElementById('globalSearch').value.toLowerCase();
-    const filtered = allClients.filter(c => 
-        c.name.toLowerCase().includes(term) || c.idNumber.includes(term)
-    );
-    renderTable(filtered);
-};
-
-// SETTINGS: ADMIN ONLY PASSWORD RESET
-window.adminResetPassword = () => {
-    if(!isAdmin) return alert("Unauthorized");
-    const email = document.getElementById('reset-email').value;
-    sendPasswordResetEmail(auth, email).then(() => alert("Reset email sent!")).catch(e => alert(e.message));
-};
-
-// PAYMENT PROCESSING
 window.processPayment = async () => {
     const amt = parseFloat(document.getElementById('payAmt').value);
     const time = document.getElementById('payTime').value;
-    const activity = document.getElementById('payActivity').value;
     const c = allClients.find(x => x.idNumber === activeID);
+    if(!amt || !time) return alert("Fill amount and time");
 
-    if(!amt || !time || !c) return alert("Please fill amount and time");
-
-    if(activity === 'Payment') c.balance -= amt;
-    
+    c.balance -= amt;
     if(!c.history) c.history = [];
     c.history.push({
         date: new Date().toLocaleDateString('en-GB'),
+        type: 'Payment',
         time: time,
         amt: amt,
-        activity: activity,
         by: auth.currentUser.email.split('@')[0]
     });
 
@@ -114,52 +85,39 @@ window.processPayment = async () => {
     openDashboard(activeID);
 };
 
-// SETTLE VS NEW LOAN
 window.settleLoanOnly = async () => {
     const c = allClients.find(x => x.idNumber === activeID);
-    if(!confirm("Settle this loan? Profile will stay but balance will be 0.")) return;
+    if(!confirm("Settle without new loan?")) return;
     
-    const archive = { 
-        clearedDate: new Date().toLocaleDateString('en-GB'), 
-        principal: c.principal, 
-        totalPaid: c.principal * 1.25 - c.balance 
-    };
-    if(!c.pastLoans) c.pastLoans = [];
-    c.pastLoans.push(archive);
+    const archive = { name: c.name, principal: c.principal, date: new Date().toLocaleDateString('en-GB') };
+    await set(ref(db, `jml_settled/${Date.now()}`), archive);
     
+    c.history.push({ date: archive.date, type: 'Cleared Loan', time: '--', amt: 0, by: 'System' });
     c.balance = 0;
     c.status = "Inactive";
     await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
     closeDetails();
 };
 
-window.startNewLoan = async () => {
-    const c = allClients.find(x => x.idNumber === activeID);
-    const newPrinc = prompt("Enter New Loan Principal Amount:");
-    if(!newPrinc) return;
-
-    c.principal = parseFloat(newPrinc);
-    c.balance = c.principal * 1.25;
-    c.status = "Active Member";
-    c.history.push({
-        date: new Date().toLocaleDateString('en-GB'),
-        activity: "Loan Started",
-        amt: c.principal,
-        time: "---",
-        by: auth.currentUser.email.split('@')[0]
-    });
-
-    await set(ref(db, `jml_data/${c.ownerId}/${c.idNumber}`), c);
-    openDashboard(activeID);
+window.doSearch = () => {
+    const term = document.getElementById('globalSearch').value.toLowerCase();
+    const filtered = allClients.filter(c => c.name.toLowerCase().includes(term) || c.idNumber.includes(term));
+    renderTable(filtered);
 };
 
-// UI UTILS
+window.triggerReset = () => {
+    const email = document.getElementById('reset-email').value;
+    sendPasswordResetEmail(auth, email).then(() => alert("Reset Link Sent"));
+};
+
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
+window.toggleTheme = () => document.body.classList.toggle('dark-mode');
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    event.currentTarget.classList.add('active');
 };
+window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
+
 
 
 
