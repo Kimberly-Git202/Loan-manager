@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
@@ -31,28 +31,29 @@ onAuthStateChanged(auth, user => {
 function loadData() {
     onValue(ref(db, 'jml_data'), (snap) => {
         const data = snap.val();
-        if (data) {
-            allClients = Object.values(data);
-            renderTable(allClients);
-            populateStaffDropdown();
-            calculateFinancials();
-        }
+        allClients = data ? Object.values(data) : [];
+        renderTable(allClients);
+        renderDebtTable();
+        populateStaffDropdown();
+        calculateFinancials();
+    });
+    
+    onValue(ref(db, 'acc_total'), (snap) => {
+        document.getElementById('display-acc-total').innerText = `KSh ${snap.val() || 0}`;
     });
 }
 
-// Spaced Enrollment Save
+// ENROLLMENT
 window.enrollClient = async () => {
     const idNum = document.getElementById('e-id').value.trim();
     const name = document.getElementById('e-name').value.trim();
-    if(!idNum || !name) return alert("Fill Name and ID!");
+    if(!idNum || !name) return alert("Missing ID or Name");
 
     const clientData = {
-        name: name,
+        name, idNumber: idNum,
         phone: document.getElementById('e-phone').value,
-        idNumber: idNum,
         location: document.getElementById('e-loc').value,
         occupation: document.getElementById('e-occ').value,
-        referral: document.getElementById('e-ref').value,
         principal: parseFloat(document.getElementById('e-princ').value) || 0,
         balance: parseFloat(document.getElementById('e-princ').value) || 0,
         totalPaid: 0,
@@ -61,95 +62,29 @@ window.enrollClient = async () => {
         staff: auth.currentUser.email.split('@')[0],
         history: [{
             date: new Date().toLocaleDateString('en-GB'),
-            activity: 'Enrollment',
-            details: `Started KSh ${document.getElementById('e-princ').value}`,
+            activity: 'Loan Started',
+            details: `Initial KSh ${document.getElementById('e-princ').value}`,
             by: auth.currentUser.email.split('@')[0]
         }]
     };
-
     await set(ref(db, 'jml_data/' + idNum), clientData);
-    alert("Success!");
-    document.querySelectorAll('#add-sec input').forEach(i => i.value = "");
+    alert("Saved!");
     showSection('list-sec');
 };
 
-// Staff Dropdown Logic
-function populateStaffDropdown() {
-    const staffSelect = document.getElementById('staff-select');
-    const uniqueStaff = [...new Set(allClients.map(c => c.staff))];
-    staffSelect.innerHTML = '<option value="">-- Choose Employee --</option>' + 
-        uniqueStaff.map(s => `<option value="${s}">${s.toUpperCase()}</option>`).join('');
-}
-
-window.renderStaffReport = () => {
-    const selected = document.getElementById('staff-select').value;
-    const tbody = document.getElementById('staffReportTableBody');
-    const filtered = allClients.filter(c => c.staff === selected);
-    
-    tbody.innerHTML = filtered.map(c => `
-        <tr>
-            <td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td>
-            <td>KSh ${c.principal}</td>
-            <td><button class="btn-post" onclick="openDashboard('${c.idNumber}')">View</button></td>
-        </tr>
-    `).join('');
-};
-
-// Weekly Loans Sorting
-window.renderWeeklyLoans = () => {
-    const month = document.getElementById('loan-month-select').value; // YYYY-MM
-    const week = parseInt(document.getElementById('loan-week-select').value);
-    const tbody = document.getElementById('weeklyLoanBody');
-    
-    const filtered = allClients.filter(c => {
-        if (!c.startDate.startsWith(month)) return false;
-        const day = parseInt(c.startDate.split('-')[2]);
-        if (week === 1) return day <= 7;
-        if (week === 2) return day > 7 && day <= 14;
-        if (week === 3) return day > 14 && day <= 21;
-        return day > 21;
-    });
-
-    tbody.innerHTML = filtered.map(c => `
-        <tr><td>${c.name}</td><td>${c.idNumber}</td><td>KSh ${c.principal}</td></tr>
-    `).join('');
-};
-
-// Settled Archive
-window.renderSettled = () => {
-    const month = document.getElementById('settled-month-select').value;
-    const tbody = document.getElementById('settledTableBody');
-    const filtered = allClients.filter(c => c.status === "Settled" && c.settleDate?.startsWith(month));
-
-    tbody.innerHTML = filtered.map(c => `
-        <tr><td>${c.name}</td><td>${c.idNumber}</td><td>KSh ${c.totalPaid}</td><td>${c.settleDate}</td></tr>
-    `).join('');
-};
-
-window.renderTable = (list) => {
-    const tbody = document.getElementById('clientTableBody');
-    tbody.innerHTML = list.filter(c => c.status === "Active").map((c, i) => `
-        <tr>
-            <td>${i + 1}</td>
-            <td><strong>${c.name}</strong></td>
-            <td>${c.idNumber}</td>
-            <td>${c.phone}</td>
-            <td>KSh ${c.totalPaid}</td>
-            <td>KSh ${c.balance.toLocaleString()}</td>
-            <td><button class="btn-post" onclick="openDashboard('${c.idNumber}')">View</button></td>
-        </tr>
-    `).join('');
-};
-
+// VIEW BUTTON LOGIC
 window.openDashboard = (id) => {
-    const c = allClients.find(x => x.idNumber === id);
+    const c = allClients.find(x => x.idNumber == id);
+    if(!c) return;
     activeID = id;
     document.getElementById('v-name').innerText = c.name;
     document.getElementById('v-id').innerText = c.idNumber;
     document.getElementById('vi-phone').innerText = c.phone;
     document.getElementById('vi-loc').innerText = c.location;
+    document.getElementById('vi-occ').innerText = c.occupation;
     document.getElementById('vl-princ').innerText = `KSh ${c.principal}`;
     document.getElementById('vl-bal').innerText = `KSh ${c.balance}`;
+    document.getElementById('vl-paid').innerText = `KSh ${c.totalPaid || 0}`;
     
     document.getElementById('historyBody').innerHTML = (c.history || []).map(h => `
         <tr><td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.by}</td></tr>
@@ -157,10 +92,50 @@ window.openDashboard = (id) => {
     document.getElementById('detailWindow').classList.remove('hidden');
 };
 
+// DEBT MANAGEMENT
+function renderDebtTable() {
+    const debts = allClients.filter(c => c.status === "Active" && c.balance > 0);
+    document.getElementById('debtTableBody').innerHTML = debts.map(c => `
+        <tr>
+            <td>${c.name}</td><td>${c.idNumber}</td><td>${c.principal}</td><td>${c.balance}</td>
+            <td><button class="btn-post" onclick="openDashboard('${c.idNumber}')">View</button></td>
+        </tr>
+    `).join('');
+}
+
+// FINANCIALS
+window.calculateFinancials = () => {
+    const today = new Date().toLocaleDateString('en-GB');
+    const selectedMonth = document.getElementById('fin-month').value; 
+
+    let totalOut = 0, todayPaid = 0, monthPaid = 0;
+
+    allClients.forEach(c => {
+        totalOut += (c.balance || 0);
+        (c.history || []).forEach(h => {
+            if(h.activity === 'Payment') {
+                const amt = parseFloat(h.details.replace(/\D/g,'')) || 0;
+                if(h.date === today) todayPaid += amt;
+                if(h.date.includes(selectedMonth.split('-')[1])) monthPaid += amt;
+            }
+        });
+    });
+
+    document.getElementById('fin-out').innerText = `KSh ${totalOut.toLocaleString()}`;
+    document.getElementById('fin-today').innerText = `KSh ${todayPaid.toLocaleString()}`;
+    document.getElementById('fin-month-val').innerText = `KSh ${monthPaid.toLocaleString()}`;
+};
+
+window.updateAccTotal = () => {
+    const val = document.getElementById('acc-total-entry').value;
+    set(ref(db, 'acc_total'), parseFloat(val));
+};
+
+// HELPERS
 window.postPayment = async () => {
     const amt = parseFloat(document.getElementById('up-amt').value);
-    const c = allClients.find(x => x.idNumber === activeID);
-    const newHistory = [...(c.history || []), {
+    const c = allClients.find(x => x.idNumber == activeID);
+    const history = [...(c.history || []), {
         date: new Date().toLocaleDateString('en-GB'),
         activity: 'Payment',
         details: `Paid KSh ${amt}`,
@@ -169,9 +144,8 @@ window.postPayment = async () => {
     await update(ref(db, 'jml_data/' + activeID), {
         balance: c.balance - amt,
         totalPaid: (c.totalPaid || 0) + amt,
-        history: newHistory
+        history
     });
-    alert("Paid!");
     closeDetails();
 };
 
@@ -180,15 +154,25 @@ window.settleLoan = async () => {
         status: "Settled", 
         settleDate: new Date().toISOString().split('T')[0] 
     });
-    alert("Settled!");
     closeDetails();
 };
 
-// UI Toggles
+function populateStaffDropdown() {
+    const staff = [...new Set(allClients.map(c => c.staff))];
+    document.getElementById('staff-select').innerHTML = '<option value="">Select Employee</option>' + 
+        staff.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+window.renderTable = (list) => {
+    document.getElementById('clientTableBody').innerHTML = list.filter(c => c.status === "Active").map((c, i) => `
+        <tr><td>${i+1}</td><td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td><td>${c.totalPaid}</td><td>${c.balance}</td>
+        <td><button class="btn-post" onclick="openDashboard('${c.idNumber}')">View</button></td></tr>
+    `).join('');
+};
+
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 };
 window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
 window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
