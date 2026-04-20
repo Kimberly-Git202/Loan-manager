@@ -16,11 +16,12 @@ const auth = getAuth(app);
 let allClients = [];
 let activeID = null;
 
-// --- AUTHENTICATION ---
+// --- AUTH & INITIALIZATION ---
 onAuthStateChanged(auth, user => {
     if (user) {
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
+        document.getElementById('user-display').innerText = `User: ${user.email.split('@')[0]}`;
         loadData();
     } else {
         document.getElementById('login-overlay').classList.remove('hidden');
@@ -33,29 +34,29 @@ function loadData() {
         allClients = Object.values(data);
         renderTable(allClients);
         calculateFinancials();
-        renderStaffReport();
     });
 }
 
-// --- RENDER CLIENT LIST (With Late Skip Red Logic) ---
+// --- RENDER TABLE & LATE/SKIP LOGIC ---
 function renderTable(list) {
     const tbody = document.getElementById('clientTableBody');
+    const todayStr = new Date().toLocaleDateString('en-GB');
     const now = new Date();
-    const isLateTime = now.getHours() >= 18; // 6 PM Rule
-    const todayStr = now.toLocaleDateString('en-GB');
+    const isPast6PM = now.getHours() >= 18;
 
     tbody.innerHTML = list.map((c, i) => {
-        const hasPaidToday = (c.history || []).some(h => h.date === todayStr);
-        let rowClass = "";
+        const history = c.history || [];
+        const hasPaidToday = history.some(h => h.date === todayStr && h.activity === 'Payment');
         
-        // Red highlight if skipped payment today or past due
-        if ((isLateTime && !hasPaidToday) || (c.nextPaymentDate && new Date(c.nextPaymentDate) < now && !hasPaidToday)) {
+        let rowClass = "";
+        // Red highlight if 6PM rule hit OR next payment date missed
+        if ((isPast6PM && !hasPaidToday) || (c.nextPayDate && new Date(c.nextPayDate) < now && !hasPaidToday)) {
             rowClass = "late-row";
         }
 
         return `<tr class="${rowClass}">
             <td>${i+1}</td>
-            <td>${c.name}</td>
+            <td><strong>${c.name}</strong></td>
             <td>${c.idNumber}</td>
             <td>${c.phone}</td>
             <td>KSh ${c.totalPaid || 0}</td>
@@ -65,29 +66,76 @@ function renderTable(list) {
     }).join('');
 }
 
-// --- POST PAYMENT (Compulsory Next Date & Manual Time) ---
+// --- CLIENT DASHBOARD ---
+window.openDashboard = (id) => {
+    const c = allClients.find(x => x.idNumber === id);
+    activeID = id;
+
+    document.getElementById('v-name').innerText = c.name;
+    document.getElementById('v-id').innerText = c.idNumber;
+    document.getElementById('v-last').innerText = c.lastUpdated || 'Never';
+    
+    // Fill Boxes
+    document.getElementById('vi-name').innerText = c.name;
+    document.getElementById('vi-id').innerText = c.idNumber;
+    document.getElementById('vi-phone').innerText = c.phone;
+    document.getElementById('vi-loc').innerText = c.location;
+    document.getElementById('vi-occ').innerText = c.occupation;
+    document.getElementById('vi-ref').innerText = c.referral;
+    document.getElementById('vi-dates').innerText = `${c.startDate} to ${c.endDate || 'Ongoing'}`;
+
+    document.getElementById('vl-princ').innerText = `KSh ${c.principal}`;
+    document.getElementById('vl-paid').innerText = `KSh ${c.totalPaid || 0}`;
+    document.getElementById('vl-bal').innerText = `KSh ${c.balance}`;
+    document.getElementById('vl-next').innerText = c.nextPaymentStr || 'Not Set';
+    document.getElementById('v-notes').value = c.notes || '';
+
+    // History & Archived
+    renderHistory(c.history || []);
+    renderArchive(c.archivedLoans || []);
+
+    document.getElementById('detailWindow').classList.remove('hidden');
+};
+
+function renderHistory(history) {
+    const tbody = document.getElementById('historyBody');
+    tbody.innerHTML = history.map(h => {
+        const isLate = parseInt(h.time?.split(':')[0]) >= 18 ? 'late-row' : '';
+        const isNew = h.activity === 'Loan Started' ? 'new-loan-row' : '';
+        return `<tr class="${isLate} ${isNew}">
+            <td>${h.date}</td>
+            <td>${h.activity}</td>
+            <td>${h.details}</td>
+            <td>${h.time}</td>
+            <td>${h.by}</td>
+        </tr>`;
+    }).join('');
+}
+
+// --- RECORD PAYMENT (Compulsory Checks) ---
 window.postPayment = async () => {
-    const amt = parseFloat(document.getElementById('up-amt').value) || 0;
+    const amt = parseFloat(document.getElementById('up-amt').value);
     const time = document.getElementById('up-time').value;
     const nextDate = document.getElementById('up-next-date').value;
 
-    if(!time || !nextDate) return alert("Time and Next Payment Date are COMPULSORY!");
+    if(!amt || !time || !nextDate) return alert("All fields (Amount, Time, Next Date) are compulsory!");
 
     const c = allClients.find(x => x.idNumber === activeID);
-    
+    const today = new Date().toLocaleDateString('en-GB');
+
     const entry = {
-        date: new Date().toLocaleDateString('en-GB'),
-        activity: "Payment",
-        details: `KSh ${amt} payment`,
+        date: today,
+        activity: 'Payment',
+        details: `Repayment KSh ${amt}`,
         time: time,
         by: auth.currentUser.email.split('@')[0]
     };
 
     c.totalPaid = (c.totalPaid || 0) + amt;
     c.balance -= amt;
-    c.nextPaymentDate = nextDate;
-    c.nextPaymentStr = `KSh 200 due on ${nextDate}`;
-    c.lastUpdated = `${entry.date} ${time}`;
+    c.nextPayDate = nextDate;
+    c.nextPaymentStr = `KSh 200 due on ${new Date(nextDate).toLocaleDateString('en-GB')}`;
+    c.lastUpdated = `${today} ${time}`;
     if(!c.history) c.history = [];
     c.history.push(entry);
 
@@ -95,7 +143,7 @@ window.postPayment = async () => {
     openDashboard(activeID);
 };
 
-// --- SETTLE LOAN & ARCHIVING ---
+// --- SETTLE & ARCHIVE ---
 window.settleLoan = async () => {
     const c = allClients.find(x => x.idNumber === activeID);
     if(!c.archivedLoans) c.archivedLoans = [];
@@ -105,45 +153,41 @@ window.settleLoan = async () => {
         clearedDate: new Date().toLocaleDateString('en-GB')
     });
 
-    c.status = "Inactive";
     c.balance = 0;
-    await set(ref(db, `jml_data/${activeID}`), c);
-    alert("Loan Settled and Archived!");
-    closeDetails();
-};
-
-// --- STAFF REPORT (Admin Only) ---
-function renderStaffReport() {
-    const container = document.getElementById('staff-report-container');
-    // Group all history by employee
-    let reportData = {};
-    allClients.forEach(c => {
-        (c.history || []).forEach(h => {
-            if(!reportData[h.by]) reportData[h.by] = [];
-            reportData[h.by].push({ client: c.name, ...h });
-        });
+    c.status = "Inactive";
+    c.history.push({
+        date: new Date().toLocaleDateString('en-GB'),
+        activity: 'Loan Settled',
+        details: 'Full balance cleared',
+        time: '--',
+        by: 'System'
     });
 
-    container.innerHTML = Object.keys(reportData).map(staff => `
-        <div class="info-box" style="margin-bottom:10px;">
-            <h4>Update Log: ${staff}</h4>
-            ${reportData[staff].slice(-3).map(r => `<p>${r.date} - ${r.client}: ${r.activity}</p>`).join('')}
-        </div>
-    `).join('');
-}
+    await set(ref(db, `jml_data/${activeID}`), c);
+    openDashboard(activeID);
+};
 
-// --- UTILS ---
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
+// --- SIDEBAR NAVIGATION & SEARCH ---
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     if(window.innerWidth <= 768) toggleSidebar();
 };
-window.confirmAction = (fn) => { if(confirm("Confirm this action?")) fn(); };
+
+window.doSearch = () => {
+    const term = document.getElementById('globalSearch').value.toLowerCase();
+    const filtered = allClients.filter(c => c.name.toLowerCase().includes(term) || c.idNumber.includes(term));
+    renderTable(filtered);
+};
+
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
+window.toggleTheme = () => document.body.classList.toggle('dark-mode');
 window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
+window.confirmAction = (fn) => { if(confirm("Are you sure you want to proceed?")) fn(); };
+
+// --- LOGIN ---
 window.handleLogin = () => {
     const e = document.getElementById('login-email').value;
     const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Failed: " + err.message));
 };
-window.toggleTheme = () => document.body.classList.toggle('dark-mode');
