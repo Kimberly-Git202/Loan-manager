@@ -15,51 +15,47 @@ const auth = getAuth(app);
 
 let allClients = [];
 let activeID = null;
-let isAdmin = false;
 
-// 1. AUTH & INITIALIZATION
-onAuthStateChanged(auth, async (user) => {
+// --- AUTHENTICATION ---
+onAuthStateChanged(auth, user => {
     if (user) {
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
-        document.getElementById('user-display').innerText = user.email;
-        const snap = await get(ref(db, `jml_users/${user.uid}`));
-        isAdmin = (snap.val()?.role === 'admin');
         loadData();
     } else {
         document.getElementById('login-overlay').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
     }
 });
 
-// 2. DATA LOADING
 function loadData() {
     onValue(ref(db, 'jml_data'), (snap) => {
         const data = snap.val() || {};
         allClients = Object.values(data);
         renderTable(allClients);
         calculateFinancials();
+        renderStaffReport();
     });
 }
 
-// 3. TABLE RENDERING (With 6PM & Overdue Logic)
+// --- RENDER CLIENT LIST (With Late Skip Red Logic) ---
 function renderTable(list) {
     const tbody = document.getElementById('clientTableBody');
     const now = new Date();
-    const isLateTime = now.getHours() >= 18; 
+    const isLateTime = now.getHours() >= 18; // 6 PM Rule
     const todayStr = now.toLocaleDateString('en-GB');
 
     tbody.innerHTML = list.map((c, i) => {
-        const hasPaidToday = (c.history || []).some(h => h.date === todayStr && h.activity === 'Payment');
-        
-        // Logic for Red Highlight
+        const hasPaidToday = (c.history || []).some(h => h.date === todayStr);
         let rowClass = "";
-        if (isLateTime && !hasPaidToday) rowClass = "late-row";
-        if (c.nextPaymentDate && new Date(c.nextPaymentDate) < now && !hasPaidToday) rowClass = "late-row";
+        
+        // Red highlight if skipped payment today or past due
+        if ((isLateTime && !hasPaidToday) || (c.nextPaymentDate && new Date(c.nextPaymentDate) < now && !hasPaidToday)) {
+            rowClass = "late-row";
+        }
 
         return `<tr class="${rowClass}">
             <td>${i+1}</td>
-            <td><strong>${c.name}</strong></td>
+            <td>${c.name}</td>
             <td>${c.idNumber}</td>
             <td>${c.phone}</td>
             <td>KSh ${c.totalPaid || 0}</td>
@@ -69,60 +65,20 @@ function renderTable(list) {
     }).join('');
 }
 
-// 4. CLIENT DASHBOARD LOGIC
-window.openDashboard = (id) => {
-    const c = allClients.find(x => x.idNumber === id);
-    activeID = id;
-    
-    document.getElementById('v-name').innerText = c.name;
-    document.getElementById('v-id').innerText = c.idNumber;
-    document.getElementById('v-last').innerText = c.lastUpdated || "N/A";
-    
-    // Bio
-    document.getElementById('vi-name').innerText = c.name;
-    document.getElementById('vi-id').innerText = c.idNumber;
-    document.getElementById('vi-phone').innerText = c.phone;
-    document.getElementById('vi-loc').innerText = c.location;
-    document.getElementById('vi-occ').innerText = c.occupation;
-    document.getElementById('vi-ref').innerText = c.referral;
-
-    // Loans
-    document.getElementById('vl-princ').innerText = `KSh ${c.principal}`;
-    document.getElementById('vl-paid').innerText = `KSh ${c.totalPaid || 0}`;
-    document.getElementById('vl-bal').innerText = `KSh ${c.balance}`;
-    document.getElementById('vl-next').innerText = c.nextPaymentStr || "Not Scheduled";
-
-    // History
-    const hBody = document.getElementById('historyBody');
-    hBody.innerHTML = (c.history || []).map(h => {
-        const isLateRow = (parseInt(h.time?.split(':')[0]) >= 18) ? 'late-row' : '';
-        const startClass = (h.activity === 'Loan Started') ? 'new-loan-row' : '';
-        return `<tr class="${isLateRow} ${startClass}">
-            <td>${h.date}</td>
-            <td>${h.activity}</td>
-            <td>${h.details}</td>
-            <td>${h.time}</td>
-            <td>${h.by}</td>
-        </tr>`;
-    }).join('');
-
-    document.getElementById('detailWindow').classList.remove('hidden');
-};
-
-// 5. UPDATE RECORDS (Manual Time & Next Payment)
+// --- POST PAYMENT (Compulsory Next Date & Manual Time) ---
 window.postPayment = async () => {
     const amt = parseFloat(document.getElementById('up-amt').value) || 0;
     const time = document.getElementById('up-time').value;
     const nextDate = document.getElementById('up-next-date').value;
 
-    if(!time || !nextDate) return alert("Time and Next Payment Date are COMPULSORY.");
+    if(!time || !nextDate) return alert("Time and Next Payment Date are COMPULSORY!");
 
     const c = allClients.find(x => x.idNumber === activeID);
     
-    const newEntry = {
+    const entry = {
         date: new Date().toLocaleDateString('en-GB'),
         activity: "Payment",
-        details: `Repayment of KSh ${amt}`,
+        details: `KSh ${amt} payment`,
         time: time,
         by: auth.currentUser.email.split('@')[0]
     };
@@ -131,77 +87,63 @@ window.postPayment = async () => {
     c.balance -= amt;
     c.nextPaymentDate = nextDate;
     c.nextPaymentStr = `KSh 200 due on ${nextDate}`;
-    c.lastUpdated = `${newEntry.date} at ${time}`;
+    c.lastUpdated = `${entry.date} ${time}`;
     if(!c.history) c.history = [];
-    c.history.push(newEntry);
+    c.history.push(entry);
 
-    await set(ref(db, `jml_data/${c.idNumber}`), c);
-    alert("Record Updated Successfully");
+    await set(ref(db, `jml_data/${activeID}`), c);
     openDashboard(activeID);
 };
 
-// 6. ENROLLMENT
-window.enrollClient = async () => {
-    const id = document.getElementById('e-id').value;
-    const princ = parseFloat(document.getElementById('e-princ').value);
+// --- SETTLE LOAN & ARCHIVING ---
+window.settleLoan = async () => {
+    const c = allClients.find(x => x.idNumber === activeID);
+    if(!c.archivedLoans) c.archivedLoans = [];
     
-    const newClient = {
-        name: document.getElementById('e-name').value,
-        phone: document.getElementById('e-phone').value,
-        idNumber: id,
-        location: document.getElementById('e-loc').value,
-        occupation: document.getElementById('e-occ').value,
-        referral: document.getElementById('e-ref').value,
-        principal: princ,
-        balance: princ * 1.2, // Example 20% interest
-        startDate: document.getElementById('e-start').value,
-        endDate: document.getElementById('e-end').value,
-        status: "Active",
-        history: [{
-            date: new Date().toLocaleDateString('en-GB'),
-            activity: "Loan Started",
-            details: `Initial Loan of KSh ${princ}`,
-            time: "Enrollment",
-            by: auth.currentUser.email.split('@')[0]
-        }]
-    };
+    c.archivedLoans.push({
+        amount: c.principal,
+        clearedDate: new Date().toLocaleDateString('en-GB')
+    });
 
-    await set(ref(db, `jml_data/${id}`), newClient);
-    alert("Client Enrolled!");
-    showSection('list-sec');
+    c.status = "Inactive";
+    c.balance = 0;
+    await set(ref(db, `jml_data/${activeID}`), c);
+    alert("Loan Settled and Archived!");
+    closeDetails();
 };
 
-// 7. FINANCIALS & WEEKLY SORTING
-window.calculateFinancials = () => {
-    const month = document.getElementById('fin-month').value;
-    let totalOut = 0, todayPaid = 0, monthPaid = 0;
-    const today = new Date().toLocaleDateString('en-GB');
-
+// --- STAFF REPORT (Admin Only) ---
+function renderStaffReport() {
+    const container = document.getElementById('staff-report-container');
+    // Group all history by employee
+    let reportData = {};
     allClients.forEach(c => {
-        totalOut += c.balance;
         (c.history || []).forEach(h => {
-            if(h.date === today && h.activity === "Payment") todayPaid += (h.amt || 0);
-            if(h.date.includes(month) && h.activity === "Payment") monthPaid += (h.amt || 0);
+            if(!reportData[h.by]) reportData[h.by] = [];
+            reportData[h.by].push({ client: c.name, ...h });
         });
     });
 
-    document.getElementById('fin-out').innerText = `KSh ${totalOut.toLocaleString()}`;
-    document.getElementById('fin-today').innerText = `KSh ${todayPaid.toLocaleString()}`;
-    document.getElementById('fin-month-val').innerText = `KSh ${monthPaid.toLocaleString()}`;
-};
+    container.innerHTML = Object.keys(reportData).map(staff => `
+        <div class="info-box" style="margin-bottom:10px;">
+            <h4>Update Log: ${staff}</h4>
+            ${reportData[staff].slice(-3).map(r => `<p>${r.date} - ${r.client}: ${r.activity}</p>`).join('')}
+        </div>
+    `).join('');
+}
 
-// 8. UTILS
+// --- UTILS ---
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    if(window.innerWidth <= 768) toggleSidebar();
 };
-
-window.confirmAction = (fn) => { if(confirm("Confirm this transaction?")) fn(); };
-window.toggleTheme = () => document.body.classList.toggle('dark-mode');
+window.confirmAction = (fn) => { if(confirm("Confirm this action?")) fn(); };
 window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
 window.handleLogin = () => {
     const e = document.getElementById('login-email').value;
     const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Failed: " + err.message));
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
 };
-window.handleLogout = () => signOut(auth);
+window.toggleTheme = () => document.body.classList.toggle('dark-mode');
