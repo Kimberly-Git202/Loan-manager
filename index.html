@@ -27,11 +27,10 @@
             </div>
             <div class="nav-item active" onclick="showSection('list-sec')"><i class="fas fa-users"></i> Clients</div>
             <div class="nav-item" onclick="showSection('add-sec')"><i class="fas fa-user-plus"></i> Enroll Client</div>
-            <div class="nav-item" onclick="showSection('finance-sec')"><i class="fas fa-chart-line"></i> Financials</div>
             <div class="nav-item" onclick="showSection('loan-sec')"><i class="fas fa-money-check-alt"></i> Loans Issued</div>
             <div class="nav-item" onclick="showSection('settled-sec')"><i class="fas fa-check-circle"></i> Settled Archive</div>
+            <div class="nav-item" onclick="showSection('finance-sec')"><i class="fas fa-chart-line"></i> Financials</div>
             <div class="nav-item" onclick="showSection('report-sec')"><i class="fas fa-file-alt"></i> Staff Reports</div>
-            <div class="nav-item" onclick="showSection('settings-sec')"><i class="fas fa-cog"></i> Settings</div>
             <div class="nav-item" onclick="toggleTheme()"><i class="fas fa-adjust"></i> Themes</div>
             <div class="nav-item logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
         </nav>
@@ -47,11 +46,11 @@
             </header>
 
             <section id="list-sec" class="content-section">
-                <h2>Active Client Database</h2>
+                <h2>Clients Details</h2>
                 <div class="table-container">
                     <table class="styled-table">
                         <thead>
-                            <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Balance</th><th>Action</th></tr>
+                            <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
@@ -59,65 +58,67 @@
             </section>
 
             <section id="add-sec" class="content-section hidden">
-                <div class="enrollment-container">
-                    <h2 class="section-title"><i class="fas fa-user-plus"></i> Enroll New Client</h2>
-                    <div class="form-card">
-                        <div class="form-grid">
-                            <div class="input-group"><label>Full Name</label><input type="text" id="e-name" placeholder="Full Name"></div>
-                            <div class="input-group"><label>ID Number</label><input type="text" id="e-id" placeholder="ID Number"></div>
-                            <div class="input-group"><label>Phone Number</label><input type="text" id="e-phone" placeholder="Phone Number"></div>
-                            <div class="input-group"><label>Location</label><input type="text" id="e-loc" placeholder="E.g. Eldoret"></div>
-                            <div class="input-group"><label>Occupation</label><input type="text" id="e-occ" placeholder="Occupation"></div>
-                            <div class="input-group"><label>Referral Source</label><input type="text" id="e-ref" placeholder="Referral"></div>
-                            <div class="input-group"><label>Principal (KSH)</label><input type="number" id="e-princ" placeholder="6000"></div>
-                            <div class="input-group"><label>Start Date</label><input type="date" id="e-start"></div>
-                        </div>
-                        <button class="btn-enroll" onclick="enrollClient()">Create Client Profile</button>
+                <div class="info-box">
+                    <h2>New Enrollment Form</h2>
+                    <div class="form-grid-spaced">
+                        <div class="field-wrap"><label>Full Name</label><input type="text" id="e-name" placeholder="John Doe"></div>
+                        <div class="field-wrap"><label>Phone Number</label><input type="text" id="e-phone" placeholder="0712..."></div>
+                        <div class="field-wrap"><label>ID Number</label><input type="text" id="e-id" placeholder="12345678"></div>
+                        <div class="field-wrap"><label>Location</label><input type="text" id="e-loc" placeholder="City/Street"></div>
+                        <div class="field-wrap"><label>Occupation</label><input type="text" id="e-occ" placeholder="Job Title"></div>
+                        <div class="field-wrap"><label>Referral Source</label><input type="text" id="e-ref" placeholder="Friend/Web"></div>
+                        <div class="field-wrap"><label>Principal (KSH)</label><input type="number" id="e-princ" placeholder="5000"></div>
+                        <div class="field-wrap"><label>Start Date</label><input type="date" id="e-start"></div>
+                        <div class="field-wrap"><label>End Date (Optional)</label><input type="date" id="e-end"></div>
                     </div>
+                    <button class="btn-post btn-large" onclick="enrollClient()">Save Enrollment</button>
                 </div>
             </section>
 
             <section id="loan-sec" class="content-section hidden">
-                <h2>Loans Issued</h2>
-                <div class="filter-bar">
+                <h2>Loans Issued (Weekly Sorting)</h2>
+                <div class="filter-row">
                     <input type="month" id="loan-month-select" onchange="renderWeeklyLoans()">
                     <select id="loan-week-select" onchange="renderWeeklyLoans()">
-                        <option value="1">Week 1</option><option value="2">Week 2</option>
-                        <option value="3">Week 3</option><option value="4">Week 4</option>
+                        <option value="1">Week 1 (1st-7th)</option>
+                        <option value="2">Week 2 (8th-14th)</option>
+                        <option value="3">Week 3 (15th-21st)</option>
+                        <option value="4">Week 4 (22nd-End)</option>
                     </select>
                 </div>
                 <div class="table-container">
                     <table class="styled-table">
-                        <thead><tr><th>Name</th><th>ID NO</th><th>LOAN AMOUNT</th></tr></thead>
-                        <tbody id="weeklyLoanContainer"></tbody>
+                        <thead><tr><th>Name</th><th>ID No.</th><th>Loan Amount</th></tr></thead>
+                        <tbody id="weeklyLoanBody"></tbody>
                     </table>
                 </div>
             </section>
 
             <section id="settled-sec" class="content-section hidden">
-                <h2>Settled Loan Archive</h2>
-                <div class="filter-bar">
+                <h2>Settled Loans Archive</h2>
+                <div class="filter-row">
                     <input type="month" id="settled-month-select" onchange="renderSettled()">
                 </div>
                 <div class="table-container">
                     <table class="styled-table">
-                        <thead><tr><th>Name</th><th>ID NO</th><th>Total Paid</th><th>Date Cleared</th></tr></thead>
-                        <tbody id="settledContainer"></tbody>
+                        <thead><tr><th>Name</th><th>ID No.</th><th>Total Paid</th><th>Date Cleared</th></tr></thead>
+                        <tbody id="settledTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
             <section id="report-sec" class="content-section hidden">
-                <h2>Staff Performance Reports</h2>
-                <div class="filter-bar">
-                    <select id="staff-report-dropdown" onchange="renderStaffReport()">
-                        <option value="">Select Staff Member</option>
+                <h2>Staff Activity Reports</h2>
+                <div class="report-controls">
+                    <label>Select Staff Member:</label>
+                    <select id="staff-select" onchange="renderStaffReport()">
+                        <option value="">-- Choose Employee --</option>
                     </select>
                 </div>
-                <div class="table-container">
+                <div class="table-container" style="margin-top:20px;">
                     <table class="styled-table">
-                        <thead><tr><th>Name</th><th>ID NO</th><th>Phone</th><th>Loan Amount</th><th>Action</th></tr></thead>
-                        <tbody id="staffReportBody"></tbody>
+                        <thead><tr><th>Client Name</th><th>ID Number</th><th>Phone</th><th>Principal</th><th>Action</th></tr></thead>
+                        <tbody id="staffReportTableBody"></tbody>
                     </table>
                 </div>
             </section>
@@ -126,6 +127,11 @@
                 <div class="stats-grid">
                     <div class="info-box"><h3>Grand Total Out</h3><h2 id="fin-out">KSh 0</h2></div>
                     <div class="info-box"><h3>Paid Today</h3><h2 id="fin-today">KSh 0</h2></div>
+                    <div class="info-box">
+                        <h3>Total Paid Monthly</h3>
+                        <input type="month" id="fin-month" onchange="calculateFinancials()">
+                        <h2 id="fin-month-val">KSh 0</h2>
+                    </div>
                 </div>
             </section>
         </main>
@@ -134,25 +140,32 @@
     <div id="detailWindow" class="modal hidden">
         <div class="modal-content dashboard-modal">
             <span class="close-btn" onclick="closeDetails()">&times;</span>
-            <h2 id="v-name"></h2>
+            <div class="modal-header">
+                <h2 id="v-name">Client Name</h2>
+                <p>ID: <span id="v-id"></span></p>
+            </div>
             <div class="dashboard-grid">
                 <div class="info-box">
-                    <h3>Bio Data</h3>
-                    <p>ID: <span id="vi-id"></span></p>
-                    <p>Phone: <span id="vi-phone"></span></p>
-                    <p>Location: <span id="vi-loc"></span></p>
+                    <h3>INFORMATION</h3>
+                    <div class="detail-row"><span>Phone:</span><span id="vi-phone"></span></div>
+                    <div class="detail-row"><span>Location:</span><span id="vi-loc"></span></div>
+                    <div class="detail-row"><span>Principal:</span><span id="vl-princ"></span></div>
+                    <div class="detail-row"><span>Balance:</span><span id="vl-bal"></span></div>
                 </div>
                 <div class="info-box">
-                    <h3>Financials</h3>
-                    <p>Principal: <span id="vl-princ"></span></p>
-                    <p>Balance: <span id="vl-bal"></span></p>
+                    <h3>PAYMENT ACTIONS</h3>
+                    <input type="number" id="up-amt" placeholder="Amount to Pay">
+                    <button class="btn-post" onclick="postPayment()" style="width:100%; margin-top:10px;">Post Payment</button>
+                    <button class="btn-settle" onclick="settleLoan()" style="width:100%; margin-top:10px;">Mark as Settled</button>
                 </div>
             </div>
-            <h3>History</h3>
-            <table class="history-table">
-                <thead><tr><th>Date</th><th>Activity</th><th>By</th></tr></thead>
-                <tbody id="historyBody"></tbody>
-            </table>
+            <h3>HISTORY</h3>
+            <div class="table-container">
+                <table class="history-table">
+                    <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Staff</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
