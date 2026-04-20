@@ -62,3 +62,70 @@ button { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-
     .main-content { padding: 15px; }
     .form-grid { grid-template-columns: 1fr; }
 }
+/* Card Enrollment Form Styling */
+.enrollment-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.form-card {
+    background: var(--card);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px; /* This adds the spacing you requested */
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.input-group label {
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.input-group input {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+.btn-enroll {
+    width: 100%;
+    margin-top: 40px;
+    padding: 15px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Sidebar Active State */
+.nav-item.active {
+    background: rgba(255,255,255,0.2) !important;
+    border-left: 4px solid #fff;
+}
