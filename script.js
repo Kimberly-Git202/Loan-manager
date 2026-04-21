@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
@@ -14,168 +14,132 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 let allClients = [];
-let activeID = null;
+let activeClientID = null;
 
-onAuthStateChanged(auth, user => {
+// --- AUTH HANDLERS ---
+onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('main-app').classList.remove('hidden');
-        document.getElementById('user-display').innerText = `Staff: ${user.email.split('@')[0]}`;
-        loadData();
+        document.getElementById('user-display').innerText = user.email;
+        fetchData();
     } else {
         document.getElementById('login-overlay').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
     }
 });
 
-function loadData() {
-    onValue(ref(db, 'jml_data'), (snap) => {
-        const data = snap.val();
+function fetchData() {
+    onValue(ref(db, 'jml_data'), (snapshot) => {
+        const data = snapshot.val();
         allClients = data ? Object.values(data) : [];
-        renderTable(allClients);
-        renderDebtTable();
-        populateStaffDropdown();
+        renderClientTable(allClients);
         calculateFinancials();
     });
-    
-    onValue(ref(db, 'acc_total'), (snap) => {
-        document.getElementById('display-acc-total').innerText = `KSh ${snap.val() || 0}`;
-    });
 }
 
-// ENROLLMENT
-window.enrollClient = async () => {
-    const idNum = document.getElementById('e-id').value.trim();
-    const name = document.getElementById('e-name').value.trim();
-    if(!idNum || !name) return alert("Missing ID or Name");
-
-    const clientData = {
-        name, idNumber: idNum,
-        phone: document.getElementById('e-phone').value,
-        location: document.getElementById('e-loc').value,
-        occupation: document.getElementById('e-occ').value,
-        principal: parseFloat(document.getElementById('e-princ').value) || 0,
-        balance: parseFloat(document.getElementById('e-princ').value) || 0,
-        totalPaid: 0,
-        startDate: document.getElementById('e-start').value || new Date().toISOString().split('T')[0],
-        status: "Active",
-        staff: auth.currentUser.email.split('@')[0],
-        history: [{
-            date: new Date().toLocaleDateString('en-GB'),
-            activity: 'Loan Started',
-            details: `Initial KSh ${document.getElementById('e-princ').value}`,
-            by: auth.currentUser.email.split('@')[0]
-        }]
-    };
-    await set(ref(db, 'jml_data/' + idNum), clientData);
-    alert("Saved!");
-    showSection('list-sec');
-};
-
-// VIEW BUTTON LOGIC
-window.openDashboard = (id) => {
+// --- VIEW DASHBOARD LOGIC ---
+window.openView = (id) => {
     const c = allClients.find(x => x.idNumber == id);
-    if(!c) return;
-    activeID = id;
+    if (!c) return;
+    activeClientID = id;
+
     document.getElementById('v-name').innerText = c.name;
     document.getElementById('v-id').innerText = c.idNumber;
-    document.getElementById('vi-phone').innerText = c.phone;
+    document.getElementById('v-updated').innerText = c.lastUpdated || "Never";
+    document.getElementById('v-status-badge').innerText = c.status;
+    
+    // Fill Info Cards
     document.getElementById('vi-loc').innerText = c.location;
     document.getElementById('vi-occ').innerText = c.occupation;
+    document.getElementById('vi-phone').innerText = c.phone;
+    document.getElementById('vi-ref').innerText = c.referral;
+
+    // Fill Loan Data
     document.getElementById('vl-princ').innerText = `KSh ${c.principal}`;
+    document.getElementById('vl-paid').innerText = `KSh ${c.totalPaid}`;
     document.getElementById('vl-bal').innerText = `KSh ${c.balance}`;
-    document.getElementById('vl-paid').innerText = `KSh ${c.totalPaid || 0}`;
+    document.getElementById('vl-next').innerText = c.nextPayment || "N/A";
     
-    document.getElementById('historyBody').innerHTML = (c.history || []).map(h => `
-        <tr><td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.by}</td></tr>
-    `).join('');
-    document.getElementById('detailWindow').classList.remove('hidden');
+    document.getElementById('v-notes-area').value = c.notes || "";
+    document.getElementById('ve-officer').value = c.loanOfficer || "System";
+
+    renderHistory(c.history || []);
+    document.getElementById('view-modal').classList.remove('hidden');
 };
 
-// DEBT MANAGEMENT
-function renderDebtTable() {
-    const debts = allClients.filter(c => c.status === "Active" && c.balance > 0);
-    document.getElementById('debtTableBody').innerHTML = debts.map(c => `
-        <tr>
-            <td>${c.name}</td><td>${c.idNumber}</td><td>${c.principal}</td><td>${c.balance}</td>
-            <td><button class="btn-post" onclick="openDashboard('${c.idNumber}')">View</button></td>
-        </tr>
-    `).join('');
+function renderHistory(history) {
+    const body = document.getElementById('v-history-body');
+    body.innerHTML = history.map(h => {
+        // Highlighting Logic: Red if past 18:00 (6 PM)
+        const isLate = h.time && h.time > "18:00";
+        const rowClass = isLate ? "row-late" : "";
+        
+        return `<tr class="${rowClass}">
+            <td>${h.date}</td>
+            <td>${h.activity}</td>
+            <td>${h.details}</td>
+            <td>${h.time || '--'}</td>
+            <td>${h.by}</td>
+        </tr>`;
+    }).join('');
 }
 
-// FINANCIALS
-window.calculateFinancials = () => {
-    const today = new Date().toLocaleDateString('en-GB');
-    const selectedMonth = document.getElementById('fin-month').value; 
+// --- ACTIONS (PAYMENT/SETTLE/DELETE) ---
+window.processAction = async (type) => {
+    if (!confirm(`Are you sure you want to ${type}?`)) return;
 
-    let totalOut = 0, todayPaid = 0, monthPaid = 0;
+    const amount = parseFloat(document.getElementById('act-amount').value) || 0;
+    const time = document.getElementById('act-time').value;
+    const clientRef = ref(db, `jml_data/${activeClientID}`);
+    const client = allClients.find(x => x.idNumber == activeClientID);
+
+    let updates = {
+        lastUpdated: new Date().toLocaleString(),
+        loanOfficer: auth.currentUser.email
+    };
+
+    if (type === 'Payment') {
+        updates.totalPaid = (client.totalPaid || 0) + amount;
+        updates.balance = (client.principal || 0) - updates.totalPaid;
+        updates.history = [...(client.history || []), {
+            date: new Date().toLocaleDateString(),
+            activity: 'Payment',
+            details: `KSh ${amount} received`,
+            time: time,
+            by: auth.currentUser.email
+        }];
+    } else if (type === 'Delete') {
+        await remove(clientRef);
+        return closeView();
+    }
+
+    await update(clientRef, updates);
+    openView(activeClientID); // Refresh view
+};
+
+// --- CALCULATIONS ---
+window.calculateFinancials = () => {
+    let out = 0, today = 0;
+    const now = new Date().toLocaleDateString();
 
     allClients.forEach(c => {
-        totalOut += (c.balance || 0);
+        out += (c.balance || 0);
         (c.history || []).forEach(h => {
-            if(h.activity === 'Payment') {
-                const amt = parseFloat(h.details.replace(/\D/g,'')) || 0;
-                if(h.date === today) todayPaid += amt;
-                if(h.date.includes(selectedMonth.split('-')[1])) monthPaid += amt;
+            if (h.date === now && h.activity === 'Payment') {
+                today += parseFloat(h.details.replace(/[^0-9.]/g, '')) || 0;
             }
         });
     });
 
-    document.getElementById('fin-out').innerText = `KSh ${totalOut.toLocaleString()}`;
-    document.getElementById('fin-today').innerText = `KSh ${todayPaid.toLocaleString()}`;
-    document.getElementById('fin-month-val').innerText = `KSh ${monthPaid.toLocaleString()}`;
+    document.getElementById('fin-out').innerText = `KSh ${out.toLocaleString()}`;
+    document.getElementById('fin-today').innerText = `KSh ${today.toLocaleString()}`;
 };
 
-window.updateAccTotal = () => {
-    const val = document.getElementById('acc-total-entry').value;
-    set(ref(db, 'acc_total'), parseFloat(val));
-};
-
-// HELPERS
-window.postPayment = async () => {
-    const amt = parseFloat(document.getElementById('up-amt').value);
-    const c = allClients.find(x => x.idNumber == activeID);
-    const history = [...(c.history || []), {
-        date: new Date().toLocaleDateString('en-GB'),
-        activity: 'Payment',
-        details: `Paid KSh ${amt}`,
-        by: auth.currentUser.email.split('@')[0]
-    }];
-    await update(ref(db, 'jml_data/' + activeID), {
-        balance: c.balance - amt,
-        totalPaid: (c.totalPaid || 0) + amt,
-        history
-    });
-    closeDetails();
-};
-
-window.settleLoan = async () => {
-    await update(ref(db, 'jml_data/' + activeID), { 
-        status: "Settled", 
-        settleDate: new Date().toISOString().split('T')[0] 
-    });
-    closeDetails();
-};
-
-function populateStaffDropdown() {
-    const staff = [...new Set(allClients.map(c => c.staff))];
-    document.getElementById('staff-select').innerHTML = '<option value="">Select Employee</option>' + 
-        staff.map(s => `<option value="${s}">${s}</option>`).join('');
-}
-
-window.renderTable = (list) => {
-    document.getElementById('clientTableBody').innerHTML = list.filter(c => c.status === "Active").map((c, i) => `
-        <tr><td>${i+1}</td><td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td><td>${c.totalPaid}</td><td>${c.balance}</td>
-        <td><button class="btn-post" onclick="openDashboard('${c.idNumber}')">View</button></td></tr>
-    `).join('');
-};
-
+// --- UTILS ---
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
 };
-window.closeDetails = () => document.getElementById('detailWindow').classList.add('hidden');
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
+window.closeView = () => document.getElementById('view-modal').classList.add('hidden');
 window.toggleTheme = () => document.body.classList.toggle('dark-mode');
-window.handleLogin = () => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-password').value);
-window.handleLogout = () => signOut(auth).then(() => location.reload());
+
