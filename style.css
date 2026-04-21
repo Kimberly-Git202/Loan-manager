@@ -1,46 +1,34 @@
-:root { --primary: #1a237e; --bg: #f0f2f5; --card: #ffffff; --text: #333; --red: #d32f2f; --success: #2e7d32; --blue: #1565c0; }
-.dark-mode { --primary: #0a0e23; --bg: #121212; --card: #1e1e1e; --text: #efefef; }
+:root { --primary: #1a237e; --bg: #f4f7f6; --card: #ffffff; --text: #333; --red: #d32f2f; }
+.dark-mode { --primary: #0a0e23; --bg: #121212; --card: #1e1e1e; --text: #eee; }
 
-body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); overflow-x: hidden; }
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); }
 
-/* Responsive Sidebar */
-.sidebar { width: 260px; height: 100vh; background: var(--primary); color: white; position: fixed; left: 0; top: 0; transition: 0.3s; z-index: 2000; overflow-y: auto; }
+.sidebar { width: 260px; height: 100vh; background: var(--primary); color: white; position: fixed; left: 0; transition: 0.3s; z-index: 1000; }
 .sidebar.minimized { left: -260px; }
-.main-content { margin-left: 260px; padding: 20px; transition: 0.3s; min-height: 100vh; }
+.main-content { margin-left: 260px; padding: 20px; transition: 0.3s; }
 .main-content.expanded { margin-left: 0; }
 
-@media (max-width: 900px) {
+@media (max-width: 800px) {
     .sidebar { left: -260px; }
     .sidebar.active { left: 0; }
     .main-content { margin-left: 0; }
 }
 
-/* Red Highlights for Skipped/Late */
-.row-red { background-color: #ffebee !important; color: var(--red) !important; font-weight: bold; }
-.new-loan-mark { border-left: 5px solid var(--blue); background-color: #e3f2fd; }
+.card { background: var(--card); padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; }
+.field-wrap label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+.field-wrap input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
 
-/* Forms & Cards */
-.card { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-.field-wrap label { display: block; margin-bottom: 5px; font-weight: bold; }
-.val-box { border: 1px solid #ddd; padding: 10px; border-radius: 6px; background: #fafafa; margin-top: 5px; min-height: 20px; }
+.row-late { background-color: #ffebee !important; color: var(--red) !important; font-weight: bold; }
+.row-new-loan { border-left: 6px solid #1a237e; background-color: #e3f2fd; }
 
-/* Modal Dashboard */
-.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 3000; }
-.dashboard-container { background: var(--bg); width: 95%; height: 95vh; border-radius: 15px; overflow-y: auto; display: flex; flex-direction: column; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+.dashboard-container { background: var(--bg); width: 95%; height: 95vh; border-radius: 15px; overflow-y: auto; }
 .dash-header { background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; position: sticky; top: 0; }
-.dash-body { padding: 20px; }
-.dash-top-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+.dash-body { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
 
-/* General */
+.badge { padding: 5px 15px; border-radius: 20px; background: #4caf50; font-size: 14px; }
 .hidden { display: none !important; }
-.btn-post { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-.btn-full { width: 100%; margin-top: 20px; }
-.danger-bg { background: var(--red); }
-.success-bg { background: var(--success); }
-.blue-bg { background: var(--blue); }
-.styled-table { width: 100%; border-collapse: collapse; min-width: 600px; }
-.styled-table th, .styled-table td { padding: 15px; border-bottom: 1px solid #ddd; text-align: left; }
+.btn-post { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; }
 .mini-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.mini-table td, .mini-table th { padding: 10px; border-bottom: 1px solid #eee; }
-
+.mini-table th, .mini-table td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
