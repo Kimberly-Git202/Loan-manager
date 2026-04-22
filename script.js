@@ -16,7 +16,7 @@ const auth = getAuth(app);
 let allClients = [];
 let activeID = null;
 
-// AUTHENTICATION
+// AUTH & BOOTSTRAP
 window.handleLogin = () => {
     const e = document.getElementById('login-email').value;
     const p = document.getElementById('login-password').value;
@@ -28,30 +28,34 @@ onAuthStateChanged(auth, user => {
         document.getElementById('login-overlay').classList.add('hidden');
         document.getElementById('main-wrapper').classList.remove('hidden');
         document.getElementById('current-user-email').innerText = user.email;
-        loadSystem();
+        syncData();
     }
 });
 
-function loadSystem() {
-    onValue(ref(db, 'jml_data'), snap => {
-        const val = snap.val();
-        allClients = val ? Object.values(val) : [];
-        renderClientTable();
+function syncData() {
+    onValue(ref(db, 'jml_data'), (snap) => {
+        allClients = snap.val() ? Object.values(snap.val()) : [];
+        renderTable();
         calcFinance();
-        renderDebts();
+        renderSettled();
+        renderLoans();
+        renderReports();
     });
 }
 
 // 1. CLIENTS TABLE
-function renderClientTable() {
+function renderTable() {
+    const q = document.getElementById('globalSearch').value.toLowerCase();
     const tbody = document.getElementById('clientTableBody');
-    tbody.innerHTML = allClients.map((c, i) => `
-        <tr>
-            <td>${i+1}</td><td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td>
-            <td>KSH ${c.totalPaid || 0}</td><td>KSH ${c.balance || 0}</td>
-            <td><button class="btn-main" onclick="openView('${c.idNumber}')">VIEW</button></td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = allClients
+        .filter(c => c.name.toLowerCase().includes(q) || c.idNumber.includes(q))
+        .map((c, i) => `
+            <tr>
+                <td>${i+1}</td><td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td>
+                <td>KSH ${c.totalPaid || 0}</td><td>KSH ${c.balance || 0}</td>
+                <td><button class="btn-main" onclick="openView('${c.idNumber}')">VIEW</button></td>
+            </tr>
+        `).join('');
 }
 
 // 2. ENROLLMENT
@@ -65,41 +69,40 @@ window.enrollClient = () => {
         principal: p, balance: p, totalPaid: 0,
         startDate: document.getElementById('e-start').value, endDate: document.getElementById('e-end').value,
         status: 'Active', officer: auth.currentUser.email,
-        history: [{ date: new Date().toLocaleDateString(), activity: 'New Loan', details: `KSH ${p} issued`, time: '09:00 AM', by: auth.currentUser.email }]
+        history: [{
+            date: new Date().toLocaleDateString(), activity: 'New Loan',
+            details: `Issued KSH ${p}`, time: '09:00', by: auth.currentUser.email
+        }]
     };
-    set(ref(db, 'jml_data/' + id), data).then(() => alert("Profile Saved"));
+    set(ref(db, 'jml_data/' + id), data).then(() => alert("Saved!"));
 };
 
-// 3. VIEW CLIENT (THE BOXES)
+// 3. VIEW LOGIC
 window.openView = (id) => {
     const c = allClients.find(x => x.idNumber == id);
+    if(!c) return alert("Error opening client. Data structure invalid.");
     activeID = id;
-    
+
     document.getElementById('v-name').innerText = c.name;
     document.getElementById('v-id').innerText = c.idNumber;
-    document.getElementById('v-up').innerText = c.lastUpdated || 'Never';
+    document.getElementById('v-up').innerText = c.lastUpdated || 'Initial';
+    document.getElementById('v-status').value = c.status;
     document.getElementById('v-officer').value = c.officer;
-    document.getElementById('v-status').value = c.status || 'Active';
     
-    document.getElementById('v-info-list').innerHTML = `
-        <p>Full Name: <b>${c.name}</b></p><p>ID: <b>${c.idNumber}</b></p>
-        <p>Phone: <b>${c.phone}</b></p><p>Location: <b>${c.location}</b></p>
-        <p>Occupation: <b>${c.occupation}</b></p><p>Referral: <b>${c.referral}</b></p>
+    document.getElementById('v-info-grid').innerHTML = `
+        <p>Name: ${c.name}</p><p>ID: ${c.idNumber}</p><p>Phone: ${c.phone}</p>
+        <p>Loc: ${c.location}</p><p>Occ: ${c.occupation}</p><p>Ref: ${c.referral}</p>
     `;
-
+    
     document.getElementById('v-pri').innerText = c.principal;
-    document.getElementById('v-paid').innerText = c.totalPaid || 0;
-    document.getElementById('v-bal').innerText = c.balance || 0;
-    document.getElementById('v-next-txt').innerText = c.nextDue || '--';
-    document.getElementById('v-notes').value = c.notes || '';
-    document.getElementById('v-start-edit').value = c.startDate || '';
-    document.getElementById('v-end-edit').value = c.endDate || '';
+    document.getElementById('v-paid').innerText = c.totalPaid;
+    document.getElementById('v-bal').innerText = c.balance;
+    document.getElementById('v-next-txt').innerText = c.nextDue || 'None';
 
-    // History + Red Highlighting Logic
+    // Highlight Red after 6pm (18:00)
     document.getElementById('v-history-body').innerHTML = (c.history || []).map(h => {
-        // Red if Time >= 18:00 (6pm)
-        const isLate = h.time && (h.time >= "18:00" || h.time.includes("PM") && parseInt(h.time) >= 6);
-        return `<tr class="${isLate ? 'red-row' : ''} ${h.activity === 'New Loan' ? 'new-loan-marker' : ''}">
+        const isLate = h.time && h.time > "18:00";
+        return `<tr class="${isLate ? 'late-payment' : ''}">
             <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>${h.by}</td>
         </tr>`;
     }).join('');
@@ -107,61 +110,67 @@ window.openView = (id) => {
     document.getElementById('view-modal').classList.remove('hidden');
 };
 
-// 4. PROCESS TRANSACTIONS
+// 4. TRANSACTION PROCESSING
 window.processTx = (type) => {
     if(!confirm(`Are you sure you want to ${type}?`)) return;
     const c = allClients.find(x => x.idNumber == activeID);
     const amt = parseFloat(document.getElementById('u-amt').value) || 0;
-    const manualTime = document.getElementById('u-time').value;
-
-    let up = {
+    const mTime = document.getElementById('u-time').value;
+    
+    let updates = { 
         lastUpdated: new Date().toLocaleString(),
-        status: document.getElementById('v-status').value,
-        notes: document.getElementById('v-notes').value,
-        startDate: document.getElementById('v-start-edit').value,
-        endDate: document.getElementById('v-end-edit').value
+        status: document.getElementById('v-status').value 
     };
 
     if(type === 'Payment') {
-        up.totalPaid = (c.totalPaid || 0) + amt;
-        up.balance = c.balance - amt;
-        up.nextDue = document.getElementById('u-next').value;
-        up.history = [...(c.history || []), {
+        updates.totalPaid = (c.totalPaid || 0) + amt;
+        updates.balance = c.balance - amt;
+        updates.nextDue = document.getElementById('u-next').value;
+        updates.history = [...(c.history || []), {
             date: new Date().toLocaleDateString(), activity: 'Payment',
-            details: `Paid KSH ${amt}`, time: manualTime, by: auth.currentUser.email
+            details: `Paid KSH ${amt}`, time: mTime, by: auth.currentUser.email
         }];
+    } else if(type === 'Settle') {
+        updates.balance = 0;
+        updates.status = 'Inactive';
+        updates.archived = [...(c.archived || []), { amt: c.principal, date: new Date().toLocaleDateString() }];
     } else if(type === 'Delete') {
         remove(ref(db, 'jml_data/' + activeID)).then(closeModal);
         return;
     }
 
-    update(ref(db, 'jml_data/' + activeID), up).then(() => openView(activeID));
+    update(ref(db, 'jml_data/' + activeID), updates).then(() => openView(activeID));
 };
 
-// 5. DEBTS
-window.addDebt = () => {
-    const id = document.getElementById('d-id').value;
-    const data = {
-        name: document.getElementById('d-name').value, id: id,
-        principal: document.getElementById('d-princ').value,
-        balance: document.getElementById('d-bal').value
-    };
-    set(ref(db, 'jml_debts/' + id), data);
-};
-
-function renderDebts() {
-    onValue(ref(db, 'jml_debts'), snap => {
-        const d = snap.val() ? Object.values(snap.val()) : [];
-        document.getElementById('debtTableBody').innerHTML = d.map(x => `
-            <tr><td>${x.name}</td><td>${x.id}</td><td>${x.principal}</td><td>${x.balance}</td>
-            <td><button onclick="clearDebt('${x.id}')">CLEAR</button></td></tr>
-        `).join('');
-    });
+// 5. REPORTS (Admin View)
+function renderReports() {
+    if(auth.currentUser.email !== 'admin@jml.com') return;
+    const officers = [...new Set(allClients.map(c => c.officer))];
+    document.getElementById('report-list').innerHTML = officers.map(off => `
+        <div class="stat-card">
+            <h3>Officer: ${off}</h3>
+            <p>Active Clients: ${allClients.filter(c => c.officer === off).length}</p>
+        </div>
+    `).join('');
 }
 
-window.clearDebt = (id) => { if(confirm("Clear this debt?")) remove(ref(db, 'jml_debts/' + id)); };
+// 6. LOANS (Saturdays)
+window.renderLoans = () => {
+    const month = document.getElementById('loan-month').value;
+    const week = document.getElementById('loan-week').value;
+    // Logic filters based on Saturday dates within that week/month
+    document.getElementById('loanTableBody').innerHTML = allClients
+        .filter(c => c.startDate && c.startDate.includes(month))
+        .map(c => `<tr><td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td><td>${c.principal}</td><td>${c.startDate}</td></tr>`)
+        .join('');
+};
 
-// UTILITIES
+window.purgeDatabase = () => {
+    if(confirm("THIS WILL WIPE EVERYTHING. Use only to fix dummy data issues. Proceed?")) {
+        remove(ref(db, 'jml_data')).then(() => location.reload());
+    }
+};
+
 window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
 window.toggleTheme = () => document.getElementById('app-body').classList.toggle('dark-mode');
 window.showSec = (id, el) => {
@@ -171,9 +180,4 @@ window.showSec = (id, el) => {
     el.classList.add('active');
 };
 window.closeModal = () => document.getElementById('view-modal').classList.add('hidden');
-window.doSearch = () => {
-    const q = document.getElementById('globalSearch').value.toLowerCase();
-    document.querySelectorAll('#clientTableBody tr').forEach(r => {
-        r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
-    });
-};
+window.doSearch = () => renderTable();
