@@ -1,63 +1,36 @@
-body {
-    margin: 0;
-    font-family: Arial;
-    background: #f4f6f9;
-}
+:root { --sidebar: #0f172a; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --accent: #2563eb; --border: #e2e8f0; }
+.dark-mode { --sidebar: #020617; --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --accent: #3b82f6; --border: #334155; }
 
-.dark {
-    background: #0f172a;
-    color: white;
-}
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; }
 
-.sidebar {
-    width: 250px;
-    height: 100vh;
-    background: #1e293b;
-    color: white;
-    position: fixed;
-    padding: 20px;
-}
+/* Sidebar Logic */
+.sidebar { width: 280px; height: 100vh; background: var(--sidebar); color: white; position: fixed; padding: 30px; box-sizing: border-box; }
+.sidebar-brand h2 { color: var(--accent); margin-bottom: 40px; }
+.nav-item { padding: 15px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; color: #94a3b8; transition: 0.2s; font-size: 15px; }
+.nav-item.active, .nav-item:hover { background: var(--accent); color: white; }
 
-.sidebar div {
-    margin: 10px 0;
-    cursor: pointer;
-}
+/* Content Panel */
+.main-content { margin-left: 280px; padding: 40px; }
+.content-panel.hidden { display: none !important; }
 
-.sidebar div:hover {
-    background: #2563eb;
-}
+/* Cards & Spacing */
+.card { background: var(--card); padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid var(--border); margin-bottom: 35px; }
+.form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+.f-group label { display: block; margin-bottom: 10px; font-weight: 600; color: var(--accent); }
+.f-group input, textarea, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: inherit; }
 
-.main {
-    margin-left: 250px;
-    padding: 20px;
-}
+/* Dashboard Modal */
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.view-dash { background: var(--bg); width: 95%; height: 90vh; border-radius: 20px; overflow-y: auto; }
+.v-header { background: var(--sidebar); color: white; padding: 30px; display: flex; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.v-body { padding: 35px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.full-row { grid-column: span 2; }
+.box-fill { background: var(--bg); padding: 12px; border: 1px solid var(--border); border-radius: 8px; min-height: 20px; }
 
-.section {
-    margin-top: 20px;
-}
+/* Late Payment / New Loan Highlight */
+.late-row { background-color: #fee2e2 !important; color: #dc2626 !important; font-weight: bold; }
+.new-loan-row { border-left: 6px solid var(--accent); background-color: #eff6ff !important; }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
-}
-
-input {
-    display: block;
-    margin: 10px 0;
-    padding: 8px;
-    width: 100%;
-}
-
-button {
-    padding: 10px;
-    cursor: pointer;
-}
-
-.hidden {
-    display: none;
-}
+.btn-main { background: var(--accent); color: white; border: none; padding: 14px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+.btn-danger { background: #ef4444; }
+.full-w { width: 100%; grid-column: span 3; }
