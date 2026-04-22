@@ -21,20 +21,20 @@
     <div id="main-wrapper" class="hidden">
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
-                <h2 id="logo-text">JML LIMITED</h2>
+                <h2>JML LIMITED</h2>
                 <button onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
             </div>
             <nav class="nav-menu">
-                <div class="nav-item active" onclick="showSec('list-sec', this)"><i class="fas fa-users"></i> <span>1. Clients</span></div>
-                <div class="nav-item" onclick="showSec('add-sec', this)"><i class="fas fa-user-plus"></i> <span>2. Enroll Client</span></div>
-                <div class="nav-item" onclick="showSec('finance-sec', this)"><i class="fas fa-chart-line"></i> <span>3. Financials</span></div>
-                <div class="nav-item" onclick="showSec('loan-sec', this)"><i class="fas fa-hand-holding-usd"></i> <span>4. Loans</span></div>
-                <div class="nav-item" onclick="showSec('settled-sec', this)"><i class="fas fa-check-double"></i> <span>5. Settled Loans</span></div>
-                <div class="nav-item" onclick="showSec('debt-sec', this)"><i class="fas fa-exclamation-triangle"></i> <span>6. Debts</span></div>
-                <div class="nav-item" onclick="showSec('settings-sec', this)"><i class="fas fa-cog"></i> <span>7. Settings</span></div>
-                <div class="nav-item" onclick="toggleTheme()"><i class="fas fa-adjust"></i> <span>8. Themes</span></div>
-                <div class="nav-item" onclick="showSec('report-sec', this)"><i class="fas fa-file-invoice"></i> <span>9. Reports</span></div>
-                <div class="nav-item logout" onclick="logout()"><i class="fas fa-power-off"></i> <span>Logout</span></div>
+                <div class="nav-item active" onclick="showSec('list-sec', this)"><span>1. Clients</span></div>
+                <div class="nav-item" onclick="showSec('add-sec', this)"><span>2. Enroll Client</span></div>
+                <div class="nav-item" onclick="showSec('finance-sec', this)"><span>3. Financials</span></div>
+                <div class="nav-item" onclick="showSec('loan-sec', this)"><span>4. Loans</span></div>
+                <div class="nav-item" onclick="showSec('settled-sec', this)"><span>5. Settled Loans</span></div>
+                <div class="nav-item" onclick="showSec('debt-sec', this)"><span>6. Debts</span></div>
+                <div class="nav-item" onclick="showSec('settings-sec', this)"><span>7. Settings</span></div>
+                <div class="nav-item" onclick="toggleTheme()"><span>8. Themes</span></div>
+                <div class="nav-item" onclick="showSec('report-sec', this)"><span>9. Reports</span></div>
+                <div class="nav-item logout" onclick="logout()"><span>Logout</span></div>
             </nav>
         </aside>
 
@@ -49,14 +49,12 @@
 
             <section id="list-sec" class="content-panel">
                 <div class="panel-head"><h2>Clients Details</h2></div>
-                <div class="table-container">
-                    <table class="jml-table">
-                        <thead>
-                            <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
-                        </thead>
-                        <tbody id="clientTableBody"></tbody>
-                    </table>
-                </div>
+                <table class="jml-table">
+                    <thead>
+                        <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="clientTableBody"></tbody>
+                </table>
             </section>
 
             <section id="add-sec" class="content-panel hidden">
@@ -78,24 +76,24 @@
             </section>
 
             <section id="finance-sec" class="content-panel hidden">
-                <h2>Financial Dashboard</h2>
-                <div class="finance-grid">
-                    <div class="stat-card"><h3>1. Grand Total Out</h3><p id="f-out">0</p></div>
-                    <div class="stat-card"><h3>2. Paid Today</h3><p id="f-today">0</p></div>
+                <h2>Financials</h2>
+                <div class="stat-grid">
+                    <div class="stat-card"><h3>Grand Total Out</h3><p id="f-out">0</p></div>
+                    <div class="stat-card"><h3>Paid Today</h3><p id="f-today">0</p></div>
                     <div class="stat-card">
-                        <h3>3. Paid Monthly</h3>
+                        <h3>Paid Monthly</h3>
                         <input type="month" id="f-m-pick" onchange="calcFinance()">
                         <p id="f-m-val">0</p>
                     </div>
                     <div class="stat-card">
-                        <h3>4. Yearly Total</h3>
+                        <h3>Grand Total Year</h3>
                         <select id="f-y-pick" onchange="calcFinance()"><option value="2026">2026</option></select>
                         <p id="f-y-val">0</p>
                     </div>
-                    <div class="stat-card"><h3>5. Profit (Month)</h3><p id="f-profit">0</p></div>
-                    <div class="stat-card"><h3>6. Losses (Month)</h3><p id="f-loss">0</p></div>
+                    <div class="stat-card"><h3>Profit (Month)</h3><p id="f-profit">0</p></div>
+                    <div class="stat-card"><h3>Losses (Month)</h3><p id="f-loss">0</p></div>
                     <div class="stat-card">
-                        <h3>7. Total in Acc.</h3>
+                        <h3>Grand Total in Acc.</h3>
                         <input type="number" id="f-acc-input" placeholder="Amount Handled">
                         <button onclick="saveAccTotal()">Save</button>
                     </div>
@@ -103,23 +101,23 @@
             </section>
 
             <section id="loan-sec" class="content-panel hidden">
-                <h2>Loans Given (Weekly/Monthly)</h2>
+                <h2>Loans Given (Weekly Order)</h2>
                 <div class="filter-box">
-                    <input type="month" id="loan-month" onchange="renderLoans()">
-                    <select id="loan-week" onchange="renderLoans()">
+                    <input type="month" id="loan-m-pick" onchange="renderLoansSec()">
+                    <select id="loan-w-pick" onchange="renderLoansSec()">
                         <option value="1">Week 1</option><option value="2">Week 2</option>
                         <option value="3">Week 3</option><option value="4">Week 4</option>
                     </select>
                 </div>
                 <table class="jml-table">
-                    <thead><tr><th>Name</th><th>ID</th><th>Phone</th><th>Amount</th><th>Issued Date</th></tr></thead>
+                    <thead><tr><th>Full Name</th><th>ID</th><th>Phone</th><th>Loan Amount</th><th>Date Issued</th></tr></thead>
                     <tbody id="loanTableBody"></tbody>
                 </table>
             </section>
 
             <section id="settled-sec" class="content-panel hidden">
                 <h2>Settled Loans</h2>
-                <input type="month" id="settled-month-pick" onchange="renderSettled()">
+                <input type="month" id="s-month-pick" onchange="renderSettledSec()">
                 <table class="jml-table">
                     <thead><tr><th>Name</th><th>ID Number</th><th>Total Paid</th><th>Cleared Date</th></tr></thead>
                     <tbody id="settledTableBody"></tbody>
@@ -140,20 +138,6 @@
                     <tbody id="debtTableBody"></tbody>
                 </table>
             </section>
-
-            <section id="settings-sec" class="content-panel hidden">
-                <h2>Settings & Admin</h2>
-                <div class="stat-card">
-                    <h3>Access Control</h3>
-                    <p>Wipe Data (Admin Only):</p>
-                    <button class="btn-red" onclick="purgeDatabase()">Wipe All Clients</button>
-                </div>
-            </section>
-
-            <section id="report-sec" class="content-panel hidden">
-                <h2>Officer Reports</h2>
-                <div id="report-container"></div>
-            </section>
         </main>
     </div>
 
@@ -165,11 +149,9 @@
                     <p>Client ID: <span id="v-id">--</span> | Last Updated: <span id="v-up">--</span></p>
                 </div>
                 <div class="v-right">
-                    <div class="edit-controls">
-                        <div class="ctrl-box">STATUS <select id="v-status"><option>Active</option><option>Inactive</option></select></div>
-                        <div class="ctrl-box">OFFICER <input type="text" id="v-officer" readonly></div>
-                        <button class="close-modal" onclick="closeModal()">&times;</button>
-                    </div>
+                    <div class="ctrl-box">STATUS <select id="v-status"><option>Active</option><option>Inactive</option></select></div>
+                    <div class="ctrl-box">OFFICER <input type="text" id="v-officer" readonly></div>
+                    <button class="close-modal" onclick="closeModal()">CLOSE &times;</button>
                 </div>
             </div>
 
@@ -177,48 +159,44 @@
                 <div class="view-col">
                     <div class="data-group">
                         <h3>CLIENT INFORMATION</h3>
-                        <div id="v-info-grid" class="info-grid"></div>
-                        <div class="date-edit">
-                            <label>Start Date:</label><input type="date" id="v-start-edit">
-                            <label>End Date:</label><input type="date" id="v-end-edit">
-                        </div>
+                        <div id="v-info-list"></div>
                     </div>
                     <div class="data-group">
                         <h3>CURRENT LOANS</h3>
-                        <div class="box-row"><label>Principal (KSH)</label><div class="box" id="v-pri"></div></div>
-                        <div class="box-row"><label>Total Paid</label><div class="box" id="v-paid"></div></div>
-                        <div class="box-row"><label>Balance</label><div class="box" id="v-bal"></div></div>
-                        <div class="box-row"><label>Next Payment</label><div class="box" id="v-next-txt"></div></div>
+                        <div class="val-item"><label>Principal (KSH)</label><div class="box" id="v-pri"></div></div>
+                        <div class="val-item"><label>Total Paid</label><div class="box" id="v-paid"></div></div>
+                        <div class="val-item"><label>Balance</label><div class="box" id="v-bal"></div></div>
+                        <div class="val-item"><label>Next Payment</label><div class="box" id="v-next-txt"></div></div>
                     </div>
                 </div>
 
                 <div class="view-col">
                     <div class="data-group">
                         <h3>NOTES & REMINDERS</h3>
-                        <textarea id="v-notes" placeholder="Write internal notes..."></textarea>
+                        <textarea id="v-notes" placeholder="Add notes here..."></textarea>
                         <button class="btn-main" onclick="processTx('Save')">Save Note</button>
                     </div>
-                    <div class="data-group update-form">
+                    <div class="data-group">
                         <h3>RECORD UPDATE</h3>
                         <div class="input-stack">
                             <input type="number" id="u-amt" placeholder="Payment Amount">
-                            <div class="time-input">TIME: <input type="time" id="u-time"></div>
-                            <input type="text" id="u-next" placeholder="Next Payment Details">
-                        </div>
-                        <div class="btn-grid">
-                            <button class="btn-main" onclick="processTx('Payment')">Post Payment</button>
-                            <button class="btn-green" onclick="processTx('Settle')">Settle Loan</button>
-                            <button class="btn-blue" onclick="processTx('New')">New Loan</button>
-                            <button class="btn-dark" onclick="processTx('Save')">Save Changes</button>
-                            <button class="btn-red" onclick="processTx('Delete')">Delete Profile</button>
+                            <div class="time-label">TIME: <input type="time" id="u-time"></div>
+                            <input type="text" id="u-next" placeholder="Next Due Detail">
+                            <div class="btn-grid">
+                                <button class="btn-main" onclick="processTx('Payment')">Post Payment</button>
+                                <button class="btn-green" onclick="processTx('Settle')">Settle Loan</button>
+                                <button class="btn-blue" onclick="processTx('New')">New Loan</button>
+                                <button class="btn-dark" onclick="processTx('Save')">Save Changes</button>
+                                <button class="btn-red" onclick="processTx('Delete')">Delete Profile</button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="full-col">
-                    <h3>PAYMENT HISTORY</h3>
+                <div class="full-width">
+                    <h3>PAYMENT HISTORY (Red if past 6PM)</h3>
                     <table class="mini-table">
-                        <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>By</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>Handled By</th></tr></thead>
                         <tbody id="v-history-body"></tbody>
                     </table>
                     <h3>ARCHIVED LOANS</h3>
