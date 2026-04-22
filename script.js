@@ -13,171 +13,188 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 
+let currentClientID = null;
 let allClients = [];
-let activeID = null;
-let selectedIDs = new Set();
-let pressTimer;
 
-// --- AUTH ---
+// Authentication Logic
 window.handleLogin = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    signInWithEmailAndPassword(auth, email, pass).catch(err => alert(err.message));
 };
 
 onAuthStateChanged(auth, user => {
     if(user) {
         document.getElementById('login-overlay').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        onValue(ref(db, 'jml_data'), snap => {
-            allClients = snap.val() ? Object.values(snap.val()) : [];
-            renderClients();
-        });
+        document.getElementById('main-wrapper').classList.remove('hidden');
+        document.getElementById('current-user-email').innerText = user.email;
+        loadData();
+    } else {
+        document.getElementById('login-overlay').classList.remove('hidden');
+        document.getElementById('main-wrapper').classList.add('hidden');
     }
 });
 
-// --- RENDER & LONG PRESS ---
-function renderClients() {
-    const body = document.getElementById('clientTableBody');
-    body.innerHTML = allClients.map((c, i) => `
-        <tr id="row-${c.idNumber}" 
-            onmousedown="startPress('${c.idNumber}')" 
-            onmouseup="endPress()" 
-            onmouseleave="endPress()"
-            class="${selectedIDs.has(c.idNumber) ? 'selected-row' : ''}">
+// Load Clients and Filter by User Role
+function loadData() {
+    onValue(ref(db, 'jml_data'), (snapshot) => {
+        const data = snapshot.val();
+        allClients = data ? Object.values(data) : [];
+        renderClientTable();
+        calcFinance();
+    });
+}
+
+function renderClientTable() {
+    const tbody = document.getElementById('clientTableBody');
+    const user = auth.currentUser;
+    
+    // Employee logic: Only see their own enrollments. Admin sees all.
+    const filtered = (user.email === 'admin@jml.com') ? allClients : allClients.filter(c => c.enrolledBy === user.email);
+
+    tbody.innerHTML = filtered.map((c, i) => `
+        <tr>
             <td>${i+1}</td>
             <td>${c.name}</td>
             <td>${c.idNumber}</td>
             <td>${c.phone}</td>
-            <td>KSH ${c.totalPaid || 0}</td>
-            <td>KSH ${c.balance || 0}</td>
-            <td><button class="btn-main small" onclick="openView('${c.idNumber}')">VIEW</button></td>
+            <td>Ksh ${c.totalPaid || 0}</td>
+            <td>Ksh ${c.balance || 0}</td>
+            <td><button class="btn-main" onclick="openClient('${c.idNumber}')">VIEW</button></td>
         </tr>
     `).join('');
 }
 
-window.startPress = (id) => {
-    pressTimer = window.setTimeout(() => toggleSelect(id), 800);
-};
-window.endPress = () => clearTimeout(pressTimer);
-
-function toggleSelect(id) {
-    if(selectedIDs.has(id)) selectedIDs.delete(id);
-    else selectedIDs.add(id);
+// Client Enrollment
+window.enrollClient = () => {
+    const id = document.getElementById('e-id').value;
+    const princ = parseFloat(document.getElementById('e-princ').value);
     
-    const bar = document.getElementById('bulk-action-bar');
-    bar.classList.toggle('hidden', selectedIDs.size === 0);
-    document.getElementById('selected-count').innerText = `${selectedIDs.size} selected`;
-    renderClients();
-}
+    const clientData = {
+        name: document.getElementById('e-name').value,
+        phone: document.getElementById('e-phone').value,
+        idNumber: id,
+        location: document.getElementById('e-loc').value,
+        occupation: document.getElementById('e-occ').value,
+        referral: document.getElementById('e-ref').value,
+        principal: princ,
+        balance: princ,
+        totalPaid: 0,
+        startDate: document.getElementById('e-start').value,
+        endDate: document.getElementById('e-end').value,
+        status: 'Active',
+        enrolledBy: auth.currentUser.email,
+        history: [{
+            date: new Date().toLocaleDateString(),
+            activity: 'Account Created',
+            details: `Loan of Ksh ${princ} initiated`,
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            by: auth.currentUser.email
+        }]
+    };
 
-window.bulkDelete = async () => {
-    if(!confirm(`Delete ${selectedIDs.size} profiles? Are you sure?`)) return;
-    for(let id of selectedIDs) await remove(ref(db, 'jml_data/' + id));
-    selectedIDs.clear();
-    document.getElementById('bulk-action-bar').classList.add('hidden');
+    set(ref(db, 'jml_data/' + id), clientData).then(() => {
+        alert("Client Enrolled Successfully");
+        showSec('list-sec', document.querySelector('.nav-item'));
+    });
 };
 
-// --- VIEW ENGINE ---
-window.openView = (id) => {
+// Client Detailed View (Box Layout)
+window.openClient = (id) => {
     const c = allClients.find(x => x.idNumber == id);
-    if(!c) return;
-    activeID = id;
+    currentClientID = id;
+    
+    document.getElementById('v-name').innerText = c.name;
+    document.getElementById('v-id').innerText = c.idNumber;
+    document.getElementById('v-up').innerText = c.lastUpdated || 'Never';
+    document.getElementById('v-pri').innerText = `Ksh ${c.principal}`;
+    document.getElementById('v-paid').innerText = `Ksh ${c.totalPaid}`;
+    document.getElementById('v-bal').innerText = `Ksh ${c.balance}`;
+    document.getElementById('v-next').innerText = c.nextPayment || 'Manual Entry Needed';
+    document.getElementById('v-officer').value = c.enrolledBy;
+    document.getElementById('v-notes').value = c.notes || '';
 
-    // Header
-    document.getElementById('v-name-top').innerText = c.name;
-    document.getElementById('v-id-top').innerText = c.idNumber;
-    document.getElementById('v-time-top').innerText = c.lastUpdate || "---";
-    document.getElementById('v-status-select').value = c.status || 'Active';
-    document.getElementById('v-officer-input').value = c.officer || '';
-
-    // Info Box
-    document.getElementById('v-info-name').innerText = c.name;
-    document.getElementById('v-info-id').innerText = c.idNumber;
-    document.getElementById('v-info-phone').innerText = c.phone;
-    document.getElementById('v-info-loc').innerText = c.location;
-    document.getElementById('v-info-job').innerText = c.occupation;
-    document.getElementById('v-info-ref').innerText = c.referral;
-
-    // Loan Box
-    document.getElementById('v-loan-princ').innerText = c.principal;
-    document.getElementById('v-loan-paid').innerText = c.totalPaid || 0;
-    document.getElementById('v-loan-bal').innerText = c.balance || 0;
-    document.getElementById('v-loan-next').innerText = c.nextDue || '---';
-
-    // Dates
-    document.getElementById('up-start').value = c.startDate || '';
-    document.getElementById('up-end').value = c.endDate || '';
-
-    // History (6PM Check)
-    const hBody = document.getElementById('v-history-body');
-    hBody.innerHTML = (c.history || []).map(h => {
-        const isLate = h.time && h.time > "18:00"; 
-        return `<tr class="${isLate ? 'late-row' : ''} ${h.activity==='New Loan' ? 'new-loan-row' : ''}">
-            <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>${h.by}</td>
-        </tr>`;
+    // History rendering with Late Highlighting (Red after 6 PM)
+    document.getElementById('v-history-body').innerHTML = (c.history || []).map(h => {
+        const isLate = h.time && h.time.includes('PM') && parseInt(h.time) >= 6;
+        return `
+            <tr class="${isLate ? 'late-payment' : ''}">
+                <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>${h.by}</td>
+            </tr>
+        `;
     }).join('');
 
     document.getElementById('view-modal').classList.remove('hidden');
 };
 
-window.processUpdate = async (type) => {
-    if(!confirm("Are you sure?")) return;
-    const c = allClients.find(x => x.idNumber == activeID);
-    const amt = parseFloat(document.getElementById('up-amt').value) || 0;
-    const time = document.getElementById('up-time').value;
-    const next = document.getElementById('up-next').value;
+// Update Logic (Payments / New Loan)
+window.postAction = (type) => {
+    const client = allClients.find(x => x.idNumber == currentClientID);
+    const amt = parseFloat(document.getElementById('u-amt').value) || 0;
+    const time = document.getElementById('u-time').value;
+    const nextPay = document.getElementById('u-next').value;
 
-    let up = { 
-        lastUpdate: new Date().toLocaleString(),
-        status: document.getElementById('v-status-select').value,
-        officer: document.getElementById('v-officer-input').value,
-        startDate: document.getElementById('up-start').value,
-        endDate: document.getElementById('up-end').value
+    let updates = {
+        lastUpdated: new Date().toLocaleString(),
+        notes: document.getElementById('v-notes').value,
+        status: document.getElementById('v-status').value
     };
 
     if(type === 'Payment') {
-        up.balance = (c.balance || 0) - amt;
-        up.totalPaid = (c.totalPaid || 0) + amt;
-        up.nextDue = next;
-        up.history = [...(c.history || []), { 
-            date: new Date().toLocaleDateString(), activity: 'Payment', 
-            details: `Paid KSH ${amt}`, time, by: auth.currentUser.email 
+        updates.totalPaid = (client.totalPaid || 0) + amt;
+        updates.balance = client.balance - amt;
+        updates.nextPayment = nextPay;
+        updates.history = [...client.history, {
+            date: new Date().toLocaleDateString(),
+            activity: 'Payment Received',
+            details: `Ksh ${amt} paid`,
+            time: time,
+            by: auth.currentUser.email
         }];
-    } else if (type === 'Settle') {
-        up.archives = [...(c.archives || []), { amt: c.principal, date: new Date().toLocaleDateString() }];
-        up.balance = 0;
-    } else if (type === 'Delete') {
-        await remove(ref(db, 'jml_data/' + activeID));
-        return closeView();
+    }
+    
+    if(type === 'Delete') {
+        if(confirm("Permanently delete this profile?")) {
+            remove(ref(db, 'jml_data/' + currentClientID));
+            closeModal();
+            return;
+        }
     }
 
-    await update(ref(db, 'jml_data/' + activeID), up);
-    openView(activeID);
+    update(ref(db, 'jml_data/' + currentClientID), updates).then(() => {
+        openClient(currentClientID);
+        alert("System Updated");
+    });
 };
 
-window.enrollClient = async () => {
-    const id = document.getElementById('e-id').value;
-    const princ = parseFloat(document.getElementById('e-princ').value);
-    const data = {
-        name: document.getElementById('e-name').value, idNumber: id,
-        phone: document.getElementById('e-phone').value, location: document.getElementById('e-loc').value,
-        occupation: document.getElementById('e-occ').value, referral: document.getElementById('e-ref').value,
-        principal: princ, balance: princ, startDate: document.getElementById('e-start').value,
-        endDate: document.getElementById('e-end').value,
-        history: [{ date: new Date().toLocaleDateString(), activity: 'New Loan', details: princ, time: '09:00', by: auth.currentUser.email }]
-    };
-    await set(ref(db, 'jml_data/' + id), data);
-    alert("Profile Created!");
-};
+// Financial Calculations (As per 9-Card Sketch)
+function calcFinance() {
+    let grandOut = 0;
+    let paidToday = 0;
+    const today = new Date().toLocaleDateString();
 
-// --- MISC ---
-window.showSection = (id, el) => {
-    document.querySelectorAll('.content-panel').forEach(p => p.classList.add('hidden'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    allClients.forEach(c => {
+        grandOut += parseFloat(c.principal || 0);
+        (c.history || []).forEach(h => {
+            if(h.date === today && h.activity === 'Payment Received') {
+                const val = parseFloat(h.details.replace(/[^0-9.]/g, ''));
+                paidToday += val;
+            }
+        });
+    });
+
+    document.getElementById('f-out').innerText = `Ksh ${grandOut}`;
+    document.getElementById('f-today').innerText = `Ksh ${paidToday}`;
+}
+
+// Sidebar & Theme Toggles
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
+window.toggleTheme = () => document.getElementById('app-body').classList.toggle('dark-mode');
+window.showSec = (id, el) => {
+    document.querySelectorAll('.content-panel').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
 };
-window.closeView = () => document.getElementById('view-modal').classList.add('hidden');
-window.toggleMode = () => document.getElementById('app-body').classList.toggle('dark-mode');
-window.handleLogout = () => signOut(auth).then(() => location.reload());
+window.closeModal = () => document.getElementById('view-modal').classList.add('hidden');
+window.logout = () => signOut(auth);
