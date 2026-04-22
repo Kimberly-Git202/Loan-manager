@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-select=none">
     <title>JML LOAN MANAGEMENT PRO</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -11,22 +11,16 @@
 
     <div id="login-overlay" class="modal">
         <div class="auth-card">
-            <h1 style="color:var(--accent)">JML LIMITED PRO</h1>
-            <div class="f-group">
-                <label>Admin Email</label>
-                <input type="email" id="login-email" placeholder="admin@jml.com">
-            </div>
-            <div class="f-group" style="margin-top:15px">
-                <label>Password</label>
-                <input type="password" id="login-password" placeholder="••••••••">
-            </div>
-            <button onclick="handleLogin()" class="btn-main" style="width:100%; margin-top:20px">Sign In</button>
-            <p id="login-status" style="color:red; font-size:12px; margin-top:10px; text-align:center"></p>
+            <h1 style="color:var(--accent); letter-spacing: 2px;">JML LIMITED</h1>
+            <input type="email" id="login-email" placeholder="Admin Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="handleLogin()" class="btn-main">SYSTEM ACCESS</button>
+            <p id="login-status"></p>
         </div>
     </div>
 
     <div class="app-container hidden" id="main-app">
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar-nav">
             <div class="sidebar-brand"><h2>JML PRO</h2></div>
             <nav class="nav-list">
                 <div class="nav-item active" onclick="showSection('list-sec', this)">1. Clients</div>
@@ -36,32 +30,30 @@
                 <div class="nav-item" onclick="showSection('settled-sec', this)">5. Settled Loans</div>
                 <div class="nav-item" onclick="showSection('debt-sec', this)">6. Debts</div>
                 <div class="nav-item" onclick="showSection('settings-sec', this)">7. Settings</div>
-                <div class="nav-item" onclick="toggleMode()">8. Modes (L/D)</div>
+                <div class="nav-item" onclick="toggleMode()">8. Themes (L/D)</div>
                 <div class="nav-item" onclick="showSection('report-sec', this)">9. Reports</div>
             </nav>
-            <div class="sidebar-footer" onclick="handleLogout()">Logout</div>
+            <div class="sidebar-footer" onclick="handleLogout()">Logout System</div>
         </aside>
 
         <main class="main-content">
             <header class="top-bar">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" placeholder="Search by Name or ID..." onkeyup="doSearch()">
+                    <input type="text" id="globalSearch" placeholder="Search Name or ID..." onkeyup="doSearch()">
+                </div>
+                <div id="bulk-action-bar" class="hidden">
+                    <span id="selected-count">0 selected</span>
+                    <button class="btn-danger" onclick="bulkDelete()">DELETE SELECTED</button>
                 </div>
             </header>
 
             <section id="list-sec" class="content-panel">
-                <div class="panel-header">
-                    <h2>Clients Details</h2>
-                    <button class="btn-danger" id="bulkDeleteBtn" onclick="bulkDelete()" style="display:none">DELETE SELECTED</button>
-                </div>
+                <div class="panel-header"><h2>Clients Details</h2></div>
                 <div class="card">
                     <table class="main-table">
                         <thead>
-                            <tr>
-                                <th><input type="checkbox" onclick="toggleSelectAll(this)"></th>
-                                <th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th>
-                            </tr>
+                            <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
@@ -80,88 +72,103 @@
                     <div class="f-group"><label>Principal (KSH)</label><input type="number" id="e-princ"></div>
                     <div class="f-group"><label>Start Date</label><input type="date" id="e-start"></div>
                     <div class="f-group"><label>End Date</label><input type="date" id="e-end"></div>
-                    <button class="btn-main" onclick="enrollClient()" style="grid-column: span 3; margin-top:20px">Create Profile</button>
+                    <button class="btn-main" onclick="enrollClient()" style="grid-column: span 3;">Save New Client Profile</button>
                 </div>
             </section>
 
             <section id="finance-sec" class="content-panel hidden">
-                <h2>Financials Dashboard</h2>
+                <h2>Financials</h2>
                 <div class="stats-grid">
                     <div class="card"><h4>Grand Total Out</h4><h2 id="fin-out">0</h2></div>
                     <div class="card"><h4>Paid Today</h4><h2 id="fin-today">0</h2></div>
                     <div class="card">
-                        <h4>Monthly View</h4>
-                        <input type="month" id="fin-month" onchange="calcFinancials()">
-                        <h2 id="fin-month-val">0</h2>
+                        <h4>Monthly Paid</h4>
+                        <input type="month" id="fin-m-sel" onchange="calcFinancials()">
+                        <h2 id="fin-m-val">0</h2>
                     </div>
                 </div>
             </section>
-
-            <section id="loan-sec" class="content-panel hidden">
-                <h2>Loans Given (Weekly Saturday Sort)</h2>
-                <div class="filter-row" style="margin-bottom:20px;">
-                    <input type="month" id="loan-month-pick" onchange="renderSaturdayLoans()">
-                    <select id="loan-week-pick" onchange="renderSaturdayLoans()">
-                        <option value="1">Week 1</option><option value="2">Week 2</option>
-                        <option value="3">Week 3</option><option value="4">Week 4</option>
-                    </select>
-                </div>
-                <div class="card">
-                    <table class="main-table">
-                        <thead><tr><th>Name</th><th>ID</th><th>Principal</th><th>Issued Date</th></tr></thead>
-                        <tbody id="loanTableBody"></tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="settled-sec" class="content-panel hidden"><h2>Settled Loans Archive</h2><div class="card" id="settled-list"></div></section>
-            <section id="debt-sec" class="content-panel hidden"><h2>Debts / Arrears</h2></section>
-            <section id="settings-sec" class="content-panel hidden"><h2>Admin Settings</h2></section>
-            <section id="report-sec" class="content-panel hidden"><h2>Staff Performance Reports</h2></section>
         </main>
     </div>
 
-    <div id="view-modal" class="modal hidden">
-        <div class="view-dash">
-            <header class="v-header">
-                <div>
-                    <h1 id="v-title-name">---</h1>
-                    <p>ID: <span id="v-title-id"></span> | Last Update: <span id="v-last-update"></span></p>
+    <div id="view-modal" class="modal view-overlay hidden">
+        <div class="dashboard-inner">
+            <header class="dash-header">
+                <div class="dash-title">
+                    <h1 id="v-name-top">---</h1>
+                    <p>Client ID: <span id="v-id-top"></span> | Last Updated: <span id="v-time-top"></span></p>
                 </div>
-                <div class="v-header-right">
-                    <select id="v-status-pill" class="status-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+                <div class="dash-controls">
+                    <div class="f-group">
+                        <label>STATUS</label>
+                        <select id="v-status-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
+                    </div>
+                    <div class="f-group">
+                        <label>LOAN OFFICER</label>
+                        <input type="text" id="v-officer-input" placeholder="Name">
+                    </div>
                     <button onclick="closeView()" class="v-close">&times;</button>
                 </div>
             </header>
-            <div class="v-body">
-                <div class="card"><h3>CLIENT INFORMATION</h3><div id="v-info-content"></div></div>
-                <div class="card"><h3>CURRENT LOANS</h3><div id="v-loan-content"></div></div>
-                <div class="card full-row">
-                    <h3>PAYMENT HISTORY (Red if past 6:00 PM)</h3>
+
+            <div class="dash-body">
+                <div class="card-box">
+                    <h3>CLIENT INFORMATION</h3>
+                    <div class="info-grid">
+                        <p><b>Name:</b> <span id="v-info-name"></span></p>
+                        <p><b>ID:</b> <span id="v-info-id"></span></p>
+                        <p><b>Phone:</b> <span id="v-info-phone"></span></p>
+                        <p><b>Location:</b> <span id="v-info-loc"></span></p>
+                        <p><b>Job:</b> <span id="v-info-job"></span></p>
+                        <p><b>Ref:</b> <span id="v-info-ref"></span></p>
+                    </div>
+                </div>
+
+                <div class="card-box">
+                    <h3>CURRENT LOANS</h3>
+                    <div class="loan-row"><span>Principal (KSH)</span><div class="data-box" id="v-loan-princ"></div></div>
+                    <div class="loan-row"><span>Total Paid</span><div class="data-box" id="v-loan-paid"></div></div>
+                    <div class="loan-row"><span>Balance</span><div class="data-box" id="v-loan-bal"></div></div>
+                    <div class="loan-row"><span>Next Payment</span><div class="data-box" id="v-loan-next"></div></div>
+                </div>
+
+                <div class="card-box full">
+                    <h3>NOTES & REMINDERS</h3>
+                    <textarea id="v-notes-area" placeholder="Write reminders here..."></textarea>
+                    <button onclick="saveNotes()" class="btn-main small">Save Notes</button>
+                </div>
+
+                <div class="card-box full">
+                    <h3>PAYMENT HISTORY</h3>
                     <table class="mini-table">
-                        <thead><tr><th>Date</th><th>Activity</th><th>Amount/Detail</th><th>Time</th><th>User</th></tr></thead>
+                        <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>User</th></tr></thead>
                         <tbody id="v-history-body"></tbody>
                     </table>
                 </div>
-                <div class="card full-row">
+
+                <div class="card-box full">
                     <h3>ARCHIVED LOANS</h3>
                     <table class="mini-table">
-                        <thead><tr><th>Previous Principal</th><th>Date Cleared</th></tr></thead>
+                        <thead><tr><th>Loan Amount</th><th>Date Cleared</th></tr></thead>
                         <tbody id="v-archive-body"></tbody>
                     </table>
                 </div>
-                <div class="card full-row action-box">
-                    <h3>UPDATE ACTIONS</h3>
-                    <div class="form-grid">
-                        <input type="number" id="act-amt" placeholder="Amount (KSH)">
-                        <input type="time" id="act-time" title="Manual Time Entry">
-                        <input type="text" id="act-next" placeholder="Next Payment Due Date/Info">
+
+                <div class="card-box full action-card">
+                    <h3>POST UPDATES</h3>
+                    <div class="action-grid">
+                        <div class="f-group"><label>Amount (KSH)</label><input type="number" id="up-amt"></div>
+                        <div class="f-group"><label>Time (Manual)</label><input type="time" id="up-time"></div>
+                        <div class="f-group"><label>Next Payment Info</label><input type="text" id="up-next"></div>
+                        <div class="f-group"><label>Edit Start Date</label><input type="date" id="up-start"></div>
+                        <div class="f-group"><label>Edit End Date</label><input type="date" id="up-end"></div>
                     </div>
-                    <div class="btn-group" style="margin-top:20px; display:flex; gap:10px;">
-                        <button onclick="handleTx('Payment')" class="btn-main">Post Payment</button>
-                        <button onclick="handleTx('Settle')" class="btn-main" style="background:#10b981">Settle Loan</button>
-                        <button onclick="handleTx('Save')" class="btn-main" style="background:#6366f1">Save Changes</button>
-                        <button onclick="handleTx('Delete')" class="btn-danger">Delete Profile</button>
+                    <div class="btn-row">
+                        <button onclick="processUpdate('Payment')" class="btn-main">Record Payment</button>
+                        <button onclick="processUpdate('Settle')" class="btn-main green">Settle Loan</button>
+                        <button onclick="processUpdate('New')" class="btn-main blue">New Loan</button>
+                        <button onclick="processUpdate('Save')" class="btn-main purple">Save Changes</button>
+                        <button onclick="processUpdate('Delete')" class="btn-danger">Delete Profile</button>
                     </div>
                 </div>
             </div>
