@@ -1,165 +1,184 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
-
+// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
     authDomain: "jml-loans-560d8.firebaseapp.com",
-    projectId: "jml-loans-560d8",
-    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app"
+    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "jml-loans-560d8"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 let allClients = [];
 let activeID = null;
 
-// --- AUTHENTICATION ---
-window.handleLogin = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, e, p).catch(() => alert("Access Denied"));
-};
-
-onAuthStateChanged(auth, user => {
-    if(user) {
-        document.getElementById('login-overlay').classList.add('hidden');
-        document.getElementById('main-wrapper').classList.remove('hidden');
-        document.getElementById('current-user-email').innerText = user.email;
-        startSync();
-    }
+// Initialization
+document.addEventListener('DOMContentLoaded', () => {
+    fetchData();
+    populateMonthSelectors();
 });
 
-function startSync() {
-    onValue(ref(db, 'jml_data'), snap => {
-        allClients = snap.val() ? Object.values(snap.val()) : [];
-        renderTable();
+function fetchData() {
+    db.ref('jml_data').on('value', snap => {
+        const val = snap.val();
+        allClients = val ? Object.keys(val).map(key => ({ key, ...val[key] })) : [];
+        renderClientTable();
     });
 }
 
-// --- CORE FUNCTIONS ---
+// Navigation
+window.showSec = (id, el) => {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+};
+
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
+window.toggleTheme = () => document.body.classList.toggle('dark-mode');
+
+// Enrollment
 window.enrollClient = () => {
-    const p = parseFloat(document.getElementById('e-princ').value);
-    const balance = p * 1.25; // Standard JML 25% Interest
-    const id = document.getElementById('e-id').value;
+    const idNum = document.getElementById('e-id').value;
+    const princ = parseFloat(document.getElementById('e-princ').value);
+    
+    if(!idNum || isNaN(princ)) return alert("Fill ID and Principal!");
 
     const data = {
-        name: document.getElementById('e-name').value, idNumber: id,
-        phone: document.getElementById('e-phone').value, location: document.getElementById('e-loc').value,
-        occupation: document.getElementById('e-occ').value, referral: document.getElementById('e-ref').value,
-        principal: p, balance: balance, totalPaid: 0,
-        startDate: document.getElementById('e-start').value, 
+        name: document.getElementById('e-name').value,
+        idNumber: idNum,
+        phone: document.getElementById('e-phone').value,
+        location: document.getElementById('e-loc').value,
+        occupation: document.getElementById('e-occ').value,
+        referral: document.getElementById('e-ref').value,
+        principal: princ,
+        balance: princ,
+        totalPaid: 0,
+        startDate: document.getElementById('e-start').value,
         endDate: document.getElementById('e-end').value,
-        status: 'Active', officer: auth.currentUser.email,
-        history: [{ 
-            date: new Date().toLocaleDateString(), 
-            activity: 'New Loan Started', 
-            details: `Principal: ${p}`, 
-            time: '08:00', by: auth.currentUser.email 
-        }]
+        status: 'Active',
+        history: [{ date: new Date().toLocaleDateString(), activity: 'Enrollment', details: `Started with KSH ${princ}`, time: '--', by: 'Admin' }],
+        archive: [],
+        notes: ""
     };
-    set(ref(db, 'jml_data/' + id), data).then(() => {
-        alert("Enrolled!");
-        showSec('list-sec', document.querySelector('.nav-item'));
+
+    db.ref('jml_data/' + idNum).set(data).then(() => {
+        alert("Client Enrolled!");
+        resetForm();
     });
 };
 
-window.openView = (id) => {
-    const c = allClients.find(x => x.idNumber == id);
-    if(!c) return;
-    activeID = id;
+// Client Detailed View
+window.openView = (key) => {
+    activeID = key;
+    const c = allClients.find(x => x.key === key);
+    
+    document.getElementById('v-name-title').innerText = c.name;
+    document.getElementById('v-id-title').innerText = c.idNumber;
+    document.getElementById('v-last-up').innerText = c.lastUpdated || "Never";
+    document.getElementById('v-status-select').value = c.status;
+    document.getElementById('v-officer').value = c.officer || "";
 
     document.getElementById('v-name').innerText = c.name;
     document.getElementById('v-id').innerText = c.idNumber;
-    document.getElementById('v-up').innerText = c.lastUpdated || 'Initial';
-    document.getElementById('v-status').value = c.status;
+    document.getElementById('v-phone').innerText = c.phone;
+    document.getElementById('v-loc').innerText = c.location;
+    document.getElementById('v-occ').innerText = c.occupation;
+    document.getElementById('v-ref').innerText = c.referral;
 
-    document.getElementById('v-info-list').innerHTML = `
-        <div class="row"><span>Phone:</span> <b>${c.phone}</b></div>
-        <div class="row"><span>Loc:</span> <b>${c.location}</b></div>
-        <div class="row"><span>Occ:</span> <b>${c.occupation}</b></div>
-        <div class="row"><span>Ref:</span> <b>${c.referral}</b></div>
-        <div class="row"><span>Duration:</span> <b>${c.startDate} to ${c.endDate}</b></div>
-    `;
-
-    document.getElementById('v-pri').innerText = c.principal;
+    document.getElementById('v-princ').innerText = c.principal;
     document.getElementById('v-paid').innerText = c.totalPaid;
     document.getElementById('v-bal').innerText = c.balance;
-    document.getElementById('v-next-txt').innerText = c.nextDue || 'Not Set';
-    document.getElementById('v-notes').value = c.notes || '';
+    document.getElementById('v-next-txt').innerText = c.nextDue || "No schedule";
+    document.getElementById('v-notes').value = c.notes || "";
 
-    // History & 6PM Rule
-    document.getElementById('v-history-body').innerHTML = (c.history || []).reverse().map(h => {
-        const isLate = h.time && h.time > "18:00"; 
-        const isNew = h.activity === 'New Loan Started';
+    renderHistory(c);
+    renderArchive(c);
+    document.getElementById('view-panel').classList.add('open');
+};
+
+function renderHistory(c) {
+    const body = document.getElementById('v-history-body');
+    body.innerHTML = (c.history || []).map(h => {
+        const isLate = h.time > "18:00";
+        const isNew = h.activity === 'NEW LOAN';
         return `<tr class="${isLate ? 'late-row' : ''} ${isNew ? 'new-loan-row' : ''}">
             <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>${h.by}</td>
         </tr>`;
     }).join('');
+}
 
-    document.getElementById('view-modal').classList.add('modal-show');
-    document.getElementById('view-modal').classList.remove('hidden');
-};
+function renderArchive(c) {
+    const body = document.getElementById('v-archive-body');
+    body.innerHTML = (c.archive || []).map(a => `
+        <tr><td>KSH ${a.amount}</td><td>${a.clearedDate}</td></tr>
+    `).join('');
+}
 
-window.processTx = (type) => {
-    if(!confirm(`Confirm ${type}?`)) return;
-    const c = allClients.find(x => x.idNumber == activeID);
-    const amt = parseFloat(document.getElementById('u-amt').value) || 0;
-    const time = document.getElementById('u-time').value;
-
-    let up = { 
-        lastUpdated: new Date().toLocaleString(),
-        status: document.getElementById('v-status').value,
-        notes: document.getElementById('v-notes').value
-    };
+// Processing Actions
+window.processAction = (type) => {
+    if(!confirm(`Are you sure you want to process: ${type}?`)) return;
+    
+    const c = allClients.find(x => x.key === activeID);
+    const amt = parseFloat(document.getElementById('act-amt').value) || 0;
+    const timeVal = document.getElementById('act-time').value;
+    const nextDue = document.getElementById('act-next').value;
+    
+    let update = { lastUpdated: new Date().toLocaleString() };
 
     if(type === 'Payment') {
-        up.totalPaid = (c.totalPaid || 0) + amt;
-        up.balance = (c.balance || 0) - amt;
-        up.nextDue = document.getElementById('u-next').value;
-        up.history = [...(c.history || []), { date: new Date().toLocaleDateString(), activity: 'Payment', details: `Paid ${amt}`, time, by: auth.currentUser.email }];
-    } else if (type === 'Settle') {
-        up.status = 'Inactive';
-        up.balance = 0;
-        up.archived = [...(c.archived || []), { amt: c.principal, date: new Date().toLocaleDateString() }];
-    } else if (type === 'Delete') {
-        remove(ref(db, 'jml_data/' + activeID)).then(closeModal); return;
+        update.totalPaid = c.totalPaid + amt;
+        update.balance = c.balance - amt;
+        update.nextDue = nextDue;
+        update.history = [...(c.history || []), {
+            date: new Date().toLocaleDateString(), activity: 'Payment', details: `Paid KSH ${amt}`, time: timeVal, by: 'Admin'
+        }];
+    } 
+    else if(type === 'Settle') {
+        const archivedLoan = { amount: c.principal, clearedDate: new Date().toLocaleDateString() };
+        update.archive = [...(c.archive || []), archivedLoan];
+        update.balance = 0;
+        update.status = 'Inactive';
+        update.history = [...(c.history || []), {
+            date: new Date().toLocaleDateString(), activity: 'SETTLED', details: 'Full Clearance', time: timeVal, by: 'Admin'
+        }];
+    }
+    else if(type === 'Delete') {
+        db.ref('jml_data/' + activeID).remove().then(closeView);
+        return;
     }
 
-    update(ref(db, 'jml_data/' + activeID), up).then(() => openView(activeID));
+    db.ref('jml_data/' + activeID).update(update).then(() => {
+        alert("Updated Successfully");
+        openView(activeID);
+    });
 };
 
-// --- UI UTILS ---
-window.toggleSidebar = () => {
-    const sb = document.getElementById('sidebar');
-    sb.classList.toggle('minimized');
+window.saveNotes = () => {
+    const n = document.getElementById('v-notes').value;
+    db.ref('jml_data/' + activeID).update({ notes: n }).then(() => alert("Note Saved"));
 };
 
-window.showSec = (id, el) => {
-    document.querySelectorAll('.content-panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    if(el) el.classList.add('active');
-};
+window.closeView = () => document.getElementById('view-panel').classList.remove('open');
 
-window.closeModal = () => {
-    document.getElementById('view-modal').classList.remove('modal-show');
-    setTimeout(() => document.getElementById('view-modal').classList.add('hidden'), 300);
-};
-
-window.renderTable = () => {
-    const q = document.getElementById('globalSearch').value.toLowerCase();
-    const body = document.getElementById('clientTableBody');
-    const filtered = allClients.filter(c => c.name.toLowerCase().includes(q) || c.idNumber.includes(q));
-    
-    document.getElementById('client-count').innerText = `${filtered.length} Total`;
-    body.innerHTML = filtered.map((c, i) => `
-        <tr onclick="openView('${c.idNumber}')" style="cursor:pointer">
-            <td>${i+1}</td><td><b>${c.name}</b></td><td>${c.idNumber}</td><td>${c.phone}</td>
-            <td>${c.totalPaid}</td><td class="red-text">${c.balance}</td>
-            <td><button class="btn-view">VIEW</button></td>
+// Rendering Tables
+function renderClientTable() {
+    const body = document.getElementById('clientsTableBody');
+    body.innerHTML = allClients.map((c, i) => `
+        <tr>
+            <td>${i+1}</td><td>${c.name}</td><td>${c.idNumber}</td><td>${c.phone}</td>
+            <td>${c.totalPaid}</td><td>${c.balance}</td>
+            <td><button class="btn btn-main" onclick="openView('${c.key}')">VIEW</button></td>
         </tr>
     `).join('');
-};
+}
+
+function populateMonthSelectors() {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const sel = document.getElementById('f-month-sel');
+    months.forEach(m => {
+        let opt = document.createElement('option');
+        opt.text = m + " 2026";
+        sel.add(opt);
+    });
+}
