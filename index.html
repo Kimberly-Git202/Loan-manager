@@ -17,15 +17,15 @@
             <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
         </div>
         <nav class="nav-menu">
-            <div class="nav-item active" onclick="showSec('list-sec', this)"><i class="fas fa-users"></i><span>1. Clients</span></div>
+            <div class="nav-item active" onclick="showSec('list-sec', this)"><i class="fas fa-users"></i><span>1. Clients List</span></div>
             <div class="nav-item" onclick="showSec('add-sec', this)"><i class="fas fa-user-plus"></i><span>2. Enroll Client</span></div>
             <div class="nav-item" onclick="showSec('finance-sec', this)"><i class="fas fa-chart-line"></i><span>3. Financials</span></div>
-            <div class="nav-item" onclick="showSec('loan-sec', this)"><i class="fas fa-hand-holding-usd"></i><span>4. Loans</span></div>
-            <div class="nav-item" onclick="showSec('settled-sec', this)"><i class="fas fa-check-circle"></i><span>5. Settled loans</span></div>
-            <div class="nav-item" onclick="showSec('debt-sec', this)"><i class="fas fa-exclamation-triangle"></i><span>6. Debts</span></div>
-            <div class="nav-item" onclick="showSec('settings-sec', this)"><i class="fas fa-cog"></i><span>7. Settings</span></div>
-            <div class="nav-item" onclick="toggleTheme()"><i class="fas fa-adjust"></i><span>8. Themes</span></div>
-            <div class="nav-item" onclick="showSec('report-sec', this)"><i class="fas fa-file-alt"></i><span>9. Reports</span></div>
+            <div class="nav-item" onclick="showSec('loan-sec', this)"><i class="fas fa-hand-holding-usd"></i><span>4. Loans Issued</span></div>
+            <div class="nav-item" onclick="showSec('settled-sec', this)"><i class="fas fa-check-circle"></i><span>5. Settled Loans</span></div>
+            <div class="nav-item" onclick="showSec('debt-sec', this)"><i class="fas fa-exclamation-triangle"></i><span>6. Debts Manual</span></div>
+            <div class="nav-item" onclick="showSec('report-sec', this)"><i class="fas fa-file-alt"></i><span>7. Reports / Officers</span></div>
+            <div class="nav-item" onclick="showSec('settings-sec', this)"><i class="fas fa-cog"></i><span>8. Settings</span></div>
+            <div class="nav-item" onclick="toggleTheme()"><i class="fas fa-adjust"></i><span>9. Toggle Theme</span></div>
         </nav>
     </aside>
 
@@ -33,17 +33,17 @@
         <header class="top-bar">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="globalSearch" placeholder="Search by Name or ID Number..." onkeyup="filterClients()">
+                <input type="text" id="globalSearch" placeholder="Search Name or ID..." onkeyup="filterClients()">
             </div>
-            <div class="admin-profile">Admin Dashboard</div>
+            <div class="admin-profile"><i class="fas fa-user-shield"></i> System Admin</div>
         </header>
 
         <section id="list-sec" class="panel active">
-            <h2 class="sec-title">Clients Details</h2>
+            <h2 class="sec-title">Active Clients Database</h2>
             <div class="table-container scroll-x">
                 <table>
                     <thead>
-                        <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
+                        <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Paid (KSH)</th><th>Balance</th><th>Status</th><th>Action</th></tr>
                     </thead>
                     <tbody id="clientsTableBody"></tbody>
                 </table>
@@ -51,86 +51,109 @@
         </section>
 
         <section id="add-sec" class="panel">
-            <div class="box enrollment-box">
-                <h2>Enroll New Client</h2>
+            <div class="box">
+                <h2 class="sec-title">New Client Registration</h2>
                 <div class="form-grid">
                     <div class="input-group"><label>Full Name</label><input type="text" id="e-name"></div>
-                    <div class="input-group"><label>Phone</label><input type="text" id="e-phone"></div>
+                    <div class="input-group"><label>Phone Number</label><input type="text" id="e-phone"></div>
                     <div class="input-group"><label>ID Number</label><input type="text" id="e-id"></div>
-                    <div class="input-group"><label>Location</label><input type="text" id="e-loc"></div>
+                    <div class="input-group"><label>Home Location</label><input type="text" id="e-loc"></div>
                     <div class="input-group"><label>Occupation</label><input type="text" id="e-occ"></div>
-                    <div class="input-group"><label>Referral</label><input type="text" id="e-ref"></div>
+                    <div class="input-group"><label>Referral Name</label><input type="text" id="e-ref"></div>
+                    <div class="input-group"><label>Assign Officer</label><input type="text" id="e-off" placeholder="Officer Name"></div>
                     <div class="input-group"><label>Principal (KSH)</label><input type="number" id="e-princ"></div>
                     <div class="input-group"><label>Start Date</label><input type="date" id="e-start"></div>
-                    <div class="input-group"><label>End Date</label><input type="date" id="e-end"></div>
                 </div>
-                <button class="btn btn-main btn-wide" onclick="enrollClient()">SAVE CLIENT</button>
+                <button class="btn btn-main btn-wide mt-20" onclick="enrollClient()">REGISTER CLIENT</button>
             </div>
         </section>
 
         <section id="finance-sec" class="panel">
-            <h2 class="sec-title">Financial Overview</h2>
+            <h2 class="sec-title">Portfolio Analytics</h2>
             <div class="stats-grid">
-                <div class="card"><h4>Grand Total Out</h4><p id="f-total-out">0</p></div>
-                <div class="card"><h4>Paid Today</h4><p id="f-paid-today">0</p></div>
+                <div class="card"><h4>Total Out</h4><p id="f-total-out" class="val">0</p></div>
+                <div class="card"><h4>Paid Today</h4><p id="f-paid-today" class="val">0</p></div>
                 <div class="card">
-                    <h4>Monthly Total</h4>
+                    <h4>Monthly Collection</h4>
                     <select id="f-month-sel" onchange="runCalculations()"></select>
-                    <p id="f-paid-monthly">0</p>
+                    <p id="f-paid-monthly" class="val">0</p>
                 </div>
-                <div class="card">
-                    <h4>Yearly Total</h4>
-                    <select id="f-year-sel" onchange="runCalculations()"><option value="2026">2026</option></select>
-                    <p id="f-paid-yearly">0</p>
-                </div>
+                <div class="card"><h4>Yearly Collection</h4><p id="f-paid-yearly" class="val">0</p></div>
             </div>
             <div class="stats-grid mt-20">
-                <div class="card"><h4>Profit (Month)</h4><p id="f-profit" class="text-green">0</p></div>
-                <div class="card"><h4>Losses (Month)</h4><p id="f-loss" class="text-red">0</p></div>
+                <div class="card"><h4>Est. Profit</h4><p id="f-profit" class="val text-green">0</p></div>
+                <div class="card"><h4>Unpaid (Losses)</h4><p id="f-loss" class="val text-red">0</p></div>
                 <div class="card full-width">
-                    <h4>Grand Total in Account</h4>
+                    <h4>Physical Cash Reconciliation</h4>
                     <div class="flex-row">
-                        <input type="number" id="manual-acc" placeholder="Enter physical total...">
-                        <button class="btn btn-main" onclick="saveAccountTotal()">Update</button>
+                        <input type="number" id="manual-acc" placeholder="Actual Cash in Bank/Hand...">
+                        <button class="btn btn-main" onclick="saveAccountTotal()">Update Balance</button>
                     </div>
                 </div>
             </div>
         </section>
 
         <section id="loan-sec" class="panel">
-            <h2 class="sec-title">Loan Issuance (Saturdays)</h2>
+            <h2 class="sec-title">Saturday Issuance Report</h2>
             <div class="filter-bar">
                 <select id="loan-month" onchange="renderSaturdayLoans()"></select>
                 <select id="loan-week" onchange="renderSaturdayLoans()">
                     <option value="1">Week 1</option><option value="2">Week 2</option>
                     <option value="3">Week 3</option><option value="4">Week 4</option>
+                    <option value="5">Week 5</option>
                 </select>
             </div>
             <div class="table-container scroll-x">
                 <table>
-                    <thead><tr><th>Full Name</th><th>ID</th><th>Phone</th><th>Amount</th><th>Date Issued</th></tr></thead>
+                    <thead><tr><th>Name</th><th>ID</th><th>Officer</th><th>Amount</th><th>Date</th></tr></thead>
                     <tbody id="saturday-body"></tbody>
                 </table>
             </div>
         </section>
 
         <section id="settled-sec" class="panel">
-            <h2 class="sec-title">Settled Loans</h2>
+            <h2 class="sec-title">Cleared Accounts Archive</h2>
             <select id="settle-month" class="mb-20" onchange="renderSettled()"></select>
             <div class="table-container scroll-x">
                 <table>
-                    <thead><tr><th>Name</th><th>ID Number</th><th>Total Paid</th><th>Cleared Date</th></tr></thead>
+                    <thead><tr><th>Name</th><th>ID Number</th><th>Officer</th><th>Final Collection</th><th>Settled Date</th></tr></thead>
                     <tbody id="settled-body"></tbody>
                 </table>
             </div>
         </section>
 
         <section id="debt-sec" class="panel">
-            <h2 class="sec-title">Debt Tracking</h2>
+            <h2 class="sec-title">Manual Debt Entry</h2>
+            <div class="box">
+                <div class="action-grid">
+                    <input type="text" id="d-name" placeholder="Debtor Name">
+                    <input type="text" id="d-id" placeholder="ID Number">
+                    <input type="number" id="d-amt" placeholder="Debt Amount">
+                    <button class="btn btn-red" onclick="addManualDebt()">RECORD DEBT</button>
+                </div>
+            </div>
+            <div class="table-container scroll-x mt-20">
+                <table>
+                    <thead><tr><th>Debtor Name</th><th>ID</th><th>Debt Amount</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody id="debt-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="report-sec" class="panel">
+            <h2 class="sec-title">Employee Performance & Management</h2>
+            <div class="box">
+                <div class="filter-row">
+                    <label>Filter by Management Officer:</label>
+                    <select id="off-filter" onchange="filterByOfficer()">
+                        <option value="All">All Officers</option>
+                    </select>
+                </div>
+            </div>
             <div class="table-container scroll-x">
                 <table>
-                    <thead><tr><th>Name</th><th>ID Number</th><th>Principal</th><th>Balance</th><th>Action</th></tr></thead>
-                    <tbody id="debt-body"></tbody>
+                    <thead><tr><th>Officer</th><th>Managed Client</th><th>Total Loaned</th><th>Total Recovered</th><th>Performance %</th></tr></thead>
+                    <tbody id="report-body"></tbody>
                 </table>
             </div>
         </section>
@@ -139,83 +162,56 @@
             <div class="v-header">
                 <div class="v-header-left">
                     <h1 id="v-title-name">--</h1>
-                    <p>Client ID: <span id="v-title-id">--</span> | Last Updated: <span id="v-last-up">--</span></p>
+                    <p>ID: <span id="v-title-id">--</span> | Last Updated: <span id="v-last-up">--</span></p>
                 </div>
                 <div class="v-header-right">
-                    <div class="edit-pill">
-                        <label>Status:</label>
-                        <select id="v-status"><option>Active</option><option>Inactive</option></select>
-                        <label>Officer:</label>
-                        <input type="text" id="v-officer" placeholder="Officer Name">
-                    </div>
+                    <button onclick="showSec('list-sec')" class="btn btn-main">Back to List</button>
                 </div>
             </div>
 
             <div class="v-body">
                 <div class="box">
-                    <h3>CLIENT INFORMATION</h3>
+                    <h3>CLIENT BIO</h3>
                     <div class="info-grid">
-                        <p><strong>Name:</strong> <span id="v-info-name"></span></p>
-                        <p><strong>ID:</strong> <span id="v-info-id"></span></p>
                         <p><strong>Phone:</strong> <span id="v-info-phone"></span></p>
                         <p><strong>Location:</strong> <span id="v-info-loc"></span></p>
-                        <p><strong>Occupation:</strong> <span id="v-info-occ"></span></p>
-                        <p><strong>Referral:</strong> <span id="v-info-ref"></span></p>
-                        <p><strong>Start Date:</strong> <input type="date" id="v-start"></p>
-                        <p><strong>End Date:</strong> <input type="date" id="v-end"></p>
+                        <p><strong>Officer:</strong> <input type="text" id="v-officer"> </p>
+                        <p><strong>Status:</strong> <select id="v-status"><option>Active</option><option>Inactive</option></select></p>
                     </div>
                 </div>
 
                 <div class="box">
-                    <h3>CURRENT LOANS</h3>
+                    <h3>FINANCIAL STANDING</h3>
                     <div class="loan-stats">
-                        <div class="l-card">Principal<div class="val" id="v-princ"></div></div>
-                        <div class="l-card">Total Paid<div class="val" id="v-paid"></div></div>
+                        <div class="l-card">Loaned<div class="val" id="v-princ"></div></div>
+                        <div class="l-card">Paid<div class="val text-green" id="v-paid"></div></div>
                         <div class="l-card">Balance<div class="val text-red" id="v-bal"></div></div>
-                        <div class="l-card">Next Payment<div class="val" id="v-next"></div></div>
+                        <div class="l-card">Next Due<div class="val" id="v-next"></div></div>
                     </div>
                 </div>
 
                 <div class="box">
-                    <h3>NOTES & REMINDERS</h3>
-                    <textarea id="v-note-text" placeholder="Enter notes..."></textarea>
-                    <button class="btn btn-main mt-10" onclick="saveNote()">SAVE NOTE</button>
-                    <div id="v-notes-list" class="notes-container"></div>
-                </div>
-
-                <div class="box">
-                    <h3>PAYMENT HISTORY</h3>
+                    <h3>TRANSACTION LOG</h3>
                     <div class="table-container scroll-x">
                         <table class="history-table">
-                            <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>By</th></tr></thead>
+                            <thead><tr><th>Date</th><th>Activity</th><th>Amount</th><th>Time</th><th>Auth By</th></tr></thead>
                             <tbody id="v-history-body"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="box">
-                    <h3>ARCHIVED LOANS</h3>
-                    <div class="table-container scroll-x">
-                        <table class="history-table">
-                            <thead><tr><th>Loan Amount</th><th>Date Cleared</th></tr></thead>
-                            <tbody id="v-archive-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
                 <div class="box action-footer">
-                    <h3>UPDATE CLIENT</h3>
+                    <h3>POST TRANSACTION</h3>
                     <div class="action-grid">
-                        <input type="number" id="act-amt" placeholder="Amount (KSH)">
+                        <input type="number" id="act-amt" placeholder="KSH Amount">
                         <input type="time" id="act-time">
-                        <input type="text" id="act-next" placeholder="Next Due (e.g. Jan 20)">
+                        <input type="text" id="act-next" placeholder="Next Due Date">
                     </div>
                     <div class="action-btns mt-20">
                         <button class="btn btn-p" onclick="process('Payment')">Post Payment</button>
-                        <button class="btn btn-s" onclick="process('Settle')">Settle Loan</button>
-                        <button class="btn btn-n" onclick="process('New')">New Loan</button>
-                        <button class="btn btn-main" onclick="saveAll()">Save Changes</button>
-                        <button class="btn btn-red" onclick="process('Delete')">Delete Profile</button>
+                        <button class="btn btn-s" onclick="process('Settle')">Archive Account</button>
+                        <button class="btn btn-red" onclick="process('Delete')">Delete Client</button>
+                        <button class="btn btn-main" onclick="saveChanges()">Commit Changes</button>
                     </div>
                 </div>
             </div>
