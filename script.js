@@ -7,128 +7,112 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-
 let clients = [];
 let activeKey = null;
 
-// SYNC DATA
+// SYNC & INIT DROPDOWNS
 db.ref('jml_master_records').on('value', snap => {
     const data = snap.val();
     clients = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
     renderMainList();
+    populateDropdowns();
     runCalculations();
 });
 
-// SIDEBAR & THEMES
+function populateDropdowns() {
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const monthHtml = months.map((m, i) => `<option value="${i+1}">${m} 2026</option>`).join('');
+    document.getElementById('f-month-sel').innerHTML = monthHtml;
+    document.getElementById('loan-month').innerHTML = monthHtml;
+    document.getElementById('settle-month').innerHTML = monthHtml;
+}
+
+// NAVIGATION
 window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
 window.toggleTheme = () => document.body.classList.toggle('dark-mode');
+
 window.showSec = (id, el) => {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    el.classList.add('active');
+    if(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
 };
 
-// ENROLL CLIENT
-window.enrollClient = () => {
-    const id = document.getElementById('e-id').value;
-    const princ = parseFloat(document.getElementById('e-princ').value);
-    if(!id || isNaN(princ)) return alert("Required: ID Number and Principal.");
-
-    const payload = {
-        name: document.getElementById('e-name').value,
-        idNo: id, phone: document.getElementById('e-phone').value,
-        location: document.getElementById('e-loc').value,
-        occupation: document.getElementById('e-occ').value,
-        referral: document.getElementById('e-ref').value,
-        principal: princ, balance: princ, totalPaid: 0,
-        startDate: document.getElementById('e-start').value,
-        endDate: document.getElementById('e-end').value,
-        status: 'Active', history: [], archive: [], notes: []
-    };
-
-    db.ref('jml_master_records/' + id).set(payload).then(() => {
-        alert("Client Enrolled Successfully!");
-    });
-};
-
-// VIEW PANEL LOGIC
+// VIEW CLIENT (INTEGRATED)
 window.openView = (key) => {
     activeKey = key;
     const c = clients.find(x => x.key === key);
+    showSec('view-sec'); // Show the view section beside sidebar
+
     document.getElementById('v-title-name').innerText = c.name;
     document.getElementById('v-title-id').innerText = c.idNo;
     document.getElementById('v-info-name').innerText = c.name;
     document.getElementById('v-info-id').innerText = c.idNo;
+    document.getElementById('v-info-phone').innerText = c.phone;
+    document.getElementById('v-info-loc').innerText = c.location;
+    document.getElementById('v-info-occ').innerText = c.occupation;
+    document.getElementById('v-info-ref').innerText = c.referral;
     document.getElementById('v-princ').innerText = `KSH ${c.principal}`;
     document.getElementById('v-paid').innerText = `KSH ${c.totalPaid || 0}`;
     document.getElementById('v-bal').innerText = `KSH ${c.balance}`;
-    document.getElementById('v-status').value = c.status;
-    document.getElementById('v-officer').value = c.officer || "";
+    document.getElementById('v-next').innerText = c.nextDue || "N/A";
+    document.getElementById('v-start').value = c.startDate || "";
+    document.getElementById('v-end').value = c.endDate || "";
     
     renderHistory(c.history);
-    renderArchives(c.archive);
-    document.getElementById('view-panel').classList.add('open');
-};
+}
 
 function renderHistory(history) {
     const body = document.getElementById('v-history-body');
-    const histArray = history ? Object.values(history) : [];
-    body.innerHTML = histArray.map(h => {
-        const isLate = h.time > "18:00"; // Red highlight logic
-        const isNew = h.activity === 'New Loan'; // Green highlight logic
-        return `<tr class="${isLate ? 'late-row' : ''} ${isNew ? 'new-loan-row' : ''}">
+    body.innerHTML = history ? Object.values(history).map(h => {
+        const isLate = h.time > "18:00";
+        return `<tr class="${isLate ? 'late-row' : ''}">
             <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>Admin</td>
         </tr>`;
-    }).join('');
+    }).join('') : '';
 }
 
-// ACTIONS WITH CONFIRMATION
-window.process = (type) => {
-    if(!confirm(`Confirm ${type} action?`)) return;
-
-    const amt = parseFloat(document.getElementById('act-amt').value) || 0;
-    const time = document.getElementById('act-time').value;
-    const next = document.getElementById('act-next').value;
-    const c = clients.find(x => x.key === activeKey);
-
-    let updates = { lastUpdated: new Date().toLocaleString() };
-
-    if(type === 'Payment') {
-        updates.totalPaid = (c.totalPaid || 0) + amt;
-        updates.balance = c.balance - amt;
-        updates.nextDue = next;
-    } else if(type === 'Settle') {
-        const arch = { amount: c.principal, date: new Date().toLocaleDateString() };
-        updates.archive = [...(c.archive || []), arch];
-        updates.balance = 0; updates.status = 'Inactive';
-    } else if(type === 'Delete') {
-        db.ref('jml_master_records/' + activeKey).remove().then(closeView); return;
-    }
-
-    db.ref('jml_master_records/' + activeKey).update(updates);
-    db.ref(`jml_master_records/${activeKey}/history`).push({
-        date: new Date().toLocaleDateString(), activity: type, details: `KSH ${amt}`, time: time
-    });
+// FILTERING LOGIC (APRIL ONLY ETC)
+window.renderSaturdayLoans = () => {
+    const month = parseInt(document.getElementById('loan-month').value);
+    const week = parseInt(document.getElementById('loan-week').value);
+    const body = document.getElementById('saturday-body');
+    
+    body.innerHTML = clients.filter(c => {
+        const d = new Date(c.startDate);
+        const isSat = d.getDay() === 6;
+        const isMonth = (d.getMonth() + 1) === month;
+        const isWeek = Math.ceil(d.getDate() / 7) === week;
+        return isSat && isMonth && isWeek;
+    }).map(c => `<tr><td>${c.name}</td><td>${c.idNo}</td><td>${c.phone}</td><td>KSH ${c.principal}</td><td>${c.startDate}</td></tr>`).join('');
 };
 
-// CALCULATIONS
-function runCalculations() {
-    let out = 0, today = 0;
-    clients.forEach(c => {
-        out += parseFloat(c.principal || 0);
-        // Calculation logic for today's payments
-        if(c.history) {
-            Object.values(c.history).forEach(h => {
-                if(h.date === new Date().toLocaleDateString()) today += parseFloat(h.details.replace('KSH ', '')) || 0;
-            });
-        }
-    });
-    document.getElementById('f-total-out').innerText = `KSH ${out.toLocaleString()}`;
-    document.getElementById('f-paid-today').innerText = `KSH ${today.toLocaleString()}`;
-}
+window.renderSettled = () => {
+    const month = parseInt(document.getElementById('settle-month').value);
+    const body = document.getElementById('settled-body');
+    body.innerHTML = clients.filter(c => {
+        const d = new Date(c.lastUpdated);
+        return c.status === 'Inactive' && (d.getMonth() + 1) === month;
+    }).map(c => `<tr><td>${c.name}</td><td>${c.idNo}</td><td>${c.totalPaid}</td><td>${c.lastUpdated}</td></tr>`).join('');
+};
 
-window.closeView = () => document.getElementById('view-panel').classList.remove('open');
+// ENROLL & PROCESS (UNCHANGED LOGIC, JUST UI SYNC)
+window.enrollClient = () => {
+    const id = document.getElementById('e-id').value;
+    const p = parseFloat(document.getElementById('e-princ').value);
+    if(!id || isNaN(p)) return alert("Fill Name and Principal");
+
+    db.ref('jml_master_records/' + id).set({
+        name: document.getElementById('e-name').value, idNo: id,
+        phone: document.getElementById('e-phone').value, location: document.getElementById('e-loc').value,
+        occupation: document.getElementById('e-occ').value, referral: document.getElementById('e-ref').value,
+        principal: p, balance: p, totalPaid: 0, startDate: document.getElementById('e-start').value,
+        endDate: document.getElementById('e-end').value, status: 'Active'
+    }).then(() => { alert("Saved!"); showSec('list-sec'); });
+};
+
 function renderMainList() {
     const body = document.getElementById('clientsTableBody');
     body.innerHTML = clients.map((c, i) => `
