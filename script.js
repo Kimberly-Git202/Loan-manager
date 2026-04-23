@@ -1,4 +1,21 @@
-// --- FIREBASE INITIALIZATION ---
+// -// Paste this at the very top of your script.js file
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
+    authDomain: "jml-loans-560d8.firebaseapp.com",
+    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "jml-loans-560d8",
+    storageBucket: "jml-loans-560d8.appspot.com",
+    messagingSenderId: "956813203405",
+    appId: "1:956813203405:web:86e74b37042a1f4961502d"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+
+// Initialize Realtime Database and get a reference to the service
+const db = firebase.database();
+-- FIREBASE INITIALIZATION ---
 // (Config remains as provided)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
