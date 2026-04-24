@@ -1,206 +1,210 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JML LIMITED | Professional Loan Management</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body id="app-body" class="light-mode">
+// --- FIREBASE INIT ---
+const firebaseConfig = {
+    apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
+    authDomain: "jml-loans-560d8.firebaseapp.com",
+    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "jml-loans-560d8"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <h2 id="logo-text">JML LIMITED</h2>
-            <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-        </div>
-        <nav class="nav-menu">
-            <div class="nav-item active" onclick="showSec('list-sec', this)"><i class="fas fa-users"></i><span>1. Clients</span></div>
-            <div class="nav-item" onclick="showSec('add-sec', this)"><i class="fas fa-user-plus"></i><span>2. Enroll Client</span></div>
-            <div class="nav-item" onclick="showSec('finance-sec', this)"><i class="fas fa-chart-line"></i><span>3. Financials</span></div>
-            <div class="nav-item" onclick="showSec('loan-sec', this)"><i class="fas fa-hand-holding-dollar"></i><span>4. Loans</span></div>
-            <div class="nav-item" onclick="showSec('settled-sec', this)"><i class="fas fa-check-double"></i><span>5. Settled Loans</span></div>
-            <div class="nav-item" onclick="showSec('debt-sec', this)"><i class="fas fa-triangle-exclamation"></i><span>6. Debts</span></div>
-            <div class="nav-item" onclick="showSec('settings-sec', this)"><i class="fas fa-gears"></i><span>7. Settings</span></div>
-            <div class="nav-item" onclick="toggleTheme()"><i class="fas fa-circle-half-stroke"></i><span>8. Themes</span></div>
-            <div class="nav-item" onclick="showSec('report-sec', this)"><i class="fas fa-file-invoice-dollar"></i><span>9. Reports</span></div>
-        </nav>
-    </aside>
+let clients = [];
+let debts = [];
+let activeKey = null;
 
-    <main class="main-content" id="main-content">
-        <header class="top-bar">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="globalSearch" placeholder="Search by Name or ID..." onkeyup="filterClients()">
-            </div>
-            <div class="admin-profile"><i class="fas fa-shield-halved"></i> JML ADMIN PORTAL</div>
-        </header>
+// --- REAL-TIME DATA SYNC ---
+db.ref('jml_master_records').on('value', snap => {
+    const data = snap.val();
+    clients = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
+    renderMainList(); // Updates list immediately
+    runCalculations();
+});
 
-        <section id="list-sec" class="panel active">
-            <div class="sec-header">
-                <h2 class="sec-title">Clients Details</h2>
-            </div>
-            <div class="table-container scroll-x">
-                <table>
-                    <thead>
-                        <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
-                    </thead>
-                    <tbody id="clientsTableBody"></tbody>
-                </table>
-            </div>
-        </section>
+db.ref('jml_manual_debts').on('value', snap => {
+    const data = snap.val();
+    debts = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
+    renderDebts();
+});
 
-        <section id="add-sec" class="panel">
-            <div class="box">
-                <h2 class="sec-title">Client Registration Form</h2>
-                <div class="form-grid">
-                    <div class="input-group"><label>Full Name</label><input type="text" id="e-name"></div>
-                    <div class="input-group"><label>Phone Number</label><input type="text" id="e-phone"></div>
-                    <div class="input-group"><label>ID Number</label><input type="text" id="e-id"></div>
-                    <div class="input-group"><label>Location</label><input type="text" id="e-loc"></div>
-                    <div class="input-group"><label>Occupation</label><input type="text" id="e-occ"></div>
-                    <div class="input-group"><label>Referral</label><input type="text" id="e-ref"></div>
-                    <div class="input-group"><label>Principal (KSH)</label><input type="number" id="e-princ"></div>
-                    <div class="input-group"><label>Start Date</label><input type="date" id="e-start"></div>
-                    <div class="input-group"><label>End Date</label><input type="date" id="e-end"></div>
-                </div>
-                <button class="btn btn-main btn-wide mt-20" onclick="enrollClient()">ENROL CLIENT</button>
-            </div>
-        </section>
+// --- NAVIGATION ---
+function showSec(id, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+}
 
-        <section id="finance-sec" class="panel">
-            <h2 class="sec-title">Portfolio Analytics</h2>
-            <div class="stats-grid">
-                <div class="card"><h4>Grand Total Out</h4><p id="f-total-out" class="val">0</p></div>
-                <div class="card"><h4>Paid Today</h4><p id="f-paid-today" class="val">0</p></div>
-                <div class="card">
-                    <h4>Monthly Total</h4>
-                    <select id="f-month-sel" onchange="runCalculations()"></select>
-                    <p id="f-paid-monthly" class="val">0</p>
-                </div>
-                <div class="card">
-                    <h4>Yearly Total</h4>
-                    <select id="f-year-sel" onchange="runCalculations()"></select>
-                    <p id="f-paid-yearly" class="val">0</p>
-                </div>
-            </div>
-            <div class="stats-grid mt-20">
-                <div class="card"><h4>Monthly Profit</h4><p id="f-profit" class="val text-green">0</p></div>
-                <div class="card"><h4>Monthly Losses</h4><p id="f-loss" class="val text-red">0</p></div>
-                <div class="card full-width">
-                    <h4>Grand Total in Account</h4>
-                    <div class="flex-row">
-                        <input type="number" id="manual-acc" placeholder="Input physical balance...">
-                        <button class="btn btn-main" onclick="saveAccountTotal()">Update Account</button>
-                    </div>
-                </div>
-            </div>
-        </section>
+// --- CLIENT ENROLLMENT ---
+function enrollClient() {
+    const id = document.getElementById('e-id').value;
+    const princ = parseFloat(document.getElementById('e-princ').value);
+    if(!id || isNaN(princ)) return alert("Error: ID and Principal are required.");
 
-        <section id="debt-sec" class="panel">
-            <h2 class="sec-title">Manual Debt Ledger</h2>
-            <div class="box">
-                <div class="action-grid">
-                    <input type="text" id="d-name" placeholder="Debtor Name">
-                    <input type="text" id="d-id" placeholder="ID Number">
-                    <input type="number" id="d-princ" placeholder="Principal (KSH)">
-                    <input type="number" id="d-bal" placeholder="Balance">
-                    <button class="btn btn-red" onclick="addManualDebt()">POST DEBT</button>
-                </div>
-            </div>
-            <div class="table-container scroll-x mt-20">
-                <table class="debt-table-styled">
-                    <thead><tr><th>Name</th><th>ID Number</th><th>Principal</th><th>Balance</th><th>Management</th></tr></thead>
-                    <tbody id="debt-body"></tbody>
-                </table>
-            </div>
-        </section>
+    const clientData = {
+        name: document.getElementById('e-name').value,
+        idNo: id,
+        phone: document.getElementById('e-phone').value,
+        location: document.getElementById('e-loc').value,
+        occupation: document.getElementById('e-occ').value,
+        referral: document.getElementById('e-ref').value,
+        principal: princ,
+        totalPaid: 0,
+        balance: princ,
+        startDate: document.getElementById('e-start').value,
+        endDate: document.getElementById('e-end').value,
+        status: 'Active',
+        lastUpdated: new Date().toLocaleString(),
+        officer: 'Unassigned'
+    };
 
-        <section id="view-sec" class="panel">
-            <div class="v-header-flex">
-                <div class="v-title-block">
-                    <h1 id="v-title-name">--</h1>
-                    <p>Client ID: <span id="v-title-id">--</span> | Last Updated: <span id="v-last-up">--</span></p>
-                </div>
-                <div class="v-status-box">
-                    <label>Status:</label>
-                    <select id="v-status-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-                    <label>Officer:</label>
-                    <input type="text" id="v-officer-input">
-                </div>
-            </div>
+    db.ref('jml_master_records/' + id).set(clientData).then(() => {
+        alert("Client Enrolled Successfully!");
+        document.querySelectorAll('#add-sec input').forEach(i => i.value = '');
+        showSec('list-sec'); // Jump back to table
+    });
+}
 
-            <div class="box mt-20">
-                <h3>CLIENT INFORMATION</h3>
-                <div class="info-grid">
-                    <p><strong>Name:</strong> <span id="v-info-name"></span></p>
-                    <p><strong>ID:</strong> <span id="v-info-id"></span></p>
-                    <p><strong>Phone:</strong> <span id="v-info-phone"></span></p>
-                    <p><strong>Location:</strong> <span id="v-info-loc"></span></p>
-                    <p><strong>Occupation:</strong> <span id="v-info-occ"></span></p>
-                    <p><strong>Referral:</strong> <span id="v-info-ref"></span></p>
-                </div>
-            </div>
+// --- RENDER MAIN TABLE ---
+function renderMainList() {
+    const body = document.getElementById('clientsTableBody');
+    body.innerHTML = clients.map((c, i) => `
+        <tr>
+            <td>${i+1}</td>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.idNo}</td>
+            <td>${c.phone}</td>
+            <td>KSH ${c.totalPaid.toLocaleString()}</td>
+            <td class="text-red">KSH ${(c.principal - c.totalPaid).toLocaleString()}</td>
+            <td><button class="btn btn-p btn-sm" onclick="openView('${c.key}')">VIEW</button></td>
+        </tr>
+    `).join('');
+}
 
-            <div class="box">
-                <h3>CURRENT LOANS</h3>
-                <div class="loan-stats-grid">
-                    <div class="l-card">Principal<div class="val" id="v-princ">0</div></div>
-                    <div class="l-card">Total Paid<div class="val text-green" id="v-paid">0</div></div>
-                    <div class="l-card">Balance<div class="val text-red" id="v-bal">0</div></div>
-                    <div class="l-card">Next Payment<div class="val text-blue" id="v-next">--</div></div>
-                </div>
-                <div class="mt-20 flex-row">
-                    <label>Start:</label><input type="date" id="v-start-edit">
-                    <label>End:</label><input type="date" id="v-end-edit">
-                </div>
-            </div>
+// --- VIEW CLIENT (DOSSIER) ---
+function openView(key) {
+    activeKey = key;
+    const c = clients.find(x => x.key === key);
+    showSec('view-sec');
 
-            <div class="box">
-                <h3>NOTES & REMINDERS</h3>
-                <textarea id="v-notes-area" placeholder="Add client notes..."></textarea>
-                <button class="btn btn-main btn-sm mt-10" onclick="saveNote()">Save Note</button>
-            </div>
+    // Headers
+    document.getElementById('v-title-name').innerText = c.name;
+    document.getElementById('v-title-id').innerText = c.idNo;
+    document.getElementById('v-last-up').innerText = c.lastUpdated;
+    
+    // Status & Officer
+    document.getElementById('v-status-select').value = c.status;
+    document.getElementById('v-officer-input').value = c.officer || '';
 
-            <div class="box">
-                <h3>PAYMENT HISTORY</h3>
-                <div class="table-container scroll-x">
-                    <table>
-                        <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>Handled By</th></tr></thead>
-                        <tbody id="v-history-body"></tbody>
-                    </table>
-                </div>
-            </div>
+    // Info
+    document.getElementById('v-info-name').innerText = c.name;
+    document.getElementById('v-info-id').innerText = c.idNo;
+    document.getElementById('v-info-phone').innerText = c.phone;
+    document.getElementById('v-info-loc').innerText = c.location;
+    document.getElementById('v-info-occ').innerText = c.occupation;
+    document.getElementById('v-info-ref').innerText = c.referral;
 
-            <div class="box">
-                <h3>ARCHIVED LOANS</h3>
-                <div class="table-container scroll-x">
-                    <table>
-                        <thead><tr><th>Loan Amount</th><th>Date Cleared</th></tr></thead>
-                        <tbody id="v-archive-body"></tbody>
-                    </table>
-                </div>
-            </div>
+    // Financials
+    document.getElementById('v-princ').innerText = c.principal.toLocaleString();
+    document.getElementById('v-paid').innerText = c.totalPaid.toLocaleString();
+    document.getElementById('v-bal').innerText = (c.principal - c.totalPaid).toLocaleString();
+    document.getElementById('v-next').innerText = c.nextDue || 'Not Set';
+    
+    document.getElementById('v-start-edit').value = c.startDate || '';
+    document.getElementById('v-end-edit').value = c.endDate || '';
+    document.getElementById('v-notes-area').value = c.notes || '';
 
-            <div class="action-footer box">
-                <div class="action-grid">
-                    <div class="input-group"><label>Amount</label><input type="number" id="act-amt"></div>
-                    <div class="input-group"><label>Time</label><input type="time" id="act-time"></div>
-                    <div class="input-group"><label>Next Due/Details</label><input type="text" id="act-details"></div>
-                </div>
-                <div class="btn-group-row mt-20">
-                    <button class="btn btn-p" onclick="recordPayment()">Record Payment</button>
-                    <button class="btn btn-s" onclick="settleLoanPrompt()">Settle Loan</button>
-                    <button class="btn btn-main" onclick="newLoanPrompt()">New Loan</button>
-                    <button class="btn btn-main" onclick="saveChangesPrompt()">Save Changes</button>
-                    <button class="btn btn-red" onclick="deleteProfilePrompt()">Delete Profile</button>
-                </div>
-            </div>
-        </section>
-    </main>
+    renderHistory(c);
+}
 
-    <script src="script.js"></script>
-</body>
-</html>
+function renderHistory(c) {
+    const hBody = document.getElementById('v-history-body');
+    if(!c.history) { hBody.innerHTML = '<tr><td colspan="5">No history found</td></tr>'; return; }
+    
+    hBody.innerHTML = Object.values(c.history).map(h => {
+        // Red highlight if payment is past 6:00 PM (18:00)
+        const isLate = h.time > "18:00" ? 'late-row' : '';
+        const isNew = h.activity === 'New Loan' ? 'new-loan-marker' : '';
+        return `<tr class="${isLate} ${isNew}">
+            <td>${h.date}</td>
+            <td>${h.activity}</td>
+            <td>${h.details}</td>
+            <td>${h.time}</td>
+            <td>${h.handledBy || 'Admin'}</td>
+        </tr>`;
+    }).join('');
+}
+
+// --- ACTIONS WITH PROMPTS ---
+function recordPayment() {
+    if(!confirm("Are you sure you want to post this payment?")) return;
+    const amt = parseFloat(document.getElementById('act-amt').value);
+    const time = document.getElementById('act-time').value;
+    const details = document.getElementById('act-details').value;
+    if(!amt || !time) return alert("Fill amount and time.");
+
+    const c = clients.find(x => x.key === activeKey);
+    const newTotal = (c.totalPaid || 0) + amt;
+
+    const record = {
+        date: new Date().toLocaleDateString(),
+        activity: 'Payment',
+        details: `Paid KSH ${amt}. Next: ${details}`,
+        time: time,
+        handledBy: 'JML_User'
+    };
+
+    db.ref(`jml_master_records/${activeKey}`).update({
+        totalPaid: newTotal,
+        nextDue: details,
+        lastUpdated: new Date().toLocaleString()
+    });
+    db.ref(`jml_master_records/${activeKey}/history`).push(record);
+    document.getElementById('act-amt').value = '';
+}
+
+function settleLoanPrompt() {
+    if(!confirm("Confirm Full Settlement? This will archive the current loan.")) return;
+    const c = clients.find(x => x.key === activeKey);
+    const archive = { amount: c.principal, dateCleared: new Date().toLocaleDateString() };
+    
+    db.ref(`jml_master_records/${activeKey}/archives`).push(archive);
+    db.ref(`jml_master_records/${activeKey}`).update({ principal: 0, totalPaid: 0, status: 'Inactive' });
+}
+
+function deleteProfilePrompt() {
+    if(confirm("PERMANENT DELETE? This cannot be undone.")) db.ref(`jml_master_records/${activeKey}`).remove().then(() => showSec('list-sec'));
+}
+
+// --- DEBTS ---
+function addManualDebt() {
+    const d = { 
+        name: document.getElementById('d-name').value, 
+        idNo: document.getElementById('d-id').value, 
+        principal: document.getElementById('d-princ').value, 
+        balance: document.getElementById('d-bal').value 
+    };
+    db.ref('jml_manual_debts').push(d);
+}
+
+function renderDebts() {
+    document.getElementById('debt-body').innerHTML = debts.map(d => `
+        <tr><td>${d.name}</td><td>${d.idNo}</td><td>${d.principal}</td><td>${d.balance}</td>
+        <td><button class="btn btn-red btn-sm" onclick="if(confirm('Clear debt?')) db.ref('jml_manual_debts/${d.key}').remove()">CLEAR</button></td></tr>
+    `).join('');
+}
+
+// --- FINANCE LOGIC ---
+function runCalculations() {
+    let grandOut = 0;
+    clients.forEach(c => grandOut += parseFloat(c.principal || 0));
+    document.getElementById('f-total-out').innerText = "KSH " + grandOut.toLocaleString();
+}
+
+// Init logic for dropdowns
+(function populateDates() {
+    const m = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const mSel = document.getElementById('f-month-sel');
+    m.forEach((name, i) => mSel.innerHTML += `<option value="${i+1}">${name} 2026</option>`);
+})();
