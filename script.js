@@ -1,4 +1,3 @@
-// --- FIREBASE INIT ---
 const firebaseConfig = {
     apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
     authDomain: "jml-loans-560d8.firebaseapp.com",
@@ -11,15 +10,16 @@ const db = firebase.database();
 let clients = [];
 let activeKey = null;
 
-// --- REAL-TIME DATA SYNC ---
+// SYNC DATA
 db.ref('jml_master_records').on('value', snap => {
     const data = snap.val();
-    // Convert to array and update immediately
     clients = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
-    renderMainTable();
+    renderMainList();
+    calcFinance();
 });
 
-// --- NAVIGATION ---
+// NAVIGATION & THEME
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 function switchTab(id, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -27,138 +27,103 @@ function switchTab(id, el) {
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         el.classList.add('active');
     }
+    if(window.innerWidth < 900) toggleSidebar();
 }
+function toggleTheme() { document.body.classList.toggle('dark-mode'); }
 
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-
-// --- ENROLL CLIENT (IMMEDIATE UPDATE) ---
+// ENROLL (IMMEDIATE UPDATE)
 function enrollClient() {
     const id = document.getElementById('e-id').value;
     const princ = parseFloat(document.getElementById('e-princ').value);
-    if(!id || isNaN(princ)) return alert("Required: ID and Principal");
+    if(!id || isNaN(princ)) return alert("ID and Principal required");
 
-    const newClient = {
+    const data = {
         name: document.getElementById('e-name').value,
-        idNo: id,
-        phone: document.getElementById('e-phone').value,
+        idNo: id, phone: document.getElementById('e-phone').value,
         location: document.getElementById('e-loc').value,
         occupation: document.getElementById('e-occ').value,
         referral: document.getElementById('e-ref').value,
-        principal: princ,
-        totalPaid: 0,
-        balance: princ,
+        principal: princ, totalPaid: 0,
         startDate: document.getElementById('e-start').value,
         endDate: document.getElementById('e-end').value,
-        status: 'Active',
-        lastUpdated: new Date().toLocaleString()
+        status: 'Active', lastUpdated: new Date().toLocaleString()
     };
 
-    db.ref('jml_master_records/' + id).set(newClient).then(() => {
-        // Form disappears immediately
+    db.ref('jml_master_records/' + id).set(data).then(() => {
         document.querySelectorAll('#add-sec input').forEach(i => i.value = '');
-        switchTab('list-sec'); // Switch to table immediately
+        switchTab('list-sec');
     });
 }
 
-// --- RENDER MAIN TABLE ---
-function renderMainTable() {
-    const body = document.getElementById('clientsTableBody');
-    body.innerHTML = clients.map((c, i) => `
+// MAIN RENDER
+function renderMainList() {
+    const tbody = document.getElementById('clientsTableBody');
+    tbody.innerHTML = clients.map((c, i) => `
         <tr>
             <td>${i+1}</td>
             <td><strong>${c.name}</strong></td>
             <td>${c.idNo}</td>
             <td>${c.phone}</td>
-            <td>KSH ${c.totalPaid.toLocaleString()}</td>
-            <td class="text-red">KSH ${(c.principal - c.totalPaid).toLocaleString()}</td>
+            <td>KSH ${c.totalPaid || 0}</td>
+            <td class="text-red">KSH ${(c.principal - (c.totalPaid || 0))}</td>
             <td><button class="btn btn-p btn-sm" onclick="openView('${c.key}')">VIEW</button></td>
         </tr>
     `).join('');
 }
 
-// --- OPEN VIEW (DOSSIER) ---
+// FINANCIALS
+function calcFinance() {
+    let out = 0, today = 0;
+    const now = new Date().toLocaleDateString();
+    clients.forEach(c => {
+        out += parseFloat(c.principal || 0);
+        if(c.history) {
+            Object.values(c.history).forEach(h => {
+                if(h.date === now) today += parseFloat(h.amt || 0);
+            });
+        }
+    });
+    document.getElementById('f-total-out').innerText = out;
+    document.getElementById('f-paid-today').innerText = today;
+}
+
+// VIEW DOSSIER
 function openView(key) {
     activeKey = key;
     const c = clients.find(x => x.key === key);
     switchTab('view-sec');
-
-    // Header Details
     document.getElementById('v-title-name').innerText = c.name;
-    document.getElementById('v-title-id').innerText = c.idNo;
-    document.getElementById('v-last-up').innerText = c.lastUpdated;
-    document.getElementById('v-status-select').value = c.status;
-
-    // Info Boxes
     document.getElementById('v-info-name').innerText = c.name;
-    document.getElementById('v-info-id').innerText = c.idNo;
-    document.getElementById('v-info-phone').innerText = c.phone;
-    document.getElementById('v-info-loc').innerText = c.location;
-    document.getElementById('v-info-occ').innerText = c.occupation;
-    document.getElementById('v-info-ref').innerText = c.referral;
-
-    // Loan Boxes
-    document.getElementById('v-princ').innerText = c.principal.toLocaleString();
-    document.getElementById('v-paid').innerText = c.totalPaid.toLocaleString();
-    document.getElementById('v-bal').innerText = (c.principal - c.totalPaid).toLocaleString();
-    document.getElementById('v-next').innerText = c.nextDue || "No Data";
-
+    document.getElementById('v-princ').innerText = c.principal;
+    document.getElementById('v-paid').innerText = c.totalPaid || 0;
+    document.getElementById('v-bal').innerText = (c.principal - (c.totalPaid || 0));
     renderHistory(c);
 }
 
-// --- HISTORY LOGIC (WITH RED HIGHLIGHTS) ---
 function renderHistory(c) {
-    const hBody = document.getElementById('v-history-body');
-    if(!c.history) { hBody.innerHTML = ''; return; }
-
-    hBody.innerHTML = Object.values(c.history).map(h => {
-        // Red highlight if time is past 18:00 (6:00 PM)
-        const isLate = h.time > "18:00" ? 'late-payment' : '';
-        const isNew = h.activity === 'New Loan' ? 'new-loan-marker' : '';
-        
-        return `<tr class="${isLate} ${isNew}">
-            <td>${h.date}</td>
-            <td>${h.activity}</td>
-            <td>${h.details}</td>
-            <td>${h.time}</td>
-            <td>${h.handledBy || 'Admin'}</td>
-        </tr>`;
+    const body = document.getElementById('v-history-body');
+    if(!c.history) { body.innerHTML = ''; return; }
+    body.innerHTML = Object.values(c.history).map(h => {
+        const late = h.time > "18:00" ? 'late-row' : '';
+        const newL = h.activity === 'New Loan' ? 'new-loan-row' : '';
+        return `<tr class="${late} ${newL}"><td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>${h.by}</td></tr>`;
     }).join('');
 }
 
-// --- RECORD PAYMENT (PROMPTS INCLUDED) ---
+// ACTIONS
 function recordPayment() {
-    if(!confirm("Are you sure you want to post this payment?")) return;
-    
+    if(!confirm("Post payment?")) return;
     const amt = parseFloat(document.getElementById('act-amt').value);
     const time = document.getElementById('act-time').value;
-    const details = document.getElementById('act-details').value;
-
     const c = clients.find(x => x.key === activeKey);
-    const newTotal = (c.totalPaid || 0) + amt;
-
-    const record = {
+    const newPaid = (c.totalPaid || 0) + amt;
+    
+    db.ref(`jml_master_records/${activeKey}`).update({ totalPaid: newPaid });
+    db.ref(`jml_master_records/${activeKey}/history`).push({
         date: new Date().toLocaleDateString(),
         activity: 'Payment',
-        details: `Paid KSH ${amt}. Next: ${details}`,
+        amt: amt,
         time: time,
-        handledBy: 'JML_User'
-    };
-
-    db.ref(`jml_master_records/${activeKey}`).update({
-        totalPaid: newTotal,
-        nextDue: details,
-        lastUpdated: new Date().toLocaleString()
+        by: 'Admin'
     });
-    db.ref(`jml_master_records/${activeKey}/history`).push(record);
-}
-
-// --- DEBTS ---
-function addManualDebt() {
-    const d = {
-        name: document.getElementById('d-name').value,
-        idNo: document.getElementById('d-id').value,
-        principal: document.getElementById('d-princ').value,
-        balance: document.getElementById('d-bal').value
-    };
-    db.ref('jml_manual_debts').push(d);
 }
