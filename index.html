@@ -38,7 +38,7 @@
 
         <section id="list-sec" class="panel active">
             <h2 class="sec-title">Clients Details</h2>
-            <div class="table-scroll"><table id="mainTable">
+            <div class="table-scroll"><table>
                 <thead><tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr></thead>
                 <tbody id="clientsTableBody"></tbody>
             </table></div>
@@ -66,45 +66,51 @@
             <h2>Financial Portfolio</h2>
             <div class="stats-grid">
                 <div class="card"><h4>Grand Total Out</h4><p id="f-total-out" class="val">0</p></div>
-                <div class="card"><h4>Paid Today</h4><p id="f-paid-today" class="val text-green">0</p></div>
+                <div class="card"><h4>Grand Total Paid Today</h4><p id="f-paid-today" class="val text-green">0</p></div>
                 <div class="card">
-                    <h4>Monthly Total</h4>
-                    <select id="f-month-sel" onchange="calcFinance()"></select>
+                    <h4>Grand Total Paid Monthly</h4>
+                    <select id="f-month-sel" onchange="updateFinancials()">
+                        <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+                        <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+                        <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+                        <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+                    </select>
                     <p id="f-paid-monthly" class="val">0</p>
                 </div>
                 <div class="card">
-                    <h4>Yearly Total</h4>
-                    <select id="f-year-sel" onchange="calcFinance()"></select>
+                    <h4>Grand Total Year</h4>
+                    <select id="f-year-sel" onchange="updateFinancials()">
+                        <option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option>
+                    </select>
                     <p id="f-paid-yearly" class="val">0</p>
                 </div>
             </div>
             <div class="stats-grid mt-20">
-                <div class="card"><h4>Profit</h4><p id="f-profit" class="val text-green">0</p></div>
-                <div class="card"><h4>Losses</h4><p id="f-loss" class="val text-red">0</p></div>
-                <div class="card"><h4>Total in Account</h4><input type="number" id="f-manual-acc" placeholder="KSH" onchange="saveAccTotal()"><p id="f-acc-display" class="val">--</p></div>
+                <div class="card"><h4>Profit in Month</h4><p id="f-profit" class="val text-green">0</p></div>
+                <div class="card"><h4>Loses in Month</h4><p id="f-loss" class="val text-red">0</p></div>
+                <div class="card"><h4>Grand Total in Account</h4><input type="number" id="f-manual-acc" placeholder="Enter Total" onchange="saveAccountTotal()"><p id="f-acc-display" class="val">--</p></div>
             </div>
         </section>
 
         <section id="loan-sec" class="panel">
-            <h2>Loans Given (By Month/Week)</h2>
-            <div class="box">
-                <select id="loan-month-sel" onchange="renderLoans()">
-                    <option value="">Select Month</option>
-                    <option value="0">January</option><option value="3">April</option>
+            <h2>Loans Given</h2>
+            <div class="box filter-row">
+                <select id="loan-month-sel" onchange="renderLoanWeek()">
+                    <option value="0">January</option><option value="3">April</option><option value="10">November</option>
                 </select>
-                <select id="loan-week-sel" onchange="renderLoans()">
+                <select id="loan-week-sel" onchange="renderLoanWeek()">
                     <option value="1">Week 1</option><option value="2">Week 2</option>
                     <option value="3">Week 3</option><option value="4">Week 4</option>
                 </select>
             </div>
             <div class="table-scroll"><table>
-                <thead><tr><th>Full Name</th><th>ID</th><th>Phone</th><th>Amount</th><th>Issued Date</th></tr></thead>
+                <thead><tr><th>Full Name</th><th>ID</th><th>Phone</th><th>Loan Amount</th><th>Date Issued</th></tr></thead>
                 <tbody id="loan-body"></tbody>
             </table></div>
         </section>
 
         <section id="settled-sec" class="panel">
-            <h2>Settled Loans History</h2>
+            <h2>Settled Loans</h2>
             <div class="box"><select id="settled-month-sel" onchange="renderSettled()"></select></div>
             <div class="table-scroll"><table>
                 <thead><tr><th>Name</th><th>ID Number</th><th>Total Paid</th><th>Cleared Date</th></tr></thead>
@@ -116,10 +122,10 @@
             <h2>Manual Debt Ledger</h2>
             <div class="box action-grid">
                 <input type="text" id="d-name" placeholder="Name">
-                <input type="text" id="d-id" placeholder="ID">
+                <input type="text" id="d-id" placeholder="ID Number">
                 <input type="number" id="d-princ" placeholder="Principal">
                 <input type="number" id="d-bal" placeholder="Balance">
-                <button class="btn btn-red" onclick="addDebt()">POST DEBT</button>
+                <button class="btn btn-red" onclick="addDebtManually()">POST DEBT</button>
             </div>
             <div class="table-scroll mt-20"><table>
                 <thead><tr><th>Name</th><th>ID Number</th><th>Principal</th><th>Balance</th><th>Action</th></tr></thead>
@@ -129,16 +135,20 @@
 
         <section id="report-sec" class="panel">
             <h2>Employee Activity Reports</h2>
-            <div class="box"><select id="emp-sel" onchange="renderEmpReport()"></select></div>
-            <div id="report-content"></div>
+            <div class="box">
+                <select id="emp-sel" onchange="renderEmployeeReport()">
+                    <option value="">Select Employee</option>
+                </select>
+            </div>
+            <div id="report-results"></div>
         </section>
 
         <section id="view-sec" class="panel">
             <div class="view-header">
-                <div><h1 id="v-title-name">--</h1><p>ID: <span id="v-title-id">--</span> | Updated: <span id="v-last-up">--</span></p></div>
-                <div class="box">
+                <div><h1 id="v-title-name">--</h1><p>ID: <span id="v-title-id">--</span> | Last Updated: <span id="v-last-up">--</span></p></div>
+                <div class="v-status-box">
                     <label>Status:</label> <select id="v-status-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
-                    <label>Officer:</label> <input type="text" id="v-officer">
+                    <label>Loan Officer:</label> <input type="text" id="v-officer" placeholder="Officer Name">
                 </div>
             </div>
 
@@ -153,38 +163,36 @@
             <div class="box"><h3>CURRENT LOANS</h3>
                 <div class="stats-grid">
                     <div class="l-card">Principal<div class="val" id="v-princ">0</div></div>
-                    <div class="l-card">Paid<div class="val text-green" id="v-paid">0</div></div>
+                    <div class="l-card">Total Paid<div class="val text-green" id="v-paid">0</div></div>
                     <div class="l-card">Balance<div class="val text-red" id="v-bal">0</div></div>
                     <div class="l-card">Next Payment<div class="val text-blue" id="v-next">--</div></div>
                 </div>
             </div>
 
-            <div class="box"><h3>NOTES</h3><textarea id="v-notes"></textarea><button class="btn btn-main btn-sm" onclick="saveNote()">Save Note</button></div>
-
             <div class="box"><h3>PAYMENT HISTORY</h3>
                 <div class="table-scroll"><table>
-                    <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>By</th></tr></thead>
+                    <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>Handled By</th></tr></thead>
                     <tbody id="v-history-body"></tbody>
                 </table></div>
             </div>
 
             <div class="box"><h3>ARCHIVED LOANS</h3>
                 <div class="table-scroll"><table>
-                    <thead><tr><th>Amount</th><th>Cleared Date</th></tr></thead>
+                    <thead><tr><th>Loan Amount</th><th>Date Cleared</th></tr></thead>
                     <tbody id="v-archive-body"></tbody>
                 </table></div>
             </div>
 
             <div class="box action-grid">
-                <input type="number" id="act-amt" placeholder="Amt">
+                <input type="number" id="act-amt" placeholder="Amount">
                 <input type="time" id="act-time">
-                <input type="text" id="act-details" placeholder="Next Date">
+                <input type="text" id="act-details" placeholder="Notes/Next Payment">
                 <div class="btn-group">
-                    <button class="btn btn-p" onclick="recordPayment()">Post Payment</button>
-                    <button class="btn btn-s" onclick="settleLoan()">Settle Loan</button>
-                    <button class="btn btn-main" onclick="newLoan()">New Loan</button>
-                    <button class="btn btn-main" onclick="saveChanges()">Save Changes</button>
-                    <button class="btn btn-red" onclick="deleteProfile()">Delete</button>
+                    <button class="btn btn-p" onclick="recordPayment()">Record Payment</button>
+                    <button class="btn btn-s" onclick="settleLoanAction()">Settle Loan</button>
+                    <button class="btn btn-main" onclick="newLoanAction()">New Loan</button>
+                    <button class="btn btn-main" onclick="saveClientChanges()">Save Changes</button>
+                    <button class="btn btn-red" onclick="deleteClient()">Delete Profile</button>
                 </div>
             </div>
         </section>
