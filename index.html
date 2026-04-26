@@ -1,55 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JML Loan Manager</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <title>JML Loan Manager | Professional Financial Suite</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body data-theme="dark">
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
+<body>
+    <div id="auth-container" class="hidden">
+        <div class="login-card">
+            <h2>JML Loan Manager</h2>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="handleLogin()">Access Terminal</button>
+        </div>
+    </div>
+
+    <div id="app-container">
         <aside class="sidebar">
-            <div class="logo">JML LOANS</div>
-            <ul class="nav-menu" id="sidebar-nav">
-                <li data-module="clients" class="active">1. Clients</li>
-                <li data-module="enroll">2. Enroll Client</li>
-                <li data-module="financials">3. Financials</li>
-                <li data-module="loans">4. Loans</li>
-                <li data-module="settled">5. Settled Loans</li>
-                <li data-module="debts">6. Debts</li>
-                <li data-module="settings">7. Settings</li>
-                <li data-module="modes">8. Modes</li>
-                <li data-module="reports">9. Reports</li>
-            </ul>
-            <div class="user-section">
-                <div id="user-info"></div>
-                <button id="logout-btn" class="btn btn-danger">Logout</button>
+            <div class="logo">JML MANAGER</div>
+            <nav>
+                <ul id="main-nav">
+                    <li data-view="clients" class="active"><i class="fa fa-users"></i> Clients</li>
+                    <li data-view="enroll"><i class="fa fa-user-plus"></i> Enroll Client</li>
+                    <li data-view="financials"><i class="fa fa-chart-line"></i> Financials</li>
+                    <li data-view="loans"><i class="fa fa-file-invoice-dollar"></i> Loans</li>
+                    <li data-view="settled"><i class="fa fa-check-circle"></i> Settled Loans</li>
+                    <li data-view="debts"><i class="fa fa-exclamation-triangle"></i> Debts</li>
+                    <li data-view="settings"><i class="fa fa-cog"></i> Settings</li>
+                    <li data-view="modes"><i class="fa fa-adjust"></i> Modes</li>
+                    <li data-view="reports"><i class="fa fa-clipboard-list"></i> Reports</li>
+                </ul>
+            </nav>
+            <div class="user-info">
+                <span id="current-user-role">Employee</span>
+                <button onclick="logout()">Logout</button>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header>
-                <h1 id="page-title">Clients</h1>
-                <div class="search-container">
-                    <input type="text" id="global-search" placeholder="Search by name or ID Number..." onkeyup="filterCurrentTable()">
+        <main class="content">
+            <header class="top-bar">
+                <h1 id="view-title">Clients</h1>
+                <div id="search-container">
+                    <input type="text" id="global-search" placeholder="Search by Name or ID..." onkeyup="filterTable()">
                 </div>
-                <button onclick="toggleTheme()" class="theme-btn">☀️</button>
             </header>
-            <div id="content-area" class="content-area"></div>
+
+            <section id="view-port">
+                </section>
         </main>
     </div>
 
-    <!-- Global Modal -->
-    <div id="modal" class="modal">
-        <div class="modal-content" id="modal-content"></div>
+    <div id="modal-overlay" class="hidden">
+        <div class="modal-content">
+            <div id="modal-body"></div>
+            <div class="modal-actions">
+                <button id="modal-confirm" class="btn-confirm">Confirm</button>
+                <button onclick="closeModal()" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
