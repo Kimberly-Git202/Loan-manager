@@ -5,43 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JML Loan Manager</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 </head>
 <body data-theme="dark">
     <div class="app-container">
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">JML LOANS</div>
             <ul class="nav-menu" id="sidebar-nav">
-                <li data-module="clients" class="active">Clients</li>
-                <li data-module="enroll">Enroll Client</li>
-                <li data-module="financials">Financials</li>
-                <li data-module="loans">Loans</li>
-                <li data-module="settled">Settled Loans</li>
-                <li data-module="debts">Debts</li>
-                <li data-module="settings">Settings</li>
-                <li data-module="modes">Modes</li>
-                <li data-module="reports">Reports</li>
+                <li data-module="clients" class="active">1. Clients</li>
+                <li data-module="enroll">2. Enroll Client</li>
+                <li data-module="financials">3. Financials</li>
+                <li data-module="loans">4. Loans</li>
+                <li data-module="settled">5. Settled Loans</li>
+                <li data-module="debts">6. Debts</li>
+                <li data-module="settings">7. Settings</li>
+                <li data-module="modes">8. Modes</li>
+                <li data-module="reports">9. Reports</li>
             </ul>
             <div class="user-section">
-                <div id="user-info">Loading user...</div>
+                <div id="user-info"></div>
                 <button id="logout-btn" class="btn btn-danger">Logout</button>
             </div>
         </aside>
 
+        <!-- Main Content -->
         <main class="main-content">
             <header>
                 <h1 id="page-title">Clients</h1>
-                <div class="search-bar">
-                    <input type="text" id="global-search" placeholder="Search by name or ID" onkeyup="filterClients()">
+                <div class="search-container">
+                    <input type="text" id="global-search" placeholder="Search by name or ID Number..." onkeyup="filterCurrentTable()">
                 </div>
                 <button onclick="toggleTheme()" class="theme-btn">☀️</button>
             </header>
-            <div id="content-area"></div>
+            <div id="content-area" class="content-area"></div>
         </main>
     </div>
 
+    <!-- Global Modal -->
     <div id="modal" class="modal">
         <div class="modal-content" id="modal-content"></div>
     </div>
