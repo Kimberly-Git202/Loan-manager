@@ -1,150 +1,123 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { 
-    getFirestore, collection, addDoc, getDocs, updateDoc, doc, 
-    query, where, orderBy, onSnapshot, runTransaction, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-// --- CONFIGURATION ---
 const firebaseConfig = {
     apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
     authDomain: "jml-loans-560d8.firebaseapp.com",
     databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "jml-loans-560d8"
 };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+let clients = [];
+let activeKey = null;
 
-// --- APP STATE ---
-let currentUserData = null;
-
-// --- AUTHENTICATION GATE ---
-onAuthStateChanged(auth, async (user) => {
-    const authUI = document.getElementById('auth-container');
-    const appUI = document.getElementById('app-container');
-
-    if (user) {
-        authUI.classList.add('hidden');
-        appUI.classList.remove('hidden');
-        // Load initial view
-        navigateTo('clients');
-    } else {
-        authUI.classList.remove('hidden');
-        appUI.classList.add('hidden');
-    }
+// SYNC DATA
+db.ref('jml_master_records').on('value', snap => {
+    const data = snap.val();
+    clients = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
+    renderMainList();
 });
 
-// --- CORE UTILITIES ---
-const navigateTo = (view) => {
-    // UI logic to switch views and update Sidebar Active state
-    console.log(`Navigating to: ${view}`);
-    renderView(view);
-};
+// NAVIGATION
+function switchTab(id, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleTheme() { document.body.classList.toggle('dark-mode'); }
 
-// --- FINANCIAL CALCULATIONS (The 1.25x Rules) ---
-const Financials = {
-    calcDebt: (principal) => parseFloat(principal) * 1.25,
-    calcProfitFromPay: (payAmount) => parseFloat(payAmount) * 0.20, // 25% interest is 20% of total repaid
-};
+// ENROLL & IMMEDIATE REFRESH
+function enrollClient() {
+    const id = document.getElementById('e-id').value;
+    const princ = parseFloat(document.getElementById('e-princ').value);
+    if(!id) return alert("ID Required");
 
-// --- CLIENT ENROLLMENT ---
-window.handleEnrollment = async (event) => {
-    event.preventDefault();
-    const form = event.target;
-    const principal = parseFloat(form.principal.value);
-    const totalDue = Financials.calcDebt(principal);
-
-    const clientObj = {
-        fullName: form.fullName.value,
-        idNumber: form.idNumber.value,
-        phone: form.phone.value,
-        location: form.location.value,
-        occupation: form.occupation.value,
-        referral: form.referral.value,
-        principal: principal,
-        totalToPay: totalDue,
-        totalPaid: 0,
-        balance: totalDue,
-        status: 'Active',
-        createdAt: serverTimestamp()
+    const data = {
+        name: document.getElementById('e-name').value,
+        idNo: id, phone: document.getElementById('e-phone').value,
+        location: document.getElementById('e-loc').value,
+        occupation: document.getElementById('e-occ').value,
+        referral: document.getElementById('e-ref').value,
+        principal: princ, totalPaid: 0,
+        startDate: document.getElementById('e-start').value,
+        endDate: document.getElementById('e-end').value,
+        status: 'Active', officer: 'Unassigned',
+        lastUpdated: new Date().toLocaleString()
     };
 
-    try {
-        const docRef = await addDoc(collection(db, "clients"), clientObj);
-        
-        // Auto-log the New Loan in History
-        await addDoc(collection(db, "payments"), {
-            clientId: docRef.id,
-            activity: "NEW LOAN",
-            details: `Issued KSH ${principal}. Total due: ${totalDue}`,
-            date: new Date().toISOString().split('T')[0],
-            time: "08:00", // Default start time
-            handledBy: auth.currentUser.email,
-            isNewLoan: true
-        });
+    db.ref('jml_master_records/' + id).set(data).then(() => {
+        document.querySelectorAll('#add-sec input').forEach(i => i.value = '');
+        switchTab('list-sec', document.querySelector('.nav-item:first-child'));
+    });
+}
 
-        alert("Client Enrolled Successfully!");
-        navigateTo('clients');
-    } catch (e) {
-        console.error("Error adding client: ", e);
-    }
-};
+// RENDER MAIN TABLE
+function renderMainList() {
+    const tbody = document.getElementById('clientsTableBody');
+    tbody.innerHTML = clients.map((c, i) => `
+        <tr>
+            <td>${i+1}</td>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.idNo}</td>
+            <td>${c.phone}</td>
+            <td>KSH ${c.totalPaid || 0}</td>
+            <td class="text-red">KSH ${(c.principal - (c.totalPaid || 0))}</td>
+            <td><button class="btn btn-p btn-sm" onclick="openView('${c.key}')">VIEW</button></td>
+        </tr>
+    `).join('');
+}
 
-// --- PAYMENT PROCESSING (Smart Rules) ---
-window.processPayment = async (clientId, amount, timeInput) => {
-    if (!confirm(`Confirm payment of KSH ${amount}?`)) return;
+// OPEN VIEW DOSSIER
+function openView(key) {
+    activeKey = key;
+    const c = clients.find(x => x.key === key);
+    switchTab('view-sec');
+    
+    document.getElementById('v-title-name').innerText = c.name;
+    document.getElementById('v-title-id').innerText = c.idNo;
+    document.getElementById('v-info-name').innerText = c.name;
+    document.getElementById('v-info-phone').innerText = c.phone;
+    document.getElementById('v-info-loc').innerText = c.location;
+    document.getElementById('v-princ').innerText = c.principal;
+    document.getElementById('v-paid').innerText = c.totalPaid || 0;
+    document.getElementById('v-bal').innerText = (c.principal - (c.totalPaid || 0));
+    document.getElementById('v-last-up').innerText = c.lastUpdated;
 
-    const clientRef = doc(db, "clients", clientId);
-    const isLate = parseInt(timeInput.split(':')[0]) >= 18;
+    renderHistory(c);
+}
 
-    try {
-        await runTransaction(db, async (transaction) => {
-            const clientDoc = await transaction.get(clientRef);
-            const data = clientDoc.data();
-            const newBalance = data.balance - amount;
+// HISTORY LOGIC (Late payments & New Loans)
+function renderHistory(c) {
+    const body = document.getElementById('v-history-body');
+    if(!c.history) { body.innerHTML = ''; return; }
+    
+    body.innerHTML = Object.values(c.history).map(h => {
+        const lateClass = h.time > "18:00" ? 'late-payment' : '';
+        const newClass = h.activity === 'New Loan' ? 'new-loan-row' : '';
+        return `<tr class="${lateClass} ${newClass}"><td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td><td>${h.time}</td><td>Admin</td></tr>`;
+    }).join('');
+}
 
-            transaction.update(clientRef, {
-                balance: newBalance,
-                totalPaid: data.totalPaid + amount,
-                lastUpdated: serverTimestamp()
-            });
-
-            transaction.set(doc(collection(db, "payments")), {
-                clientId,
-                activity: "REPAYMENT",
-                details: `Paid KSH ${amount}`,
-                date: new Date().toISOString().split('T')[0],
-                time: timeInput,
-                handledBy: auth.currentUser.email,
-                isLate: isLate
-            });
-
-            // Settlement Automation
-            if (newBalance <= 0) {
-                transaction.set(doc(collection(db, "settled_loans")), {
-                    ...data,
-                    balance: 0,
-                    clearedDate: new Date().toISOString().split('T')[0]
-                });
-                transaction.update(clientRef, { status: 'Settled' });
-            }
-        });
-        alert("Payment Recorded.");
-        renderClientDossier(clientId);
-    } catch (e) {
-        alert("Transaction failed: " + e.message);
-    }
-};
-
-// --- DARK/LIGHT MODE ---
-window.toggleMode = () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    const target = current === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', target);
-    localStorage.setItem('theme', target);
-};
-
-// Initialize theme on load
-document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+// ACTIONS WITH PROMPTS
+function recordPayment() {
+    if(!confirm("Are you sure you want to record this payment?")) return;
+    const amt = parseFloat(document.getElementById('act-amt').value);
+    const time = document.getElementById('act-time').value;
+    const c = clients.find(x => x.key === activeKey);
+    
+    const newPaid = (c.totalPaid || 0) + amt;
+    db.ref(`jml_master_records/${activeKey}`).update({
+        totalPaid: newPaid,
+        lastUpdated: new Date().toLocaleString()
+    });
+    db.ref(`jml_master_records/${activeKey}/history`).push({
+        date: new Date().toLocaleDateString(),
+        activity: 'Payment',
+        amt: amt,
+        time: time,
+        details: document.getElementById('act-details').value
+    });
+}
