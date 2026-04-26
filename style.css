@@ -1,57 +1,44 @@
 :root {
-    --primary: #2c3e50;
-    --accent: #3498db;
-    --success: #27ae60;
-    --danger: #e74c3c;
-    --bg: #f4f7f6;
-    --sidebar: #1a252f;
-    --white: #ffffff;
+    --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --white: #ffffff;
+    --red: #ef4444; --green: #10b981; --sidebar-w: 260px;
 }
 
-[data-theme="dark"] {
-    --bg: #121212;
-    --white: #1e1e1e;
-    --primary: #ecf0f1;
-    --sidebar: #000000;
+.dark-mode {
+    --primary: #020617; --bg: #0f172a; --white: #1e293b;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+body { margin: 0; display: flex; background: var(--bg); font-family: 'Inter', sans-serif; transition: 0.3s; }
 
-body { background-color: var(--bg); display: flex; height: 100vh; overflow: hidden; }
+/* SIDEBAR */
+.sidebar { width: var(--sidebar-w); height: 100vh; background: var(--primary); color: white; position: fixed; z-index: 1001; }
+.nav-item { padding: 14px 24px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: #94a3b8; }
+.nav-item:hover, .nav-item.active { background: var(--accent); color: white; }
+.nav-item.sub { padding-left: 45px; font-size: 0.9rem; }
 
-#app-container { display: flex; width: 100%; }
+/* MOBILE FRIENDLY TABLE SCROLLING */
+.main-content { margin-left: var(--sidebar-w); flex-grow: 1; padding: 25px; min-width: 0; }
+.table-scroll { 
+    width: 100%; 
+    overflow-x: auto; /* Essential for mobile swiping */
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+table { width: 100%; border-collapse: collapse; min-width: 850px; } /* Forces scroll rather than squash */
+th, td { padding: 14px; border-bottom: 1px solid #f1f5f9; text-align: left; white-space: nowrap; }
 
-.sidebar { width: 260px; background: var(--sidebar); color: white; display: flex; flex-direction: column; }
-.sidebar .logo { padding: 30px; font-size: 1.5rem; font-weight: bold; border-bottom: 1px solid #34495e; }
-.sidebar nav ul { list-style: none; }
-.sidebar nav li { padding: 15px 30px; cursor: pointer; transition: 0.3s; }
-.sidebar nav li:hover, .sidebar nav li.active { background: var(--accent); }
+/* SPECIAL HIGHLIGHTS */
+.late-payment { background-color: #fee2e2 !important; color: #b91c1c; font-weight: bold; }
+.new-loan-row { border-left: 6px solid var(--accent); background-color: #eff6ff; }
 
-.content { flex-grow: 1; overflow-y: auto; padding: 20px; }
+/* LAYOUT BOXES */
+.box { background: var(--white); padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0; }
+.stats-grid, .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.l-card { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+.val { font-size: 1.4rem; font-weight: 800; display: block; margin-top: 5px; }
 
-/* Dashboard Cards */
-.dossier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-.info-box { background: var(--white); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-
-/* Tables */
-.table-container { background: var(--white); border-radius: 8px; overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 800px; }
-th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
-th { background: #f8f9fa; }
-
-/* Automation Highlights */
-.row-new-loan { background-color: #e8f8f5 !important; border-left: 5px solid var(--success); }
-.row-late { background-color: #fdedec !important; color: var(--danger); }
-.row-missed { background-color: #fadbd8 !important; border-left: 5px solid var(--danger); }
-
-/* Forms */
-.form-group { margin-bottom: 15px; }
-.form-group label { display: block; margin-bottom: 5px; }
-.form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-
-/* Mobile Adjustments */
-@media (max-width: 768px) {
-    .sidebar { width: 70px; }
-    .sidebar span, .sidebar .logo { display: none; }
-    .sidebar nav li { text-align: center; padding: 20px 0; }
+@media (max-width: 900px) {
+    .sidebar { left: -260px; transition: 0.3s; }
+    .sidebar.open { left: 0; }
+    .main-content { margin-left: 0; padding: 10px; }
 }
