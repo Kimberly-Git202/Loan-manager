@@ -1,4 +1,3 @@
-// FIREBASE CONFIG
 const firebaseConfig = {
     apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
     authDomain: "jml-loans-560d8.firebaseapp.com",
@@ -8,17 +7,135 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let clients = [];
-let activeKey = null;
+const app = {
+    clients: [],
+    activeKey: null,
 
-// SYNC DATA
-db.ref('jml_v2_records').on('value', snap => {
-    const data = snap.val();
-    clients = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
-    renderMainTable();
-});
+    init() {
+        db.ref('jml_v4_data').on('value', snap => {
+            const data = snap.val();
+            this.clients = data ? Object.keys(data).map(k => ({ key: k, ...data[k] })) : [];
+            this.renderList();
+            this.populateSelectors();
+        });
+    },
 
-// TAB SWITCHER
+    // 1. ENROLL WITH 1.25 RULE & REDIRECT
+    enroll() {
+        const id = document.getElementById('e-id').value;
+        const princ = parseFloat(document.getElementById('e-princ').value);
+        if(!id || isNaN(princ)) return alert("Missing ID/Principal");
+
+        const payload = {
+            name: document.getElementById('e-name').value,
+            phone: document.getElementById('e-phone').value,
+            idNo: id, location: document.getElementById('e-loc').value,
+            occupation: document.getElementById('e-occ').value,
+            referral: document.getElementById('e-ref').value,
+            principal: princ, balance: princ * 1.25, totalPaid: 0,
+            start: document.getElementById('e-start').value,
+            end: document.getElementById('e-end').value,
+            status: 'Active', updated: new Date().toLocaleString(),
+            history: [], notes: ""
+        };
+
+        db.ref('jml_v4_data/' + id).set(payload).then(() => {
+            alert("Enrolled!");
+            document.querySelectorAll('#enroll-sec input').forEach(i => i.value = '');
+            switchTab('list-sec', document.querySelector('.nav-item'));
+        });
+    },
+
+    // 2. SKIPPED DAY & 6PM LOGIC
+    renderDossierHistory(c) {
+        const body = document.getElementById('d-hist-body');
+        if(!c.history) { body.innerHTML = ""; return; }
+        
+        const historyArr = Object.values(c.history).sort((a,b) => new Date(b.date) - new Date(a.date));
+        let html = "";
+        
+        // Logical Gap Check: Compare dates to find skipped days
+        historyArr.forEach((h, i) => {
+            const isLate = h.time > "18:00" ? "late-time" : "";
+            const isNew = h.activity === "New Loan" ? "new-loan-row" : "";
+            
+            // Check for a date gap with the next entry
+            let skippedClass = "";
+            if(i < historyArr.length - 1) {
+                const d1 = new Date(h.date);
+                const d2 = new Date(historyArr[i+1].date);
+                const diff = (d1 - d2) / (1000 * 60 * 60 * 24);
+                if(diff > 1) skippedClass = "skipped-day"; 
+            }
+
+            html += `<tr class="${isLate} ${isNew} ${skippedClass}">
+                <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td>
+                <td>${h.time}</td><td>${h.by || 'Admin'}</td>
+            </tr>`;
+        });
+        body.innerHTML = html;
+    },
+
+    // 3. SATURDAY WEEKLY LOAN SORTING
+    renderLoansByWeek() {
+        const m = document.getElementById('loan-month').value;
+        const w = document.getElementById('loan-week').value;
+        const body = document.getElementById('loanSortBody');
+        
+        const filtered = this.clients.filter(c => {
+            const date = new Date(c.start);
+            const monthStr = ("0" + (date.getMonth() + 1)).slice(-2);
+            const day = date.getDate();
+            let week = 1;
+            if(day > 7) week = 2; if(day > 14) week = 3; if(day > 21) week = 4;
+            return monthStr === m && week == w;
+        });
+
+        body.innerHTML = filtered.map((c, i) => `
+            <tr><td>${i+1}</td><td>${c.name}</td><td>${c.idNo}</td><td>${c.phone}</td><td>${c.principal}</td><td>${c.start}</td></tr>
+        `).join('');
+    },
+
+    // 4. SECURE OPERATIONS
+    execute(type) {
+        if(!confirm("Are you sure?")) return;
+        const amt = parseFloat(document.getElementById('o-amt').value);
+        const time = document.getElementById('o-time').value;
+        const c = this.clients.find(x => x.key === this.activeKey);
+
+        if(type === 'pay') {
+            const newPaid = (c.totalPaid || 0) + amt;
+            const newBal = (c.balance || 0) - amt;
+            db.ref(`jml_v4_data/${this.activeKey}`).update({
+                totalPaid: newPaid, balance: newBal, updated: new Date().toLocaleString()
+            });
+            db.ref(`jml_v4_data/${this.activeKey}/history`).push({
+                date: new Date().toLocaleDateString(), activity: 'Payment',
+                details: document.getElementById('o-det').value, time: time, by: 'Admin'
+            });
+        }
+    },
+
+    renderList() {
+        const b = document.getElementById('clientList');
+        b.innerHTML = this.clients.map((c, i) => `
+            <tr><td>${i+1}</td><td><strong>${c.name}</strong></td><td>${c.idNo}</td><td>${c.phone}</td>
+            <td style="color:green">KSH ${c.totalPaid}</td><td style="color:red">KSH ${c.balance}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="app.openDossier('${c.key}')">VIEW</button></td></tr>
+        `).join('');
+    },
+
+    openDossier(key) {
+        this.activeKey = key;
+        const c = this.clients.find(x => x.key === key);
+        switchTab('dossier-sec');
+        document.getElementById('d-name').innerText = c.name;
+        document.getElementById('d-id').innerText = c.idNo;
+        document.getElementById('d-up').innerText = c.updated;
+        this.renderDossierHistory(c);
+    }
+};
+
 function switchTab(id, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
@@ -28,138 +145,4 @@ function switchTab(id, el) {
     }
 }
 
-function toggleSidebar() { 
-    const sb = document.getElementById('sidebar');
-    if(window.innerWidth > 900) sb.classList.toggle('minimized');
-    else sb.classList.toggle('open');
-}
-
-// ENROLLMENT LOGIC (1.25x Rule)
-function enrollClient() {
-    const id = document.getElementById('e-id').value;
-    const princ = parseFloat(document.getElementById('e-princ').value);
-
-    if(!id || isNaN(princ)) {
-        alert("Please enter ID and Principal Amount");
-        return;
-    }
-
-    const data = {
-        name: document.getElementById('e-name').value,
-        phone: document.getElementById('e-phone').value,
-        idNo: id,
-        location: document.getElementById('e-loc').value,
-        occupation: document.getElementById('e-occ').value,
-        referral: document.getElementById('e-ref').value,
-        principal: princ,
-        totalPaid: 0,
-        // The 1.25x Multiplier for Balance
-        balance: princ * 1.25,
-        startDate: document.getElementById('e-start').value,
-        endDate: document.getElementById('e-end').value,
-        status: 'Active',
-        lastUp: new Date().toLocaleString(),
-        history: [],
-        notes: ""
-    };
-
-    // Save to Firebase
-    db.ref('jml_v2_records/' + id).set(data).then(() => {
-        alert("Client Enrolled Successfully!");
-        // Reset Form
-        document.querySelectorAll('#add-sec input').forEach(i => i.value = '');
-        // REDIRECT TO LIST - FIX FOR YOUR SKETCH
-        switchTab('list-sec', document.querySelector('.nav-item:first-child'));
-    }).catch(err => alert("Error: " + err.message));
-}
-
-// RENDER CLIENTS TABLE
-function renderMainTable() {
-    const tbody = document.getElementById('clientsBody');
-    tbody.innerHTML = clients.map((c, i) => `
-        <tr>
-            <td>${i+1}</td>
-            <td><strong>${c.name}</strong></td>
-            <td>${c.idNo}</td>
-            <td>${c.phone}</td>
-            <td class="text-green">KSH ${c.totalPaid || 0}</td>
-            <td class="text-red">KSH ${c.balance || 0}</td>
-            <td><button class="btn btn-main btn-sm" onclick="openDossier('${c.key}')">VIEW</button></td>
-        </tr>
-    `).join('');
-}
-
-// DOSSIER VIEW
-function openDossier(key) {
-    activeKey = key;
-    const c = clients.find(x => x.key === key);
-    if(!c) return;
-
-    switchTab('view-sec');
-    document.getElementById('v-name-header').innerText = c.name;
-    document.getElementById('v-id-header').innerText = c.idNo;
-    document.getElementById('v-last-header').innerText = c.lastUp;
-    document.getElementById('v-p').innerText = c.principal;
-    document.getElementById('v-paid').innerText = c.totalPaid || 0;
-    document.getElementById('v-bal').innerText = c.balance || 0;
-    document.getElementById('v-notes').value = c.notes || "";
-
-    const infoBody = document.getElementById('v-info-body');
-    infoBody.innerHTML = `
-        <p><strong>Phone:</strong> ${c.phone}</p>
-        <p><strong>Location:</strong> ${c.location}</p>
-        <p><strong>Job:</strong> ${c.occupation}</p>
-        <p><strong>Ref:</strong> ${c.referral}</p>
-    `;
-
-    renderHistory(c.history);
-}
-
-function renderHistory(history) {
-    const hBody = document.getElementById('v-history-body');
-    if(!history) { hBody.innerHTML = ""; return; }
-    
-    hBody.innerHTML = Object.values(history).reverse().map(h => {
-        // Late highlight rule (18:00)
-        const isLate = h.time > "18:00" ? "late-row" : "";
-        const isNew = h.activity === "New Loan" ? "new-loan-row" : "";
-        return `<tr class="${isLate} ${isNew}">
-            <td>${h.date}</td>
-            <td>${h.activity}</td>
-            <td>${h.details}</td>
-            <td>${h.time}</td>
-            <td>Admin</td>
-        </tr>`;
-    }).join('');
-}
-
-// PAYMENT PROCESSING
-function recordPayment() {
-    const amt = parseFloat(document.getElementById('p-amt').value);
-    const time = document.getElementById('p-time').value;
-    if(!amt || !time) return alert("Amount and Time required!");
-
-    if(!confirm("Confirm payment of KSH " + amt + "?")) return;
-
-    const c = clients.find(x => x.key === activeKey);
-    const newPaid = (c.totalPaid || 0) + amt;
-    const newBal = (c.balance || 0) - amt;
-
-    const log = {
-        date: new Date().toLocaleDateString(),
-        activity: "Payment",
-        details: document.getElementById('p-next').value || "Manual Payment",
-        time: time
-    };
-
-    db.ref(`jml_v2_records/${activeKey}`).update({
-        totalPaid: newPaid,
-        balance: newBal,
-        lastUp: new Date().toLocaleString()
-    });
-
-    db.ref(`jml_v2_records/${activeKey}/history`).push(log);
-    
-    // Clear inputs
-    document.getElementById('p-amt').value = '';
-}
+app.init();
