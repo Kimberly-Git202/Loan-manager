@@ -2,47 +2,42 @@
     --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --white: #ffffff;
     --red: #ef4444; --green: #10b981; --sidebar-w: 260px;
 }
+.dark-mode { --primary: #020617; --bg: #0f172a; --white: #1e293b; --accent: #3b82f6; }
 
-body.dark-mode { --primary: #020617; --bg: #0f172a; --white: #1e293b; --accent: #3b82f6; }
+body { margin: 0; display: flex; background: var(--bg); font-family: 'Inter', sans-serif; color: #334155; }
 
-body { margin: 0; display: flex; background: var(--bg); font-family: 'Inter', sans-serif; transition: 0.3s; color: #334155; }
-
-/* SIDEBAR & MINIMIZING */
-.sidebar { width: var(--sidebar-w); height: 100vh; background: var(--primary); color: white; position: fixed; z-index: 1000; transition: 0.3s; }
+/* Sidebar Logic */
+.sidebar { width: var(--sidebar-w); height: 100vh; background: var(--primary); color: white; position: fixed; transition: 0.3s; z-index: 100; }
 .sidebar.collapsed { width: 70px; }
 .sidebar.collapsed span, .sidebar.collapsed h2 { display: none; }
 .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; color: #94a3b8; }
-.nav-item.active { background: var(--accent); color: white; }
-.nav-item.sub { padding-left: 50px; font-size: 0.85rem; }
+.nav-item.active, .nav-item:hover { background: var(--accent); color: white; }
 
-/* CONTENT AREA */
-.main-content { margin-left: var(--sidebar-w); flex-grow: 1; padding: 25px; transition: 0.3s; width: calc(100% - var(--sidebar-w)); }
-.sidebar.collapsed + .main-content { margin-left: 70px; width: calc(100% - 70px); }
-
-/* MODULES */
+.main-content { margin-left: var(--sidebar-w); flex-grow: 1; padding: 25px; width: calc(100% - var(--sidebar-w)); }
 .panel { display: none; }
-.panel.active { display: block; animation: fadeIn 0.4s ease; }
+.panel.active { display: block; animation: fadeIn 0.3s ease; }
 
-/* TABLES & MOBILE SCROLL */
-.table-container { width: 100%; overflow-x: auto; background: var(--white); border-radius: 12px; border: 1px solid #e2e8f0; }
-table { width: 100%; border-collapse: collapse; min-width: 900px; }
-th, td { padding: 16px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+/* Tables & Scroll */
+.scroll-container { width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid #e2e8f0; background: white; }
+table { width: 100%; border-collapse: collapse; min-width: 800px; }
+th, td { padding: 14px; text-align: left; border-bottom: 1px solid #f1f5f9; }
 
-/* DYNAMIC LOGIC HIGHLIGHTING */
-.late-row { background: #fee2e2 !important; color: #b91c1c; font-weight: bold; } /* 6 PM Rule */
-.skipped-day { border-left: 6px solid var(--red); background: #fff1f2 !important; } /* Missed Payment */
-.new-cycle-row { border-left: 6px solid var(--accent); background: #eff6ff !important; }
+/* Specialized Highlighting */
+.late-entry { color: var(--red); font-weight: bold; background: #fff1f2 !important; }
+.new-loan-row { border-left: 5px solid var(--green); background: #f0fdf4 !important; }
+.skipped-day { background: #fee2e2 !important; }
 
-/* BUTTONS */
-.btn { border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; transition: 0.2s; }
+/* Cards & Grid */
+.card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+.form-grid, .stats-grid, .mini-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+.m-card { border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; text-align: center; }
+
+/* Buttons */
+.btn { border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; }
 .btn-primary { background: var(--accent); }
 .btn-green { background: var(--green); }
 .btn-red { background: var(--red); }
 .btn-blue { background: #6366f1; }
 .btn-full { width: 100%; }
 
-.card { background: var(--white); padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; }
-.stats-grid, .loan-badge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-.l-badge { text-align: center; background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
-
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
