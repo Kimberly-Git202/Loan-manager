@@ -21,7 +21,7 @@
     </div>
 
     <div class="app-container">
-        <!-- Sidebar - Half screen on mobile, fixed on desktop -->
+        <!-- Sidebar -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span>JML LIMITED</span>
@@ -51,7 +51,7 @@
                 </div>
             </header>
 
-            <!-- All Sections -->
+            <!-- Clients -->
             <section id="clients-sec" class="content-section">
                 <div class="table-container">
                     <table class="styled-table">
@@ -71,6 +71,7 @@
                 </div>
             </section>
 
+            <!-- Enroll -->
             <section id="enroll-sec" class="content-section hidden">
                 <div class="stat-card" style="max-width:600px; margin:auto;">
                     <h2>Enroll New Client</h2>
@@ -91,32 +92,87 @@
                 </div>
             </section>
 
+            <!-- Financials -->
             <section id="financials-sec" class="content-section hidden">
                 <div class="finance-grid" id="finance-grid"></div>
             </section>
 
+            <!-- Loans Issued -->
             <section id="loans-sec" class="content-section hidden">
-                <div class="card"><h2>Loans</h2><p>Month & Week grouping (Saturday based)</p></div>
+                <div class="card">
+                    <h2>Loans Issued</h2>
+                    <select id="loan-month" onchange="filterLoans()">
+                        <option value="">Select Month</option>
+                    </select>
+                    <select id="loan-week" onchange="filterLoans()">
+                        <option value="ALL">All Weeks</option>
+                        <option value="1">Week 1</option>
+                        <option value="2">Week 2</option>
+                        <option value="3">Week 3</option>
+                        <option value="4">Week 4</option>
+                    </select>
+                    <div class="table-container" style="margin-top:15px;">
+                        <table class="styled-table">
+                            <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Phone</th><th>Loan Amount</th><th>Date Issued</th></tr></thead>
+                            <tbody id="loans-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
+            <!-- Settled Loans -->
             <section id="settled-sec" class="content-section hidden">
-                <div class="card"><h2>Settled Loans</h2><p>Month dropdown + Cleared Date</p></div>
+                <div class="card">
+                    <h2>Settled Loans</h2>
+                    <select id="settled-month" onchange="filterSettled()">
+                        <option value="">Select Month</option>
+                    </select>
+                    <div class="table-container" style="margin-top:15px;">
+                        <table class="styled-table">
+                            <thead><tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Total Paid</th><th>Cleared Date</th></tr></thead>
+                            <tbody id="settled-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
+            <!-- Debts -->
             <section id="debts-sec" class="content-section hidden">
-                <div class="card"><h2>Debts</h2><p>Auto-flagged + Manual + Clear button</p></div>
+                <div class="card">
+                    <h2>Debts</h2>
+                    <div class="table-container">
+                        <table class="styled-table">
+                            <thead><tr><th>Name</th><th>ID Number</th><th>Principal</th><th>Balance</th><th>Action</th></tr></thead>
+                            <tbody id="debts-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
+            <!-- Settings -->
             <section id="settings-sec" class="content-section hidden">
-                <div class="card"><h2>Settings</h2><p>Role management, password, employee access (Admin only)</p></div>
+                <div class="card"><h2>Settings (Admin Only)</h2><p>Role management and employee access control.</p></div>
             </section>
 
+            <!-- Modes -->
             <section id="modes-sec" class="content-section hidden">
                 <div class="card"><h2>Modes</h2><button onclick="toggleDarkMode()" class="btn-save">Toggle Light / Dark Mode</button></div>
             </section>
 
+            <!-- Reports -->
             <section id="reports-sec" class="content-section hidden">
-                <div class="card"><h2>Reports</h2><p>Employee performance, payments, loans issued, financial totals</p></div>
+                <div class="card">
+                    <h2>Reports</h2>
+                    <select id="report-employee" onchange="loadReports()">
+                        <option value="">All Employees</option>
+                    </select>
+                    <div class="table-container" style="margin-top:15px;">
+                        <table class="styled-table">
+                            <thead><tr><th>Employee</th><th>Clients Handled</th><th>Payments Recorded</th><th>Loans Issued</th><th>Settled</th></tr></thead>
+                            <tbody id="reports-body"></tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -157,4 +213,4 @@
 
     <script type="module" src="script.js"></script>
 </body>
-</html>
+                                              </html>
