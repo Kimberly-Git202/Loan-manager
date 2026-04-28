@@ -1,43 +1,40 @@
 :root {
-    --primary: #0f172a; --accent: #2563eb; --bg: #f1f5f9; --text: #334155;
-    --white: #ffffff; --success: #10b981; --danger: #ef4444; --border: #e2e8f0;
+    --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --card: #ffffff;
+    --text: #1e293b; --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
 }
 
-body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
-.app-shell { display: flex; height: 100vh; }
+body.dark-mode {
+    --primary: #1e293b; --bg: #0f172a; --card: #1e293b; --text: #f1f5f9; --border: #334155;
+}
 
-/* 🧭 SIDEBAR */
-.sidebar { width: 280px; background: var(--primary); color: white; display: flex; flex-direction: column; transition: 0.3s; z-index: 1000; }
+body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); }
+.app-container { display: flex; height: 100vh; }
+
+/* Sidebar */
+.sidebar { width: 260px; background: var(--primary); color: white; transition: 0.3s; z-index: 1000; }
+.sidebar.collapsed { width: 75px; }
+.sidebar.collapsed span { display: none; }
 .nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; opacity: 0.7; }
-.nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); opacity: 1; border-left: 4px solid var(--accent); }
+.nav-item.active { background: var(--accent); opacity: 1; border-left: 4px solid #fff; }
 
-/* 🔍 DOSSIER SYSTEM UI */
-.dossier-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; }
-.dossier-modal.active { display: flex; }
-.dossier-content { background: var(--white); width: 100%; max-width: 1100px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; }
-.dossier-header { background: var(--primary); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; }
+/* Smart Rules Styling */
+.row-late { color: var(--danger); font-weight: 700; background: #fff1f2 !important; }
+.row-new { background: #f0fdf4 !important; border-left: 5px solid var(--success); }
+.row-missed { background: #fffbeb !important; border-left: 5px solid #f59e0b; }
 
-.dossier-body { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 25px; background: #f8fafc; }
-.metric-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-.m-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; font-size: 0.9rem; }
-.m-card b { font-size: 1.2rem; display: block; margin-top: 5px; }
+/* Dossier Modal */
+.dossier-card { width: 95%; max-width: 1100px; max-height: 90vh; overflow-y: auto; border-radius: 20px; padding: 30px; }
+.dossier-grid { display: grid; grid-template-columns: 350px 1fr; gap: 25px; margin-top: 25px; }
+.m-card { border: 1px solid var(--border); padding: 15px; border-radius: 12px; text-align: center; font-size: 1.1rem; }
+.m-card.success { color: var(--success); }
+.m-card.danger { color: var(--danger); }
 
-/* 📊 SMART RULES */
-.late-red { color: var(--danger); font-weight: bold; }
-.new-loan-row { background: #f0fdf4 !important; border-left: 5px solid var(--success); }
-.skipped-day { border-left: 5px solid var(--danger); }
+/* Buttons & Inputs */
+.btn-pay { background: var(--success); color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; }
+.btn-settle { background: var(--accent); color: white; padding: 12px 20px; border: none; border-radius: 8px; }
 
-/* TABLES */
-.jml-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
-.jml-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 0.85rem; color: #64748b; }
-.jml-table td { padding: 15px; border-top: 1px solid var(--border); }
-
-/* MOBILE RESPONSIVE */
-@media (max-width: 768px) {
-    .sidebar { position: fixed; left: -280px; height: 100%; }
-    .sidebar.active { left: 0; }
-    .dossier-body { grid-template-columns: 1fr; }
-    .metric-cards { grid-template-columns: 1fr 1fr; }
-}
-
-.hidden { display: none !important; }
+/* Responsive Table */
+.table-scroll { overflow-x: auto; margin-top: 15px; border: 1px solid var(--border); border-radius: 10px; }
+.styled-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.styled-table th { background: rgba(0,0,0,0.03); padding: 15px; text-align: left; }
+.styled-table td { padding: 15px; border-bottom: 1px solid var(--border); }
