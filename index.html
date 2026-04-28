@@ -3,191 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JML Loan Manager | Professional Edition</title>
+    <title>JML LOAN MANAGER | Enterprise</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="light-mode">
 
     <div id="login-overlay" class="modal">
-        <div class="modal-content" style="max-width: 380px; text-align: center;">
+        <div class="modal-content auth-card">
             <h2>JML LIMITED</h2>
             <p>Secure Staff Portal</p>
-            <input type="email" id="login-email" placeholder="Work Email" class="input-field">
-            <input type="password" id="login-password" placeholder="Password" class="input-field">
-            <button onclick="handleLogin()" class="btn-save">Access System</button>
+            <input type="email" id="login-email" placeholder="admin@jml.com">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="handleLogin()" class="btn-primary btn-full">Access System</button>
         </div>
     </div>
 
     <div class="app-container">
-        <nav class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span>JML LIMITED</span>
-                <i class="fas fa-bars" onclick="toggleSidebar()" style="cursor:pointer"></i>
+                <h3>JML LTD</h3>
+                <i class="fas fa-bars" onclick="toggleSidebar()"></i>
             </div>
-            <div class="nav-menu">
-                <div class="nav-item active" onclick="showSection('list-sec', this)"><i class="fas fa-users"></i> 1. Clients</div>
-                <div class="nav-item" onclick="showSection('enroll-sec', this)"><i class="fas fa-user-plus"></i> 2. Enroll Client</div>
-                <div class="nav-item" onclick="showSection('finance-sec', this)"><i class="fas fa-chart-line"></i> 3. Financials</div>
-                <div class="nav-item" onclick="showSection('loan-sec', this)"><i class="fas fa-hand-holding-dollar"></i> 4. Loans</div>
-                <div class="nav-item" onclick="showSection('settled-sec', this)"><i class="fas fa-check-double"></i> 5. Settled Loans</div>
-                <div class="nav-item" onclick="showSection('debt-sec', this)"><i class="fas fa-triangle-exclamation"></i> 6. Debts</div>
-                <div class="nav-item" onclick="showSection('settings-sec', this)"><i class="fas fa-gears"></i> 7. Settings</div>
-                <div class="nav-item" onclick="toggleDarkMode()"><i class="fas fa-moon"></i> 8. Modes</div>
-                <div class="nav-item" onclick="showSection('report-sec', this)"><i class="fas fa-file-invoice-dollar"></i> 9. Reports</div>
-                <div class="nav-item" onclick="handleLogout()" style="margin-top:auto;"><i class="fas fa-sign-out-alt"></i> Logout</div>
-            </div>
-        </nav>
+            <nav class="nav-menu">
+                <div class="nav-item active" onclick="showSection('list-sec', this)"><i class="fas fa-users"></i><span>1. Clients</span></div>
+                <div class="nav-item" onclick="showSection('enroll-sec', this)"><i class="fas fa-user-plus"></i><span>2. Enroll Client</span></div>
+                <div class="nav-item" onclick="showSection('finance-sec', this)"><i class="fas fa-chart-line"></i><span>3. Financials</span></div>
+                <div class="nav-item" onclick="showSection('loan-sec', this)"><i class="fas fa-hand-holding-dollar"></i><span>4. Loans</span></div>
+                <div class="nav-item" onclick="showSection('settled-sec', this)"><i class="fas fa-check-double"></i><span>5. Settled Loans</span></div>
+                <div class="nav-item" onclick="showSection('debt-sec', this)"><i class="fas fa-triangle-exclamation"></i><span>6. Debts</span></div>
+                <div class="nav-item" onclick="showSection('settings-sec', this)"><i class="fas fa-gears"></i><span>7. Settings</span></div>
+                <div class="nav-item" onclick="toggleDarkMode()"><i class="fas fa-moon"></i><span>8. Modes</span></div>
+                <div class="nav-item" onclick="showSection('report-sec', this)"><i class="fas fa-file-invoice-dollar"></i><span>9. Reports</span></div>
+                <div class="nav-item logout" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+            </nav>
+        </aside>
 
         <main class="main-content">
             <header class="top-bar">
-                <div class="search-container">
+                <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" oninput="app.searchClients()" placeholder="Search Name or ID...">
+                    <input type="text" id="globalSearch" placeholder="Search Name or ID..." oninput="app.searchClients()">
                 </div>
-                <div class="user-badge" id="role-display">EMPLOYEE PORTAL</div>
+                <div class="badge" id="role-badge">ADMIN PORTAL</div>
             </header>
 
             <section id="list-sec" class="content-section">
-                <div class="table-container">
+                <div class="card table-container">
                     <table class="styled-table">
                         <thead>
-                            <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Total Paid</th><th>Total Balance</th><th>Action</th></tr>
+                            <tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th><th>Paid</th><th>Balance</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
+            <div id="detailWindow" class="modal hidden">
+                <div class="modal-content dossier-card">
+                    <header class="dossier-header">
+                        <div>
+                            <h2 id="d-name">--</h2>
+                            <small>ID: <span id="d-id">--</span> | Last Updated: <span id="d-up">--</span></small>
+                        </div>
+                        <div class="d-controls">
+                            <select id="d-status"><option>Active</option><option>Inactive</option></select>
+                            <button class="btn-close" onclick="closeDetails()">&times;</button>
+                        </div>
+                    </header>
+
+                    <div class="dossier-grid">
+                        <div class="info-panel card">
+                            <h3>CLIENT INFO</h3>
+                            <div id="d-info-list"></div>
+                            <h3 class="mt-20">NOTES</h3>
+                            <textarea id="d-notes" rows="4"></textarea>
+                            <button class="btn-primary btn-sm mt-10" onclick="app.saveNotes()">Save Note</button>
+                        </div>
+                        <div class="metrics-panel">
+                            <div class="metric-card">Principal<br><b id="v-p">0</b></div>
+                            <div class="metric-card success">Total Paid<br><b id="v-tp">0</b></div>
+                            <div class="metric-card danger">Balance<br><b id="v-bal">0</b></div>
+                            <div class="metric-card">Next Pay<br><small id="v-next">--</small></div>
+                        </div>
+                    </div>
+
+                    <div class="history-table card mt-20">
+                        <h3>PAYMENT HISTORY</h3>
+                        <div class="scroll-x">
+                            <table class="styled-table">
+                                <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>By</th></tr></thead>
+                                <tbody id="historyBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="ops-panel card mt-20">
+                        <h3>OPERATIONS</h3>
+                        <div class="ops-grid">
+                            <input type="number" id="payAmt" placeholder="Amount (KSH)">
+                            <input type="time" id="payTime">
+                            <input type="text" id="payDet" placeholder="Next Date/Details">
+                        </div>
+                        <div class="ops-btns">
+                            <button class="btn-success" onclick="app.processAction('pay')">Record Payment</button>
+                            <button class="btn-blue" onclick="app.processAction('settle')">Settle Loan</button>
+                            <button class="btn-primary" onclick="app.processAction('new')">New Loan</button>
+                            <button class="btn-danger" onclick="app.deleteClient()">Delete Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <section id="enroll-sec" class="content-section hidden">
-                <div class="stat-card" style="max-width: 600px; margin: auto;">
-                    <h2>Client Registration</h2>
+                <div class="card enroll-card">
+                    <h2>Enroll New Client</h2>
                     <form id="clientForm" class="form-grid">
                         <input type="text" id="f-name" placeholder="Full Name" required>
+                        <input type="text" id="f-phone" placeholder="Phone">
                         <input type="text" id="f-id" placeholder="ID Number" required>
-                        <input type="text" id="f-phone" placeholder="Phone Number">
                         <input type="text" id="f-loc" placeholder="Location">
                         <input type="text" id="f-occ" placeholder="Occupation">
-                        <input type="text" id="f-ref" placeholder="Referral Name">
+                        <input type="text" id="f-ref" placeholder="Referral">
                         <input type="number" id="f-loan" placeholder="Principal (KSH)" required>
-                        <div class="date-input">
+                        <div class="date-group">
                             <label>Start Date</label>
                             <input type="date" id="f-start">
                         </div>
-                        <div class="date-input">
+                        <div class="date-group">
                             <label>End Date</label>
                             <input type="date" id="f-end">
                         </div>
-                        <button type="submit" class="btn-save" style="grid-column: span 2;">Enroll & Open Account</button>
+                        <button type="submit" class="btn-primary btn-full" style="grid-column: span 2;">SUBMIT REGISTRATION</button>
                     </form>
                 </div>
             </section>
-
+            
             <section id="finance-sec" class="content-section hidden">
-                <div class="finance-grid">
-                    <div class="stat-card"><h3>Grand Total Out</h3><h2 id="total-out">KSh 0</h2></div>
-                    <div class="stat-card"><h3>Total Paid Today</h3><h2 id="total-today">KSh 0</h2></div>
-                    <div class="stat-card">
-                        <h3>Monthly Profit</h3>
-                        <select id="profit-month-sel" onchange="app.updateFinancials()"></select>
-                        <h2 id="monthly-profit" style="color:var(--success)">KSh 0</h2>
-                    </div>
-                </div>
-                <div class="stat-card mt-20">
-                    <h3>Manual Account Balance</h3>
-                    <input type="number" id="manual-acc-bal" placeholder="Enter physical cash held..." onchange="app.saveAccountBal()">
-                </div>
-            </section>
-
-            <section id="loan-sec" class="content-section hidden">
-                <div class="stat-card">
-                    <h2>Weekly Loan Disbursements</h2>
-                    <div class="filter-row">
-                        <select id="loan-week-sel" onchange="app.renderWeeklyLoans()">
-                            <option value="1">Week 1 (1-7)</option>
-                            <option value="2">Week 2 (8-14)</option>
-                            <option value="3">Week 3 (15-21)</option>
-                            <option value="4">Week 4 (22-End)</option>
-                        </select>
-                    </div>
-                    <div class="table-container mt-20">
-                        <table class="styled-table">
-                            <thead><tr><th>Name</th><th>ID</th><th>Amount</th><th>Date (Sat-Group)</th></tr></thead>
-                            <tbody id="weeklyLoanBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <section id="debt-sec" class="content-section hidden">
-                <div class="stat-card">
-                    <h2>Manual Debt Ledger</h2>
-                    <div class="table-container">
-                        <table class="styled-table">
-                            <thead><tr><th>Name</th><th>Principal</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead>
-                            <tbody id="debtTableBody"></tbody>
-                        </table>
-                    </div>
+                <div class="stats-grid">
+                    <div class="card stat-item"><h3>Total Loaned Out</h3><h2 id="total-out">KSh 0</h2></div>
+                    <div class="card stat-item"><h3>Collected Today</h3><h2 id="total-today">KSh 0</h2></div>
+                    <div class="card stat-item"><h3>Monthly Profit (1.25 Rule)</h3><h2 id="total-profit" class="text-success">KSh 0</h2></div>
                 </div>
             </section>
         </main>
-    </div>
-
-    <div id="detailWindow" class="modal hidden">
-        <div class="modal-content">
-            <div class="dossier-header">
-                <div>
-                    <h2 id="d-name">--</h2>
-                    <small>ID: <span id="d-id-val">--</span> | Updated: <span id="d-updated">--</span></small>
-                </div>
-                <div class="header-ctrls">
-                    <select id="d-status-toggle"><option>Active</option><option>Inactive</option></select>
-                    <button class="close-btn" onclick="closeDetails()">&times;</button>
-                </div>
-            </div>
-
-            <div class="dossier-grid">
-                <div class="info-box">
-                    <h3>Client Information</h3>
-                    <p><b>Phone:</b> <span id="d-phone-val"></span></p>
-                    <p><b>Location:</b> <span id="d-loc-val"></span></p>
-                    <p><b>Occupation:</b> <span id="d-occ-val"></span></p>
-                    <p><b>Referral:</b> <span id="d-ref-val"></span></p>
-                    <textarea id="d-notes" placeholder="Notes & Reminders..."></textarea>
-                    <button class="btn-save btn-sm" onclick="app.saveNotes()">Save Note</button>
-                </div>
-                <div class="metrics-grid">
-                    <div class="metric-box"><small>Principal</small><p id="d-principal">0</p></div>
-                    <div class="metric-box"><small>Total (+25%)</small><p id="d-total">0</p></div>
-                    <div class="metric-box alert"><small>Balance</small><p id="d-balance">0</p></div>
-                    <div class="metric-box"><small>Next Payment</small><p id="d-next" style="font-size:0.8rem"></p></div>
-                </div>
-            </div>
-
-            <div class="history-section mt-20">
-                <h3>Payment History</h3>
-                <div class="table-scroll">
-                    <table class="styled-table">
-                        <thead><tr><th>Date</th><th>Activity</th><th>Details</th><th>Time</th><th>By</th></tr></thead>
-                        <tbody id="historyBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="ops-panel mt-20">
-                <div class="ops-inputs">
-                    <input type="number" id="payAmt" placeholder="KSh">
-                    <input type="time" id="payTime">
-                    <input type="text" id="payDet" placeholder="Details/Next Date">
-                </div>
-                <div class="ops-btns">
-                    <button class="btn-pay" onclick="app.processAction('pay')">Record Payment</button>
-                    <button class="btn-settle" onclick="app.processAction('settle')">Settle Loan</button>
-                    <button class="btn-new" onclick="app.processAction('new')">New Loan</button>
-                    <button class="btn-del" onclick="app.deleteClient()">Delete Profile</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script type="module" src="script.js"></script>
