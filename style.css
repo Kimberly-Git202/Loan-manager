@@ -1,40 +1,43 @@
 :root {
-    --primary: #0f172a; --accent: #2563eb; --bg: #f8fafc; --text: #1e293b;
-    --card: #ffffff; --border: #e2e8f0; --success: #10b981; --danger: #ef4444;
+    --primary: #0f172a; --accent: #2563eb; --bg: #f1f5f9; --text: #334155;
+    --white: #ffffff; --success: #10b981; --danger: #ef4444; --border: #e2e8f0;
 }
-.dark-mode { --primary: #1e293b; --bg: #0f172a; --text: #f1f5f9; --card: #1e293b; --border: #334155; }
 
-body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); color: var(--text); }
-.app-container { display: flex; height: 100vh; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+.app-shell { display: flex; height: 100vh; }
 
-/* Sidebar Logic */
-.sidebar { width: 260px; background: var(--primary); color: white; transition: 0.3s; display: flex; flex-direction: column; }
-.sidebar.minimized { width: 0; overflow: hidden; }
-.nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 12px; border-left: 4px solid transparent; opacity: 0.7; }
-.nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); border-left-color: var(--accent); opacity: 1; }
+/* 🧭 SIDEBAR */
+.sidebar { width: 280px; background: var(--primary); color: white; display: flex; flex-direction: column; transition: 0.3s; z-index: 1000; }
+.nav-item { padding: 15px 25px; cursor: pointer; display: flex; align-items: center; gap: 15px; opacity: 0.7; }
+.nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); opacity: 1; border-left: 4px solid var(--accent); }
 
-/* Dossier Special Formatting */
-.new-loan-row { background: #f0fdf4 !important; border-left: 4px solid var(--success); }
-.skipped-day-alert { background: #fee2e2 !important; border-left: 4px solid var(--danger); }
-.metric-box.alert { border-color: var(--danger); background: #fff1f2; }
+/* 🔍 DOSSIER SYSTEM UI */
+.dossier-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; }
+.dossier-modal.active { display: flex; }
+.dossier-content { background: var(--white); width: 100%; max-width: 1100px; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; }
+.dossier-header { background: var(--primary); color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center; }
 
-/* Layout Blocks */
-.main-content { flex: 1; overflow-y: auto; padding: 25px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.input-field { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; }
-.styled-table { width: 100%; border-collapse: collapse; background: var(--card); }
-.styled-table th, .styled-table td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; }
+.dossier-body { display: grid; grid-template-columns: 300px 1fr; gap: 20px; padding: 25px; background: #f8fafc; }
+.metric-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+.m-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid var(--border); text-align: center; font-size: 0.9rem; }
+.m-card b { font-size: 1.2rem; display: block; margin-top: 5px; }
 
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-.modal-content { background: var(--card); width: 90%; max-width: 900px; padding: 30px; border-radius: 20px; position: relative; max-height: 90vh; overflow-y: auto; }
+/* 📊 SMART RULES */
+.late-red { color: var(--danger); font-weight: bold; }
+.new-loan-row { background: #f0fdf4 !important; border-left: 5px solid var(--success); }
+.skipped-day { border-left: 5px solid var(--danger); }
 
-.ops-panel { background: var(--bg); padding: 20px; border-radius: 15px; }
-.ops-inputs { display: flex; gap: 10px; margin-bottom: 10px; }
-.ops-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.ops-btns button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; }
-.btn-pay { background: var(--success); }
-.btn-settle { background: #0ea5e9; }
-.btn-new { background: var(--accent); }
-.btn-del { background: var(--danger); }
+/* TABLES */
+.jml-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+.jml-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 0.85rem; color: #64748b; }
+.jml-table td { padding: 15px; border-top: 1px solid var(--border); }
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+    .sidebar { position: fixed; left: -280px; height: 100%; }
+    .sidebar.active { left: 0; }
+    .dossier-body { grid-template-columns: 1fr; }
+    .metric-cards { grid-template-columns: 1fr 1fr; }
+}
 
 .hidden { display: none !important; }
