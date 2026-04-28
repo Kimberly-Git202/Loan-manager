@@ -54,7 +54,7 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// Render Clients Table
+// Render Table
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     tbody.innerHTML = clients.map((c, i) => {
@@ -95,7 +95,6 @@ window.openDashboard = (i) => {
     document.getElementById('d-balance').innerText = `KSh ${balance.toLocaleString()}`;
     document.getElementById('d-paid').innerText = `KSh ${(c.totalPaid || 0).toLocaleString()}`;
 
-    // Payment History
     const historyBody = document.getElementById('historyBody');
     historyBody.innerHTML = (c.history || []).slice().reverse().map(h => {
         const isLate = h.time && h.time >= "18:00";
@@ -142,7 +141,7 @@ window.processPayment = () => {
     });
 
     saveData();
-    alert("Payment recorded successfully!");
+    alert("Payment recorded successfully with 1.25× logic.");
     openDashboard(currentIndex);
 };
 
@@ -234,9 +233,13 @@ function updateFinancials() {
     document.getElementById('top-today').innerText = `KSh ${todayCollection.toLocaleString()}`;
 }
 
-// Sidebar & Theme
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('minimized');
+// Sidebar Control
+window.toggleSidebar = () => {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+};
 
+// Theme
 window.toggleDarkMode = () => {
     document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
@@ -244,11 +247,17 @@ window.toggleDarkMode = () => {
 
 if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
+// Show Section
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    
+    // Close sidebar on mobile after selection
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+    }
 };
 
 // Start
