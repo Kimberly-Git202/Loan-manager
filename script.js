@@ -1,28 +1,151 @@
-// Database Integration
+// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
     authDomain: "jml-loans-560d8.firebaseapp.com",
-    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "jml-loans-560d8"
+    projectId: "jml-loans-560d8",
+    storageBucket: "jml-loans-560d8.appspot.com",
+    messagingSenderId: "367252876657",
+    appId: "1:367252876657:web:6e8f498c0a8767980e6082"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db = firebase.firestore();
 
 const app = {
     clients: [],
     activeKey: null,
 
     init() {
-        db.ref('jml_final_db').on('value', snap => {
-            const val = snap.val();
-            this.clients = val ? Object.keys(val).map(k => ({ key: k, ...val[k] })) : [];
-            this.renderMasterList();
+        db.collection('clients').orderBy('createdAt', 'desc').onSnapshot(snap => {
+            this.clients = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            this.renderList();
             this.calcFinance();
         });
     },
 
-    // 1. MODULE SWITCHING (SPA LOGIC)
-    switchTab(id, el) {
+    // 1.25x RULE APPLIED HERE
+    async enrollClient() {
+        const idNo = document.getElementById('en-id').value;
+        const princ = parseFloat(document.getElementById('en-princ').value);
+        if(!idNo || isNaN(princ)) return alert("Error: ID and Principal required.");
+
+        const clientData = {
+            name: document.getElementById('en-name').value,
+            idNo: idNo,
+            phone: document.getElementById('en-phone').value,
+            location: document.getElementById('en-loc').value,
+            occupation: document.getElementById('en-occ').value,
+            referral: document.getElementById('en-ref').value,
+            principal: princ,
+            totalPaid: 0,
+            balance: princ * 1.25, // THE PROFIT RULE
+            status: 'Active',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: new Date().toLocaleString(),
+            history: [],
+            notes: ""
+        };
+
+        await db.collection('clients').doc(idNo).set(clientData);
+        alert("Success: Client Enrolled.");
+        this.resetEnrollForm();
+        ui.showModule('list-sec', document.querySelector('.nav-item'));
+    },
+
+    // EXECUTE OPERATIONS WITH CONFIRMATION
+    async execute(type) {
+        if(!confirm(`Are you sure you want to proceed with ${type}?`)) return;
+        const amt = parseFloat(document.getElementById('o-amt').value);
+        const time = document.getElementById('o-time').value;
+        const client = this.clients.find(c => c.id === this.activeKey);
+
+        if(type === 'pay') {
+            const newBal = client.balance - amt;
+            const newPaid = client.totalPaid + amt;
+            const entry = {
+                date: new Date().toLocaleDateString(),
+                activity: 'Payment',
+                details: document.getElementById('o-det').value,
+                time: time,
+                by: 'Admin'
+            };
+            await db.collection('clients').doc(this.activeKey).update({
+                balance: newBal,
+                totalPaid: newPaid,
+                history: firebase.firestore.FieldValue.arrayUnion(entry),
+                updatedAt: new Date().toLocaleString()
+            });
+        }
+        
+        if(type === 'new') {
+            // Restart with 1.25 logic
+            await db.collection('clients').doc(this.activeKey).update({
+                principal: amt,
+                balance: amt * 1.25,
+                totalPaid: 0,
+                history: firebase.firestore.FieldValue.arrayUnion({
+                    date: new Date().toLocaleDateString(),
+                    activity: 'New Loan',
+                    details: 'Cycle Restarted',
+                    time: time || '08:00',
+                    by: 'Admin'
+                })
+            });
+        }
+    },
+
+    renderList(data = this.clients) {
+        const body = document.getElementById('mainTableBody');
+        body.innerHTML = data.map((c, i) => `
+            <tr>
+                <td>${i+1}</td>
+                <td><b>${c.name}</b></td>
+                <td>${c.idNo}</td>
+                <td>${c.phone}</td>
+                <td class="text-green">KSH ${c.totalPaid}</td>
+                <td class="text-red">KSH ${c.balance.toFixed(0)}</td>
+                <td><button class="btn btn-primary btn-sm" onclick="app.openDossier('${c.id}')">VIEW</button></td>
+            </tr>
+        `).join('');
+    },
+
+    openDossier(id) {
+        this.activeKey = id;
+        const c = this.clients.find(x => x.id === id);
+        ui.showModule('dossier-sec');
+        
+        document.getElementById('d-name').innerText = c.name;
+        document.getElementById('d-id').innerText = c.idNo;
+        document.getElementById('v-p').innerText = c.principal;
+        document.getElementById('v-tp').innerText = c.totalPaid;
+        document.getElementById('v-bal').innerText = c.balance.toFixed(0);
+        document.getElementById('d-info-box').innerHTML = `
+            <p><b>Phone:</b> ${c.phone}</p><p><b>Loc:</b> ${c.location}</p>
+            <p><b>Occ:</b> ${c.occupation}</p><p><b>Ref:</b> ${c.referral}</p>
+        `;
+
+        const hBody = document.getElementById('d-hist-body');
+        hBody.innerHTML = (c.history || []).reverse().map((h, index, arr) => {
+            const isLate = h.time > "18:00" ? 'late-entry' : '';
+            const isNew = h.activity === 'New Loan' ? 'new-loan-row' : '';
+            
+            // SKIPPED DAY DETECTION
+            let isSkipped = '';
+            if(index < arr.length - 1) {
+                const d1 = new Date(h.date);
+                const d2 = new Date(arr[index+1].date);
+                if((d1 - d2) / (1000*3600*24) > 1) isSkipped = 'skipped-day';
+            }
+
+            return `<tr class="${isLate} ${isNew} ${isSkipped}">
+                <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td>
+                <td>${h.time}</td><td>${h.by}</td>
+            </tr>`;
+        }).join('');
+    }
+};
+
+const ui = {
+    showModule(id, el) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         if(el) {
@@ -30,125 +153,8 @@ const app = {
             el.classList.add('active');
         }
     },
-
-    // 2. ENROLLMENT (1.25x Interest & Auto-Redirect)
-    enrollClient() {
-        const id = document.getElementById('en-id').value;
-        const princ = parseFloat(document.getElementById('en-princ').value);
-        if(!id || !princ) return alert("Please fill ID and Principal.");
-
-        const data = {
-            name: document.getElementById('en-name').value,
-            idNo: id, phone: document.getElementById('en-phone').value,
-            location: document.getElementById('en-loc').value,
-            occupation: document.getElementById('en-occ').value,
-            referral: document.getElementById('en-ref').value,
-            principal: princ, balance: princ * 1.25, totalPaid: 0,
-            start: document.getElementById('en-start').value,
-            end: document.getElementById('en-end').value,
-            status: 'Active', updated: new Date().toLocaleString(),
-            history: [], notes: "", officer: ""
-        };
-
-        db.ref('jml_final_db/' + id).set(data).then(() => {
-            alert("Enrollment Successful.");
-            document.querySelectorAll('#enroll-sec input').forEach(i => i.value = '');
-            this.switchTab('list-sec', document.querySelector('.nav-item'));
-        });
-    },
-
-    // 3. DOSSIER LOGIC (SKIPPED DAYS & 6PM HIGHLIGHTING)
-    openDossier(key) {
-        this.activeKey = key;
-        const c = this.clients.find(x => x.key === key);
-        this.switchTab('view-sec');
-        
-        document.getElementById('v-title-name').innerText = c.name;
-        document.getElementById('v-title-id').innerText = c.idNo;
-        document.getElementById('v-p').innerText = c.principal;
-        document.getElementById('v-tp').innerText = c.totalPaid;
-        document.getElementById('v-bal').innerText = c.balance;
-        document.getElementById('v-last-up').innerText = c.updated;
-        document.getElementById('v-notes').value = c.notes || "";
-        
-        document.getElementById('v-info-box').innerHTML = `
-            <p><strong>Location:</strong> ${c.location}</p>
-            <p><strong>Occupation:</strong> ${c.occupation}</p>
-            <p><strong>Referral:</strong> ${c.referral}</p>
-            <p><strong>Phone:</strong> ${c.phone}</p>
-        `;
-
-        this.renderHistory(c.history);
-    },
-
-    renderHistory(history) {
-        const body = document.getElementById('v-history-body');
-        if(!history) { body.innerHTML = ""; return; }
-        
-        const hArr = Object.values(history).sort((a,b) => new Date(b.date) - new Date(a.date));
-        body.innerHTML = hArr.map((h, i) => {
-            // 6PM Late Rule
-            const isLate = h.time > "18:00" ? 'late-row' : '';
-            // Skipped Day Rule
-            let isSkipped = '';
-            if(i < hArr.length - 1) {
-                const diff = (new Date(h.date) - new Date(hArr[i+1].date)) / (1000*3600*24);
-                if(diff > 1) isSkipped = 'skipped-day';
-            }
-            const isNew = h.activity === 'New Loan' ? 'new-cycle-row' : '';
-
-            return `<tr class="${isLate} ${isSkipped} ${isNew}">
-                <td>${h.date}</td><td>${h.activity}</td><td>${h.details}</td>
-                <td>${h.time}</td><td>Admin</td>
-            </tr>`;
-        }).join('');
-    },
-
-    // 4. SATURDAY LOAN WEEKLY SORTING
-    renderWeeklyLoans() {
-        const m = parseInt(document.getElementById('loan-month-sel').value);
-        const w = parseInt(document.getElementById('loan-week-sel').value);
-        const body = document.getElementById('loanSortBody');
-        
-        const filtered = this.clients.filter(c => {
-            const d = new Date(c.start);
-            if(d.getMonth() !== m) return false;
-            const day = d.getDate();
-            let week = 1;
-            if(day > 7) week = 2; if(day > 14) week = 3; if(day > 21) week = 4;
-            return week === w;
-        });
-
-        body.innerHTML = filtered.map((c, i) => `
-            <tr><td>${i+1}</td><td>${c.name}</td><td>${c.idNo}</td><td>${c.phone}</td><td>${c.principal}</td><td>${c.start}</td></tr>
-        `).join('');
-    },
-
-    // 5. SECURE OPERATIONS
-    op(type) {
-        if(!confirm("Are you sure?")) return;
-        const c = this.clients.find(x => x.key === this.activeKey);
-        const amt = parseFloat(document.getElementById('act-amt').value);
-        const time = document.getElementById('act-time').value;
-
-        if(type === 'pay') {
-            const newP = c.totalPaid + amt;
-            const newB = c.balance - amt;
-            db.ref(`jml_final_db/${this.activeKey}`).update({
-                totalPaid: newP, balance: newB, updated: new Date().toLocaleString()
-            });
-            db.ref(`jml_final_db/${this.activeKey}/history`).push({
-                date: new Date().toLocaleDateString(), activity: 'Payment',
-                details: document.getElementById('act-det').value, time: time
-            });
-        }
-        if(type === 'del') {
-            db.ref(`jml_final_db/${this.activeKey}`).remove().then(() => this.switchTab('list-sec'));
-        }
-    }
+    toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); },
+    toggleTheme() { document.body.classList.toggle('dark-mode'); }
 };
-
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-function toggleTheme() { document.body.classList.toggle('dark-mode'); }
 
 app.init();
