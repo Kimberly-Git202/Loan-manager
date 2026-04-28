@@ -2,62 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JML LOAN MANAGER | Enterprise Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JML LIMITED | Professional Loan Manager</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="light-mode">
+<body>
 
+    <!-- Login Overlay -->
     <div id="login-overlay" class="modal">
-        <div class="modal-content auth-card">
+        <div class="modal-content" style="max-width: 380px; text-align: center;">
             <h2>JML LIMITED</h2>
-            <p>Staff Authentication Required</p>
-            <input type="email" id="login-email" placeholder="Work Email">
-            <input type="password" id="login-password" placeholder="Password">
-            <button onclick="handleLogin()" class="btn-primary-action">Access System</button>
+            <p>Secure Staff Portal</p>
+            <input type="email" id="login-email" placeholder="Work Email" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px;">
+            <input type="password" id="login-password" placeholder="Password" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px;">
+            <button onclick="handleLogin()" class="btn-save">Access System</button>
         </div>
     </div>
 
     <div class="app-container">
-        <aside class="sidebar" id="sidebar">
+        <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span>JML LIMITED</span>
-                <i class="fas fa-bars menu-toggle" onclick="toggleSidebar()"></i>
+                <i class="fas fa-arrow-left" onclick="toggleSidebar()" style="cursor:pointer"></i>
             </div>
-            <nav class="nav-menu">
-                <div class="nav-item active" onclick="showSection('list-sec', this)"><i class="fas fa-users"></i><span>1. Clients</span></div>
-                <div class="nav-item" onclick="showSection('enroll-sec', this)"><i class="fas fa-user-plus"></i><span>2. Enroll Client</span></div>
-                <div class="nav-item" onclick="showSection('finance-sec', this)"><i class="fas fa-chart-line"></i><span>3. Financials</span></div>
-                <div class="nav-item" onclick="showSection('loan-sec', this)"><i class="fas fa-hand-holding-dollar"></i><span>4. Loans</span></div>
-                <div class="nav-item" onclick="showSection('settled-sec', this)"><i class="fas fa-check-double"></i><span>5. Settled Loans</span></div>
-                <div class="nav-item" onclick="showSection('debt-sec', this)"><i class="fas fa-triangle-exclamation"></i><span>6. Debts</span></div>
-                <div class="nav-item" onclick="showSection('settings-sec', this)"><i class="fas fa-gears"></i><span>7. Settings</span></div>
-                <div class="nav-item" onclick="toggleDarkMode()"><i class="fas fa-moon"></i><span>8. Modes</span></div>
-                <div class="nav-item" onclick="showSection('report-sec', this)"><i class="fas fa-file-invoice-dollar"></i><span>9. Reports</span></div>
-                <div class="nav-item logout-btn" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
-            </nav>
-        </aside>
+            <div class="nav-item active" onclick="showSection('clients-sec')"><i class="fas fa-users"></i> Clients</div>
+            <div class="nav-item" onclick="showSection('enroll-sec')"><i class="fas fa-user-plus"></i> Enroll Client</div>
+            <div class="nav-item" onclick="showSection('financials-sec')"><i class="fas fa-chart-line"></i> Financials</div>
+            <div class="nav-item" onclick="showSection('loans-sec')"><i class="fas fa-hand-holding-usd"></i> Loans</div>
+            <div class="nav-item" onclick="showSection('settled-sec')"><i class="fas fa-check-circle"></i> Settled Loans</div>
+            <div class="nav-item" onclick="showSection('debts-sec')"><i class="fas fa-exclamation-triangle"></i> Debts</div>
+            <div class="nav-item" onclick="showSection('settings-sec')"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" onclick="showSection('modes-sec')"><i class="fas fa-moon"></i> Modes</div>
+            <div class="nav-item" onclick="showSection('reports-sec')"><i class="fas fa-file-alt"></i> Reports</div>
+            <div class="nav-item" onclick="handleLogout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-sign-out-alt"></i> Logout</div>
+        </nav>
 
         <main class="main-content">
             <header class="top-bar">
-                <div class="search-wrapper">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" placeholder="Search by Name or ID..." oninput="app.searchClients()">
+                <i class="fas fa-bars menu-btn" onclick="toggleSidebar()"></i>
+                <div class="search-container" style="flex:1; margin:0 20px;">
+                    <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search clients by name or ID..." style="width:100%; padding:12px 40px 12px 15px; border-radius:8px;">
                 </div>
-                <div class="top-stats">
-                    <small>Today's Collection:</small>
-                    <span id="top-today-amt">KSh 0</span>
+                <div style="text-align:right;">
+                    <small>Today's Collection</small>
+                    <div id="top-today" style="font-weight:bold; color:var(--success);">KSh 0</div>
                 </div>
             </header>
 
-            <section id="list-sec" class="content-section">
-                <div class="card glass-table-container">
+            <!-- Clients Section -->
+            <section id="clients-sec" class="content-section">
+                <div class="table-container">
                     <table class="styled-table">
                         <thead>
                             <tr>
-                                <th>#</th><th>Full Name</th><th>ID Number</th><th>Phone</th>
-                                <th>Total Paid</th><th>Total Balance</th><th>Action</th>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>ID Number</th>
+                                <th>Phone</th>
+                                <th>Total Paid</th>
+                                <th>Balance</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
@@ -65,93 +70,76 @@
                 </div>
             </section>
 
+            <!-- Enroll Section -->
             <section id="enroll-sec" class="content-section hidden">
-                <div class="card form-card">
+                <div class="stat-card" style="max-width:600px; margin:auto;">
                     <h2>Enroll New Client</h2>
-                    <form id="enrollForm" class="grid-form">
-                        <div class="field"><label>Full Name</label><input type="text" id="f-name" required></div>
-                        <div class="field"><label>ID Number</label><input type="text" id="f-id" required></div>
-                        <div class="field"><label>Phone Number</label><input type="text" id="f-phone"></div>
-                        <div class="field"><label>Location</label><input type="text" id="f-loc"></div>
-                        <div class="field"><label>Occupation</label><input type="text" id="f-occ"></div>
-                        <div class="field"><label>Referral</label><input type="text" id="f-ref"></div>
-                        <div class="field full"><label>Principal Amount (KSh)</label><input type="number" id="f-loan" required></div>
-                        <div class="field"><label>Start Date</label><input type="date" id="f-start"></div>
-                        <div class="field"><label>End Date</label><input type="date" id="f-end"></div>
-                        <button type="submit" class="btn-submit">Submit Registration</button>
+                    <form id="clientForm">
+                        <input type="text" id="f-name" placeholder="Full Name" required>
+                        <input type="text" id="f-idNumber" placeholder="ID Number" required>
+                        <input type="tel" id="f-phone" placeholder="Phone Number" required>
+                        <input type="text" id="f-location" placeholder="Location" required>
+                        <input type="text" id="f-occupation" placeholder="Occupation" required>
+                        <input type="text" id="f-referral" placeholder="Referral" required>
+                        <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required>
+                        <div style="display:flex; gap:10px;">
+                            <input type="date" id="f-start" placeholder="Start Date">
+                            <input type="date" id="f-end" placeholder="End Date">
+                        </div>
+                        <button type="submit" class="btn-save">Enroll Client</button>
                     </form>
                 </div>
             </section>
 
-            <section id="finance-sec" class="content-section hidden">
-                <div class="stats-grid">
-                    <div class="stat-item"><h3>Total Loaned Out</h3><h2 id="fin-out">KSh 0</h2></div>
-                    <div class="stat-item"><h3>Total Paid Today</h3><h2 id="fin-today">KSh 0</h2></div>
-                    <div class="stat-item"><h3>Monthly Profit (1.25x)</h3><h2 id="fin-profit" class="text-success">KSh 0</h2></div>
-                    <div class="stat-item"><h3>Monthly Losses</h3><h2 id="fin-loss" class="text-danger">KSh 0</h2></div>
-                </div>
+            <!-- Financials -->
+            <section id="financials-sec" class="content-section hidden">
+                <div class="finance-grid" id="finance-grid"></div>
             </section>
 
-            <div id="dossierWindow" class="modal hidden">
-                <div class="modal-content dossier-card">
-                    <div class="dossier-header">
-                        <div class="header-left">
-                            <h2 id="d-name">--</h2>
-                            <p>ID: <span id="d-id">--</span> | Last Updated: <span id="d-up">--</span></p>
-                        </div>
-                        <div class="header-right">
-                            <select id="d-status" class="status-badge"><option value="active">Active</option><option value="inactive">Inactive</option></select>
-                            <button class="close-btn" onclick="app.closeDossier()">&times;</button>
-                        </div>
-                    </div>
-
-                    <div class="dossier-grid">
-                        <div class="dossier-info">
-                            <div class="info-box">
-                                <h3>Client Information</h3>
-                                <div id="info-content"></div>
-                            </div>
-                            <div class="notes-box">
-                                <h3>Reminders & Notes</h3>
-                                <textarea id="d-notes" rows="4" placeholder="Enter notes..."></textarea>
-                                <button onclick="app.saveNotes()" class="btn-sm">Save Notes</button>
-                            </div>
-                        </div>
-
-                        <div class="dossier-metrics">
-                            <div class="m-card">Principal<br><b id="v-p">0</b></div>
-                            <div class="m-card success">Total Paid<br><b id="v-tp">0</b></div>
-                            <div class="m-card danger">Balance<br><b id="v-bal">0</b></div>
-                            <div class="m-card">Next Pay<br><small id="v-next">--</small></div>
-                        </div>
-
-                        <div class="dossier-history full">
-                            <h3>Payment History (Audit Log)</h3>
-                            <div class="table-scroll">
-                                <table class="history-table">
-                                    <thead><tr><th>Date</th><th>Activity</th><th>Time</th><th>User</th></tr></thead>
-                                    <tbody id="historyBody"></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="dossier-actions full">
-                            <div class="pay-form">
-                                <input type="number" id="payAmt" placeholder="KSh">
-                                <input type="time" id="payTime">
-                                <button onclick="app.processAction('pay')" class="btn-pay">Record Payment</button>
-                            </div>
-                            <div class="alt-actions">
-                                <button onclick="app.processAction('settle')" class="btn-settle">Settle Loan</button>
-                                <button onclick="app.deleteClient()" class="btn-del">Delete Profile</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Loans, Settled, Debts, Settings, Modes, Reports -->
+            <section id="loans-sec" class="content-section hidden"><div class="card"><h2>Loans</h2><p>Week grouping coming...</p></div></section>
+            <section id="settled-sec" class="content-section hidden"><div class="card"><h2>Settled Loans</h2><p>Month filter</p></div></section>
+            <section id="debts-sec" class="content-section hidden"><div class="card"><h2>Debts</h2><p>Auto + Manual debts</p></div></section>
+            <section id="settings-sec" class="content-section hidden"><div class="card"><h2>Settings (Admin)</h2><p>Role management</p></div></section>
+            <section id="modes-sec" class="content-section hidden"><div class="card"><h2>Modes</h2><button onclick="toggleDarkMode()" class="btn-save">Toggle Light/Dark Mode</button></div></section>
+            <section id="reports-sec" class="content-section hidden"><div class="card"><h2>Reports</h2><p>Employee performance reports</p></div></section>
         </main>
+    </div>
+
+    <!-- Dossier Modal -->
+    <div id="detailWindow" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeDetails()">×</span>
+            <h2 id="d-name"></h2>
+            <div class="loan-metrics">
+                <div class="metric-box"><small>Principal</small><p id="d-principal"></p></div>
+                <div class="metric-box"><small>Total (1.25×)</small><p id="d-total"></p></div>
+                <div class="metric-box"><small>Balance</small><p id="d-balance"></p></div>
+                <div class="metric-box"><small>Paid</small><p id="d-paid"></p></div>
+            </div>
+
+            <h3>Payment History</h3>
+            <div class="history-container">
+                <table class="styled-table">
+                    <thead><tr><th>Date</th><th>Time</th><th>Activity</th><th>Handled By</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+
+            <div class="payment-box">
+                <h4>New Payment</h4>
+                <input type="number" id="payAmt" placeholder="Amount (KSh)">
+                <input type="time" id="payTime" placeholder="Time (HH:mm)">
+                <button onclick="processPayment()" class="btn-save">Record Payment</button>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="settleAndReset()" class="btn-save">Settle Loan</button>
+                <button onclick="deleteClient()" class="btn-delete">Delete</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>
 </body>
-</html>
+                </html>
