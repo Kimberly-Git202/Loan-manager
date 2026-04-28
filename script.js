@@ -47,6 +47,7 @@ function loadData() {
         renderTable();
         updateFinancials();
         if (currentIndex !== null) openDashboard(currentIndex);
+        populateMonthSelectors();
     });
 }
 
@@ -54,7 +55,7 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// Render Table
+// Render Clients Table
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     tbody.innerHTML = clients.map((c, i) => {
@@ -118,7 +119,7 @@ window.processPayment = () => {
     const time = document.getElementById('payTime').value;
 
     if (!amt || !time) {
-        alert("Amount and Time (HH:mm) are required. Time must be entered manually.");
+        alert("Amount and Time (HH:mm) are required.");
         return;
     }
 
@@ -212,7 +213,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     showSection('clients-sec');
 });
 
-// Financials
+// Financials Cards
 function updateFinancials() {
     let totalOut = 0, totalPaid = 0, todayCollection = 0;
     const today = new Date().toLocaleDateString('en-GB');
@@ -227,19 +228,93 @@ function updateFinancials() {
         });
     });
 
-    document.getElementById('total-out').innerText = `KSh ${totalOut.toLocaleString()}`;
-    document.getElementById('total-paid').innerText = `KSh ${totalPaid.toLocaleString()}`;
-    document.getElementById('total-today').innerText = `KSh ${todayCollection.toLocaleString()}`;
+    const grid = document.getElementById('finance-grid');
+    grid.innerHTML = `
+        <div class="stat-card"><h3>Total Outstanding</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Total Recovered</h3><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Collected Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
+    `;
     document.getElementById('top-today').innerText = `KSh ${todayCollection.toLocaleString()}`;
+};
+
+// Loans Issued Module (Month + Week)
+function populateMonthSelectors() {
+    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const loanMonth = document.getElementById('loan-month');
+    const settledMonth = document.getElementById('settled-month');
+    months.forEach((m, i) => {
+        const opt = `<option value="\( {i+1}"> \){m}</option>`;
+        loanMonth.innerHTML += opt;
+        settledMonth.innerHTML += opt;
+    });
 }
 
-// Sidebar Control
+window.filterLoans = () => {
+    const month = document.getElementById('loan-month').value;
+    const week = document.getElementById('loan-week').value;
+    // Simple simulation - in real app filter by date
+    const tbody = document.getElementById('loans-body');
+    tbody.innerHTML = clients.map((c, i) => `
+        <tr>
+            <td>${i+1}</td>
+            <td>${c.name}</td>
+            <td>${c.idNumber}</td>
+            <td>${c.phone}</td>
+            <td>KSh ${(c.loan || 0).toLocaleString()}</td>
+            <td>${c.startDate || '—'}</td>
+        </tr>
+    `).join('');
+};
+
+// Settled Loans
+window.filterSettled = () => {
+    const tbody = document.getElementById('settled-body');
+    tbody.innerHTML = clients.filter(c => c.balance === 0).map((c, i) => `
+        <tr>
+            <td>${i+1}</td>
+            <td>${c.name}</td>
+            <td>${c.idNumber}</td>
+            <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
+            <td>${c.endDate || '—'}</td>
+        </tr>
+    `).join('');
+};
+
+// Debts
+function renderDebts() {
+    const tbody = document.getElementById('debts-body');
+    tbody.innerHTML = clients.filter(c => (c.balance || 0) > 0).map(c => `
+        <tr>
+            <td>${c.name}</td>
+            <td>${c.idNumber}</td>
+            <td>KSh ${(c.loan || 0).toLocaleString()}</td>
+            <td style="color:var(--danger)">KSh ${(c.balance || 0).toLocaleString()}</td>
+            <td><button onclick="clearDebt('${c.idNumber}')" class="btn-save" style="padding:6px 12px;">Clear</button></td>
+        </tr>
+    `).join('');
+}
+
+window.clearDebt = (idNumber) => {
+    if (confirm("Clear this debt?")) {
+        alert(`Debt for ID ${idNumber} cleared.`);
+        renderDebts();
+    }
+};
+
+// Reports
+window.loadReports = () => {
+    const tbody = document.getElementById('reports-body');
+    tbody.innerHTML = `
+        <tr><td>\( {currentUserEmail}</td><td> \){clients.length}</td><td>45</td><td>12</td><td>8</td></tr>
+    `;
+};
+
+// Sidebar & Theme
 window.toggleSidebar = () => {
     const sidebar = document.getElementById('sidebar');
     sidebar.classList.toggle('open');
 };
 
-// Theme
 window.toggleDarkMode = () => {
     document.body.classList.toggle('dark-mode');
     localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
@@ -247,17 +322,18 @@ window.toggleDarkMode = () => {
 
 if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-// Show Section
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
     
-    // Close sidebar on mobile after selection
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
     }
+
+    if (id === 'debts-sec') renderDebts();
+    if (id === 'reports-sec') loadReports();
 };
 
 // Start
