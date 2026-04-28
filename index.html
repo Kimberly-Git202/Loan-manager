@@ -21,10 +21,11 @@
     </div>
 
     <div class="app-container">
+        <!-- Sidebar - Half screen on mobile, fixed on desktop -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <span>JML LIMITED</span>
-                <i class="fas fa-arrow-left" onclick="toggleSidebar()" style="cursor:pointer"></i>
+                <i class="fas fa-times" onclick="toggleSidebar()" style="cursor:pointer; font-size:1.4rem;"></i>
             </div>
             <div class="nav-item active" onclick="showSection('clients-sec')"><i class="fas fa-users"></i> Clients</div>
             <div class="nav-item" onclick="showSection('enroll-sec')"><i class="fas fa-user-plus"></i> Enroll Client</div>
@@ -50,7 +51,7 @@
                 </div>
             </header>
 
-            <!-- Clients Section -->
+            <!-- All Sections -->
             <section id="clients-sec" class="content-section">
                 <div class="table-container">
                     <table class="styled-table">
@@ -70,7 +71,6 @@
                 </div>
             </section>
 
-            <!-- Enroll Section -->
             <section id="enroll-sec" class="content-section hidden">
                 <div class="stat-card" style="max-width:600px; margin:auto;">
                     <h2>Enroll New Client</h2>
@@ -83,26 +83,41 @@
                         <input type="text" id="f-referral" placeholder="Referral" required>
                         <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required>
                         <div style="display:flex; gap:10px;">
-                            <input type="date" id="f-start" placeholder="Start Date">
-                            <input type="date" id="f-end" placeholder="End Date">
+                            <input type="date" id="f-start">
+                            <input type="date" id="f-end">
                         </div>
                         <button type="submit" class="btn-save">Enroll Client</button>
                     </form>
                 </div>
             </section>
 
-            <!-- Financials -->
             <section id="financials-sec" class="content-section hidden">
                 <div class="finance-grid" id="finance-grid"></div>
             </section>
 
-            <!-- Loans, Settled, Debts, Settings, Modes, Reports -->
-            <section id="loans-sec" class="content-section hidden"><div class="card"><h2>Loans</h2><p>Week grouping coming...</p></div></section>
-            <section id="settled-sec" class="content-section hidden"><div class="card"><h2>Settled Loans</h2><p>Month filter</p></div></section>
-            <section id="debts-sec" class="content-section hidden"><div class="card"><h2>Debts</h2><p>Auto + Manual debts</p></div></section>
-            <section id="settings-sec" class="content-section hidden"><div class="card"><h2>Settings (Admin)</h2><p>Role management</p></div></section>
-            <section id="modes-sec" class="content-section hidden"><div class="card"><h2>Modes</h2><button onclick="toggleDarkMode()" class="btn-save">Toggle Light/Dark Mode</button></div></section>
-            <section id="reports-sec" class="content-section hidden"><div class="card"><h2>Reports</h2><p>Employee performance reports</p></div></section>
+            <section id="loans-sec" class="content-section hidden">
+                <div class="card"><h2>Loans</h2><p>Month & Week grouping (Saturday based)</p></div>
+            </section>
+
+            <section id="settled-sec" class="content-section hidden">
+                <div class="card"><h2>Settled Loans</h2><p>Month dropdown + Cleared Date</p></div>
+            </section>
+
+            <section id="debts-sec" class="content-section hidden">
+                <div class="card"><h2>Debts</h2><p>Auto-flagged + Manual + Clear button</p></div>
+            </section>
+
+            <section id="settings-sec" class="content-section hidden">
+                <div class="card"><h2>Settings</h2><p>Role management, password, employee access (Admin only)</p></div>
+            </section>
+
+            <section id="modes-sec" class="content-section hidden">
+                <div class="card"><h2>Modes</h2><button onclick="toggleDarkMode()" class="btn-save">Toggle Light / Dark Mode</button></div>
+            </section>
+
+            <section id="reports-sec" class="content-section hidden">
+                <div class="card"><h2>Reports</h2><p>Employee performance, payments, loans issued, financial totals</p></div>
+            </section>
         </main>
     </div>
 
@@ -142,4 +157,4 @@
 
     <script type="module" src="script.js"></script>
 </body>
-                </html>
+</html>
