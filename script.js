@@ -20,7 +20,7 @@ let clients = [];
 let currentIndex = null;
 let currentUserEmail = "";
 
-// Auth - Login always shows first
+// Auth
 onAuthStateChanged(auth, (user) => {
     const login = document.getElementById('login-overlay');
     if (user) {
@@ -119,7 +119,7 @@ window.processPayment = () => {
     const time = document.getElementById('payTime').value;
 
     if (!amt || !time) {
-        alert("Amount and Time (HH:mm) are required. Time must be entered manually.");
+        alert("Amount and Time (HH:mm) are required.");
         return;
     }
 
@@ -180,7 +180,7 @@ window.closeDetails = () => {
     document.getElementById('detailWindow').classList.add('hidden');
 };
 
-// Enroll Client
+// Enroll Client - FIXED: Refresh table immediately
 document.getElementById('clientForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -206,14 +206,15 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
         }]
     };
 
-    clients.unshift(newClient);
+    clients.unshift(newClient);   // Add to top
     saveData();
-    alert("Client enrolled successfully!");
+    renderTable();                // Refresh table immediately
+    alert("Client enrolled successfully! Name should now appear at the top.");
     e.target.reset();
     showSection('clients-sec');
 });
 
-// Financials - Full Cards as per sketch
+// Financials Cards
 function updateFinancials() {
     let totalOut = 0, totalPaid = 0, todayCollection = 0;
     const today = new Date().toLocaleDateString('en-GB');
@@ -232,8 +233,8 @@ function updateFinancials() {
     grid.innerHTML = `
         <div class="stat-card"><h3>Grand Total Out</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
         <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
-        <div class="stat-card"><h3>Total Paid Monthly</h3><select onchange="alert('Monthly total for selected month would show here')"><option>May</option></select><h2>KSh 100,000</h2></div>
-        <div class="stat-card"><h3>Yearly Total</h3><select onchange="alert('Yearly total for selected year')"><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Total Paid Monthly</h3><select><option>May</option></select><h2>KSh 100,000</h2></div>
+        <div class="stat-card"><h3>Yearly Total</h3><select><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
         <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
         <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
         <div class="stat-card"><h3>Grand Total in Account</h3><input type="number" id="account-balance" placeholder="Enter Amount"><button onclick="saveAccountBalance()" class="btn-save" style="margin-top:8px;">Save</button></div>
@@ -328,7 +329,7 @@ window.addManualDebt = () => {
     }
 };
 
-// Reports - Employee based on email
+// Reports
 window.loadReports = () => {
     const tbody = document.getElementById('reports-body');
     tbody.innerHTML = `
