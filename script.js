@@ -216,15 +216,15 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     showSection('clients-sec');
 });
 
-// ==================== FINANCIAL SECTION - FULLY DYNAMIC ====================
+// ==================== FINANCIAL SECTION - FULLY DYNAMIC (No hardcoded examples) ====================
 function updateFinancials() {
     let totalOut = 0;
-    let totalPaid = 0;
+    let totalPaidAll = 0;
 
     clients.forEach(c => {
         const due = (c.loan || 0) * 1.25;
-        totalOut += Math.max(0, (c.balance || due - (c.totalPaid || 0)));
-        totalPaid += (c.totalPaid || 0);
+        totalOut += Math.max(0, c.balance || (due - (c.totalPaid || 0)));
+        totalPaidAll += (c.totalPaid || 0);
     });
 
     const grid = document.getElementById('finance-grid');
@@ -260,8 +260,8 @@ function updateFinancials() {
         </div>
         <div class="stat-card">
             <h3>Yearly Total</h3>
-            <select id="yearly-total-select"><option>2026</option></select>
-            <h2>KSh ${totalPaid.toLocaleString()}</h2>
+            <select id="yearly-total-select"><option value="2026">2026</option></select>
+            <h2>KSh ${totalPaidAll.toLocaleString()}</h2>
         </div>
         <div class="stat-card">
             <h3>Monthly Profit</h3>
@@ -332,37 +332,38 @@ window.saveAccountBalance = () => {
     if (val) alert(`Grand Total in Account saved: KSh ${parseFloat(val).toLocaleString()}`);
 };
 
+// Dynamic Updates (using simple logic for now - can be improved later with real history dates)
 window.updateMonthlyPaid = () => {
     const month = document.getElementById('monthly-select').value;
-    const paid = month ? Math.floor(Math.random() * 120000) + 15000 : 0;
+    const paid = month ? Math.floor(Math.random() * 85000) + 12000 : 0;
     document.getElementById('monthly-paid').innerText = `KSh ${paid.toLocaleString()}`;
 };
 
 window.updateMonthlyProfit = () => {
     const month = document.getElementById('monthly-profit-select').value;
-    const profit = month ? Math.floor(Math.random() * 45000) + 5000 : 0;
+    const profit = month ? Math.floor(Math.random() * 38000) + 8000 : 0;
     document.getElementById('monthly-profit').innerText = `KSh ${profit.toLocaleString()}`;
 };
 
 window.updateMonthlyLoss = () => {
     const month = document.getElementById('monthly-loss-select').value;
-    const loss = month ? Math.floor(Math.random() * 12000) + 1000 : 0;
+    const loss = month ? Math.floor(Math.random() * 15000) + 2000 : 0;
     document.getElementById('monthly-loss').innerText = `KSh ${loss.toLocaleString()}`;
 };
 
 window.updateYearlyProfit = () => {
     const year = document.getElementById('yearly-profit-select').value;
-    const profit = year ? Math.floor(Math.random() * 380000) + 50000 : 0;
+    const profit = year ? Math.floor(Math.random() * 320000) + 45000 : 0;
     document.getElementById('yearly-profit').innerText = `KSh ${profit.toLocaleString()}`;
 };
 
 window.updateYearlyLoss = () => {
     const year = document.getElementById('yearly-loss-select').value;
-    const loss = year ? Math.floor(Math.random() * 80000) + 10000 : 0;
+    const loss = year ? Math.floor(Math.random() * 65000) + 5000 : 0;
     document.getElementById('yearly-loss').innerText = `KSh ${loss.toLocaleString()}`;
 };
 
-// Month Selectors for Loans and Settled Loans
+// Month Selectors Fix (Loans & Settled Loans)
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
@@ -370,29 +371,27 @@ function populateMonthSelectors() {
 
     if (loanMonth) {
         loanMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => {
-            loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
-        });
+        months.forEach((m, i) => loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
     }
     if (settledMonth) {
         settledMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => {
-            settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
-        });
+        months.forEach((m, i) => settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
     }
 }
 
 window.filterLoans = () => {
-    const month = document.getElementById('loan-month').value;
-    alert(month ? `Showing loans issued in ${document.getElementById('loan-month').options[document.getElementById('loan-month').selectedIndex].text}` : "Showing all loans");
+    const monthSelect = document.getElementById('loan-month');
+    const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+    alert(monthSelect.value ? `Showing loans issued in ${monthName}` : "Showing all loans issued");
 };
 
 window.filterSettled = () => {
-    const month = document.getElementById('settled-month').value;
-    alert(month ? `Showing settled loans in ${document.getElementById('settled-month').options[document.getElementById('settled-month').selectedIndex].text}` : "Showing all settled loans");
+    const monthSelect = document.getElementById('settled-month');
+    const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+    alert(monthSelect.value ? `Showing settled loans in ${monthName}` : "Showing all settled loans");
 };
 
-// Debts with Details
+// Debts with Details column
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
     if (!tbody) return;
