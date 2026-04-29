@@ -54,7 +54,7 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// FIXED Render Table - Matches your HTML header
+// FIXED Render Table
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     if (!tbody) return;
@@ -119,7 +119,69 @@ window.openDashboard = (i) => {
     document.getElementById('detailWindow').classList.remove('hidden');
 };
 
-// Enroll Client - FIXED
+// Record Payment
+window.processPayment = () => {
+    const amt = parseFloat(document.getElementById('payAmt').value);
+    const time = document.getElementById('payTime').value;
+    if (!amt || !time) return alert("Amount and Time (HH:mm) are required.");
+
+    if (!confirm(`Record KSh ${amt} at ${time}?`)) return;
+
+    const client = clients[currentIndex];
+    client.totalPaid = (client.totalPaid || 0) + amt;
+    client.balance = (client.loan * 1.25) - client.totalPaid;
+
+    const today = new Date().toLocaleDateString('en-GB');
+
+    client.history = client.history || [];
+    client.history.push({
+        date: today,
+        time: time,
+        act: "Payment",
+        det: `Payment of KSh ${amt}`,
+        by: currentUserEmail.split('@')[0]
+    });
+
+    saveData();
+    alert("Payment recorded successfully.");
+    openDashboard(currentIndex);
+};
+
+// Settle Loan
+window.settleAndReset = () => {
+    if (!confirm("Settle this loan completely?")) return;
+
+    const client = clients[currentIndex];
+    const today = new Date().toLocaleDateString('en-GB');
+
+    client.history.push({
+        date: today,
+        time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
+        act: "Settlement",
+        det: "Loan Fully Settled",
+        by: "System"
+    });
+
+    client.balance = 0;
+    saveData();
+    alert("Loan settled successfully.");
+    openDashboard(currentIndex);
+};
+
+window.deleteClient = () => {
+    if (confirm("Delete this client permanently?")) {
+        clients.splice(currentIndex, 1);
+        saveData();
+        closeDetails();
+    }
+};
+
+window.closeDetails = () => {
+    currentIndex = null;
+    document.getElementById('detailWindow').classList.add('hidden');
+};
+
+// Enroll Client
 document.getElementById('clientForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -148,7 +210,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
 
     clients.unshift(newClient);
     saveData();
-    renderTable();                // Immediate refresh
+    renderTable();
     alert("Client enrolled successfully!");
     e.target.reset();
     showSection('clients-sec');
@@ -230,7 +292,7 @@ function populateMonthSelectors() {
 window.filterLoans = () => alert("Loans filtered");
 window.filterSettled = () => alert("Settled loans filtered");
 
-// Debts
+// Debts - Added Details column
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
     if (!tbody) return;
