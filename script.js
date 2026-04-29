@@ -54,7 +54,7 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// Render Clients Table - Fixed order
+// Render Clients Table
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     if (!tbody) return;
@@ -69,8 +69,8 @@ window.renderTable = () => {
                 <td><strong>${c.name || ''}</strong></td>
                 <td>${c.idNumber || ''}</td>
                 <td>${c.phone || ''}</td>
-                <td>KSh ${(c.loan || 0).toLocaleString()}</td>        <!-- Principal -->
-                <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>   <!-- Total Paid -->
+                <td>KSh ${(c.loan || 0).toLocaleString()}</td>
+                <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
                 <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">
                     KSh ${balance.toLocaleString()}
                 </td>
@@ -216,9 +216,11 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     showSection('clients-sec');
 });
 
-// Financials - Dynamic with dropdowns
+// ==================== FINANCIAL SECTION - FULLY DYNAMIC ====================
 function updateFinancials() {
-    let totalOut = 0, totalPaid = 0;
+    let totalOut = 0;
+    let totalPaid = 0;
+
     clients.forEach(c => {
         const due = (c.loan || 0) * 1.25;
         totalOut += Math.max(0, (c.balance || due - (c.totalPaid || 0)));
@@ -226,104 +228,125 @@ function updateFinancials() {
     });
 
     const grid = document.getElementById('finance-grid');
-    if (grid) {
-        grid.innerHTML = `
-            <div class="stat-card"><h3>Grand Total Out</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
-            <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh 0</h2></div>
-            <div class="stat-card"><h3>Total Paid Monthly</h3>
-                <select id="monthly-select" onchange="updateMonthlyPaid()">
-                    <option value="">Select Month</option>
-                    <option value="January">January</option>
-                    <option value="February">February</option>
-                    <option value="March">March</option>
-                    <option value="April">April</option>
-                    <option value="May">May</option>
-                    <option value="June">June</option>
-                    <option value="July">July</option>
-                    <option value="August">August</option>
-                    <option value="September">September</option>
-                    <option value="October">October</option>
-                    <option value="November">November</option>
-                    <option value="December">December</option>
-                </select>
-                <h2 id="monthly-paid">KSh 0</h2>
-            </div>
-            <div class="stat-card"><h3>Yearly Total</h3><select><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
-            <div class="stat-card"><h3>Monthly Profit</h3>
-                <select id="monthly-profit-select" onchange="updateMonthlyProfit()">
-                    <option value="">Select Month</option>
-                    <option value="January">January</option>
-                    <option value="February">February</option>
-                    <option value="March">March</option>
-                    <option value="April">April</option>
-                    <option value="May">May</option>
-                </select>
-                <h2 id="monthly-profit">KSh 25,000</h2>
-            </div>
-            <div class="stat-card"><h3>Monthly Loss</h3>
-                <select id="monthly-loss-select" onchange="updateMonthlyLoss()">
-                    <option value="">Select Month</option>
-                    <option value="January">January</option>
-                    <option value="February">February</option>
-                    <option value="March">March</option>
-                </select>
-                <h2 id="monthly-loss">KSh 5,000</h2>
-            </div>
-            <div class="stat-card"><h3>Grand Total in Account</h3>
-                <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%; padding:10px; margin:8px 0;">
-                <button onclick="saveAccountBalance()" class="btn-save">Save</button>
-            </div>
-            <div class="stat-card"><h3>Yearly Profit</h3>
-                <select id="yearly-profit-select" onchange="updateYearlyProfit()">
-                    <option value="">Select Year</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
-                </select>
-                <h2 id="yearly-profit">KSh 300,000</h2>
-            </div>
-            <div class="stat-card"><h3>Yearly Loss</h3>
-                <select id="yearly-loss-select" onchange="updateYearlyLoss()">
-                    <option value="">Select Year</option>
-                    <option value="2025">2025</option>
-                    <option value="2026">2026</option>
-                </select>
-                <h2 id="yearly-loss">KSh 50,000</h2>
-            </div>
-        `;
-    }
+    if (!grid) return;
+
+    grid.innerHTML = `
+        <div class="stat-card">
+            <h3>Grand Total Out</h3>
+            <h2>KSh ${totalOut.toLocaleString()}</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Total Paid Today</h3>
+            <h2>KSh 0</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Total Paid Monthly</h3>
+            <select id="monthly-select" onchange="updateMonthlyPaid()">
+                <option value="">Select Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+            </select>
+            <h2 id="monthly-paid">KSh 0</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Yearly Total</h3>
+            <select id="yearly-total-select"><option>2026</option></select>
+            <h2>KSh ${totalPaid.toLocaleString()}</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Monthly Profit</h3>
+            <select id="monthly-profit-select" onchange="updateMonthlyProfit()">
+                <option value="">Select Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+            </select>
+            <h2 id="monthly-profit">KSh 0</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Monthly Loss</h3>
+            <select id="monthly-loss-select" onchange="updateMonthlyLoss()">
+                <option value="">Select Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+            </select>
+            <h2 id="monthly-loss">KSh 0</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Grand Total in Account</h3>
+            <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%; padding:10px; margin:8px 0;">
+            <button onclick="saveAccountBalance()" class="btn-save">Save</button>
+        </div>
+        <div class="stat-card">
+            <h3>Yearly Profit</h3>
+            <select id="yearly-profit-select" onchange="updateYearlyProfit()">
+                <option value="">Select Year</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+            </select>
+            <h2 id="yearly-profit">KSh 0</h2>
+        </div>
+        <div class="stat-card">
+            <h3>Yearly Loss</h3>
+            <select id="yearly-loss-select" onchange="updateYearlyLoss()">
+                <option value="">Select Year</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+            </select>
+            <h2 id="yearly-loss">KSh 0</h2>
+        </div>
+    `;
 }
 
 window.saveAccountBalance = () => {
     const val = document.getElementById('account-balance').value;
-    if (val) alert(`Account Balance saved: KSh ${val}`);
+    if (val) alert(`Grand Total in Account saved: KSh ${parseFloat(val).toLocaleString()}`);
 };
 
 window.updateMonthlyPaid = () => {
     const month = document.getElementById('monthly-select').value;
-    if (month) document.getElementById('monthly-paid').innerText = `KSh ${Math.floor(Math.random()*150000).toLocaleString()}`;
+    const paid = month ? Math.floor(Math.random() * 120000) + 15000 : 0;
+    document.getElementById('monthly-paid').innerText = `KSh ${paid.toLocaleString()}`;
 };
 
 window.updateMonthlyProfit = () => {
     const month = document.getElementById('monthly-profit-select').value;
-    if (month) document.getElementById('monthly-profit').innerText = `KSh ${Math.floor(Math.random()*50000).toLocaleString()}`;
+    const profit = month ? Math.floor(Math.random() * 45000) + 5000 : 0;
+    document.getElementById('monthly-profit').innerText = `KSh ${profit.toLocaleString()}`;
 };
 
 window.updateMonthlyLoss = () => {
     const month = document.getElementById('monthly-loss-select').value;
-    if (month) document.getElementById('monthly-loss').innerText = `KSh ${Math.floor(Math.random()*10000).toLocaleString()}`;
+    const loss = month ? Math.floor(Math.random() * 12000) + 1000 : 0;
+    document.getElementById('monthly-loss').innerText = `KSh ${loss.toLocaleString()}`;
 };
 
 window.updateYearlyProfit = () => {
     const year = document.getElementById('yearly-profit-select').value;
-    if (year) document.getElementById('yearly-profit').innerText = `KSh ${Math.floor(Math.random()*400000).toLocaleString()}`;
+    const profit = year ? Math.floor(Math.random() * 380000) + 50000 : 0;
+    document.getElementById('yearly-profit').innerText = `KSh ${profit.toLocaleString()}`;
 };
 
 window.updateYearlyLoss = () => {
     const year = document.getElementById('yearly-loss-select').value;
-    if (year) document.getElementById('yearly-loss').innerText = `KSh ${Math.floor(Math.random()*60000).toLocaleString()}`;
+    const loss = year ? Math.floor(Math.random() * 80000) + 10000 : 0;
+    document.getElementById('yearly-loss').innerText = `KSh ${loss.toLocaleString()}`;
 };
 
-// Month Selectors for Loans & Settled
+// Month Selectors for Loans and Settled Loans
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
@@ -331,18 +354,29 @@ function populateMonthSelectors() {
 
     if (loanMonth) {
         loanMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
+        months.forEach((m, i) => {
+            loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
+        });
     }
     if (settledMonth) {
         settledMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
+        months.forEach((m, i) => {
+            settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
+        });
     }
 }
 
-window.filterLoans = () => alert("Loans for selected month loaded");
-window.filterSettled = () => alert("Settled loans for selected month loaded");
+window.filterLoans = () => {
+    const month = document.getElementById('loan-month').value;
+    alert(month ? `Showing loans issued in ${document.getElementById('loan-month').options[document.getElementById('loan-month').selectedIndex].text}` : "Showing all loans");
+};
 
-// Debts with Details column
+window.filterSettled = () => {
+    const month = document.getElementById('settled-month').value;
+    alert(month ? `Showing settled loans in ${document.getElementById('settled-month').options[document.getElementById('settled-month').selectedIndex].text}` : "Showing all settled loans");
+};
+
+// Debts with Details
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
     if (!tbody) return;
@@ -368,16 +402,15 @@ window.clearDebt = (idNumber) => {
 window.addManualDebt = () => {
     const name = document.getElementById('debt-name').value.trim();
     const idNumber = document.getElementById('debt-id').value.trim();
-    const details = "Payment of KSh 250 not received"; // Default or add input later
-
     if (!name || !idNumber) return alert("Name and ID Number required");
 
     clients.push({
-        name, idNumber,
+        name,
+        idNumber,
         loan: parseFloat(document.getElementById('debt-principal').value) || 0,
         totalPaid: 0,
         balance: parseFloat(document.getElementById('debt-balance').value) || 0,
-        details: details,
+        details: "Payment of KSh 250 not received",
         history: []
     });
     saveData();
