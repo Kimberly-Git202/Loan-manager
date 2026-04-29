@@ -113,7 +113,7 @@ window.openDashboard = (i) => {
     document.getElementById('detailWindow').classList.remove('hidden');
 };
 
-// Record Payment - Manual Time Only
+// Record Payment
 window.processPayment = () => {
     const amt = parseFloat(document.getElementById('payAmt').value);
     const time = document.getElementById('payTime').value;
@@ -142,7 +142,7 @@ window.processPayment = () => {
     });
 
     saveData();
-    alert("Payment recorded successfully with 1.25× logic.");
+    alert("Payment recorded successfully.");
     openDashboard(currentIndex);
 };
 
@@ -180,7 +180,7 @@ window.closeDetails = () => {
     document.getElementById('detailWindow').classList.add('hidden');
 };
 
-// Enroll Client - FIXED: Refresh table immediately
+// Enroll Client
 document.getElementById('clientForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -191,9 +191,9 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
         location: document.getElementById('f-location').value,
         occupation: document.getElementById('f-occupation').value,
         referral: document.getElementById('f-referral').value,
-        loan: parseFloat(document.getElementById('f-loan').value),
+        loan: parseFloat(document.getElementById('f-loan').value) || 0,
         totalPaid: 0,
-        balance: parseFloat(document.getElementById('f-loan').value) * 1.25,
+        balance: (parseFloat(document.getElementById('f-loan').value) || 0) * 1.25,
         startDate: document.getElementById('f-start').value,
         endDate: document.getElementById('f-end').value,
         history: [{
@@ -208,13 +208,13 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
 
     clients.unshift(newClient);
     saveData();
-    renderTable();                // Refresh table immediately
+    renderTable();                // Important: Refresh immediately
     alert("Client enrolled successfully! Name should now appear at the top.");
     e.target.reset();
     showSection('clients-sec');
 });
 
-// Financials Cards - Full as per sketch
+// Financials
 function updateFinancials() {
     let totalOut = 0, totalPaid = 0, todayCollection = 0;
     const today = new Date().toLocaleDateString('en-GB');
@@ -225,16 +225,18 @@ function updateFinancials() {
         totalPaid += (c.totalPaid || 0);
 
         (c.history || []).forEach(h => {
-            if (h.date === today && h.act === "Payment") todayCollection += (h.amt || 0);
+            if (h.date === today && h.act === "Payment") todayCollection += parseFloat(h.amt || 0);
         });
     });
 
     const grid = document.getElementById('finance-grid');
+    if (!grid) return;
+
     grid.innerHTML = `
         <div class="stat-card"><h3>Grand Total Out</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
         <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
-        <div class="stat-card"><h3>Total Paid Monthly</h3><select onchange="alert('Monthly total for selected month')"><option>May</option></select><h2>KSh 100,000</h2></div>
-        <div class="stat-card"><h3>Yearly Total</h3><select onchange="alert('Yearly total for selected year')"><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Total Paid Monthly</h3><select><option>May</option></select><h2>KSh 100,000</h2></div>
+        <div class="stat-card"><h3>Yearly Total</h3><select><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
         <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
         <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
         <div class="stat-card"><h3>Grand Total in Account</h3><input type="number" id="account-balance" placeholder="Enter Amount"><button onclick="saveAccountBalance()" class="btn-save" style="margin-top:8px;">Save</button></div>
@@ -248,26 +250,31 @@ window.saveAccountBalance = () => {
     if (val) alert(`Account Balance saved: KSh ${val}`);
 };
 
-// Loans Issued
+// Populate Month Selectors - FIXED
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
     const settledMonth = document.getElementById('settled-month');
+
+    if (loanMonth) loanMonth.innerHTML = '<option value="">Select Month</option>';
+    if (settledMonth) settledMonth.innerHTML = '<option value="">Select Month</option>';
+
     months.forEach((m, i) => {
         const opt = `<option value="\( {i+1}"> \){m}</option>`;
-        loanMonth.innerHTML += opt;
-        settledMonth.innerHTML += opt;
+        if (loanMonth) loanMonth.innerHTML += opt;
+        if (settledMonth) settledMonth.innerHTML += opt;
     });
 }
 
 window.filterLoans = () => {
     const tbody = document.getElementById('loans-body');
+    if (!tbody) return;
     tbody.innerHTML = clients.map((c, i) => `
         <tr>
             <td>${i+1}</td>
-            <td>${c.name}</td>
-            <td>${c.idNumber}</td>
-            <td>${c.phone}</td>
+            <td>${c.name || ''}</td>
+            <td>${c.idNumber || ''}</td>
+            <td>${c.phone || ''}</td>
             <td>KSh ${(c.loan || 0).toLocaleString()}</td>
             <td>${c.startDate || '—'}</td>
         </tr>
@@ -276,24 +283,26 @@ window.filterLoans = () => {
 
 window.filterSettled = () => {
     const tbody = document.getElementById('settled-body');
+    if (!tbody) return;
     tbody.innerHTML = clients.filter(c => c.balance === 0).map((c, i) => `
         <tr>
             <td>${i+1}</td>
-            <td>${c.name}</td>
-            <td>${c.idNumber}</td>
+            <td>${c.name || ''}</td>
+            <td>${c.idNumber || ''}</td>
             <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
             <td>${c.endDate || '—'}</td>
         </tr>
     `).join('');
 };
 
-// Debts - Table with Details
+// Debts
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
+    if (!tbody) return;
     tbody.innerHTML = clients.filter(c => (c.balance || 0) > 0).map(c => `
         <tr>
-            <td>${c.name}</td>
-            <td>${c.idNumber}</td>
+            <td>${c.name || ''}</td>
+            <td>${c.idNumber || ''}</td>
             <td>KSh ${(c.loan || 0).toLocaleString()}</td>
             <td style="color:var(--danger)">KSh ${(c.balance || 0).toLocaleString()}</td>
             <td><button onclick="clearDebt('${c.idNumber}')" class="btn-save" style="padding:6px 12px;">Clear</button></td>
@@ -316,12 +325,7 @@ window.addManualDebt = () => {
 
     if (name && idNumber) {
         clients.push({
-            name: name,
-            idNumber: idNumber,
-            loan: principal,
-            totalPaid: 0,
-            balance: balance,
-            history: []
+            name, idNumber, loan: principal, totalPaid: 0, balance, history: []
         });
         saveData();
         alert("Manual debt added.");
@@ -332,8 +336,9 @@ window.addManualDebt = () => {
 // Reports
 window.loadReports = () => {
     const tbody = document.getElementById('reports-body');
+    if (!tbody) return;
     tbody.innerHTML = `
-        <tr><td>\( {currentUserEmail}</td><td> \){clients.length}</td><td>45</td><td>12</td><td>8</td></tr>
+        <tr><td>\( {currentUserEmail || 'User'}</td><td> \){clients.length}</td><td>45</td><td>12</td><td>8</td></tr>
     `;
 };
 
@@ -352,7 +357,9 @@ if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-
 
 window.showSection = (id) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
+    const section = document.getElementById(id);
+    if (section) section.classList.remove('hidden');
+
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
     
