@@ -272,6 +272,13 @@ function updateFinancials() {
                 <option value="March">March</option>
                 <option value="April">April</option>
                 <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
             </select>
             <h2 id="monthly-profit">KSh 0</h2>
         </div>
@@ -282,6 +289,15 @@ function updateFinancials() {
                 <option value="January">January</option>
                 <option value="February">February</option>
                 <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
             </select>
             <h2 id="monthly-loss">KSh 0</h2>
         </div>
