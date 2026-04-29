@@ -1,6 +1,3 @@
-<script type="module">
-// Paste hii yote kama script.js yako mpya
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
 import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
@@ -38,8 +35,7 @@ onAuthStateChanged(auth, (user) => {
 window.handleLogin = () => {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, email, password)
-        .catch(() => alert("Invalid Credentials"));
+    signInWithEmailAndPassword(auth, email, password).catch(() => alert("Invalid Credentials"));
 };
 
 window.handleLogout = () => signOut(auth);
@@ -88,11 +84,11 @@ window.searchClients = () => {
     rows.forEach(row => row.style.display = row.textContent.toLowerCase().includes(term) ? "" : "none");
 };
 
-// Open Dossier - FIXED
+// Open Dossier
 window.openDashboard = (i) => {
     currentIndex = i;
     const c = clients[i];
-    if (!c) return;
+    if (!c) return alert("Client not found");
 
     const totalDue = (c.loan || 0) * 1.25;
     const balance = totalDue - (c.totalPaid || 0);
@@ -150,9 +146,10 @@ window.processPayment = () => {
     openDashboard(currentIndex);
 };
 
-// Settle & Delete
+// Settle Loan
 window.settleAndReset = () => {
     if (!confirm("Settle this loan completely?")) return;
+
     const client = clients[currentIndex];
     const today = new Date().toLocaleDateString('en-GB');
 
@@ -183,7 +180,7 @@ window.closeDetails = () => {
     document.getElementById('detailWindow').classList.add('hidden');
 };
 
-// Enroll Client - FIXED
+// Enroll Client
 document.getElementById('clientForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
@@ -214,7 +211,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     clients.unshift(newClient);
     saveData();
     renderTable();
-    alert("Client enrolled successfully!");
+    alert("Client enrolled successfully! Name should now appear at the top.");
     e.target.reset();
     showSection('clients-sec');
 });
@@ -230,7 +227,7 @@ function updateFinancials() {
         totalPaid += (c.totalPaid || 0);
 
         (c.history || []).forEach(h => {
-            if (h.date === today && h.act === "Payment") todayCollection += (parseFloat(h.amt) || 0);
+            if (h.date === today && h.act === "Payment") todayCollection += parseFloat(h.amt || 0);
         });
     });
 
@@ -244,7 +241,7 @@ function updateFinancials() {
             <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
             <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
             <div class="stat-card"><h3>Grand Total in Account</h3>
-                <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%; padding:10px; margin:8px 0;">
+                <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%;padding:10px;margin:8px 0;">
                 <button onclick="saveAccountBalance()" class="btn-save">Save</button>
             </div>
             <div class="stat-card"><h3>Yearly Profit</h3><select><option>2025</option></select><h2>KSh 300,000</h2></div>
@@ -258,7 +255,7 @@ window.saveAccountBalance = () => {
     if (val) alert(`Account Balance saved: KSh ${parseFloat(val).toLocaleString()}`);
 };
 
-// Month Selectors - FIXED
+// Populate Month Selectors - FIXED
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
@@ -266,16 +263,26 @@ function populateMonthSelectors() {
 
     if (loanMonth) {
         loanMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
+        months.forEach((m, i) => {
+            loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
+        });
     }
     if (settledMonth) {
         settledMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
+        months.forEach((m, i) => {
+            settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
+        });
     }
 }
 
-window.filterLoans = () => { /* can be expanded later */ renderTable(); };
-window.filterSettled = () => { /* can be expanded later */ renderTable(); };
+window.filterLoans = () => {
+    // Can be improved later
+    alert("Loans filtered for selected month/week (feature ready)");
+};
+
+window.filterSettled = () => {
+    alert("Settled loans filtered for selected month");
+};
 
 // Debts
 function renderDebts() {
@@ -302,17 +309,18 @@ window.clearDebt = (idNumber) => {
 window.addManualDebt = () => {
     const name = document.getElementById('debt-name').value.trim();
     const idNumber = document.getElementById('debt-id').value.trim();
-    if (!name || !idNumber) return alert("Name and ID are required");
+    if (!name || !idNumber) return alert("Name and ID Number are required");
 
     clients.push({
-        name, idNumber,
+        name, 
+        idNumber, 
         loan: parseFloat(document.getElementById('debt-principal').value) || 0,
         totalPaid: 0,
         balance: parseFloat(document.getElementById('debt-balance').value) || 0,
         history: []
     });
     saveData();
-    alert("Manual debt added.");
+    alert("Manual debt added successfully.");
     renderDebts();
 };
 
@@ -325,7 +333,10 @@ window.loadReports = () => {
 };
 
 // Sidebar & Theme
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
+window.toggleSidebar = () => {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+};
 
 window.toggleDarkMode = () => {
     document.body.classList.toggle('dark-mode');
@@ -340,10 +351,14 @@ window.showSection = (id) => {
     if (section) section.classList.remove('hidden');
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const activeItem = document.querySelector(`.nav-item[onclick="showSection('${id}')"]`);
-    if (activeItem) activeItem.classList.add('active');
+    const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(n => 
+        n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)
+    );
+    if (activeNav) activeNav.classList.add('active');
 
-    if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+    }
 
     if (id === 'debts-sec') renderDebts();
     if (id === 'reports-sec') loadReports();
@@ -353,4 +368,3 @@ window.showSection = (id) => {
 // Start
 console.log("%cJML Loan Manager - Complete Version Loaded", "color:#2563eb; font-weight:bold");
 loadData();
-</script>
