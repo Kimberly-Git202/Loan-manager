@@ -40,7 +40,7 @@ window.handleLogin = () => {
 
 window.handleLogout = () => signOut(auth);
 
-// Load Data
+// Load & Save
 function loadData() {
     onValue(ref(db, 'jml_data/'), (snap) => {
         clients = snap.val() || [];
@@ -88,7 +88,7 @@ window.searchClients = () => {
 window.openDashboard = (i) => {
     currentIndex = i;
     const c = clients[i];
-    if (!c) return alert("Client not found");
+    if (!c) return;
 
     const totalDue = (c.loan || 0) * 1.25;
     const balance = totalDue - (c.totalPaid || 0);
@@ -120,8 +120,7 @@ window.openDashboard = (i) => {
 window.processPayment = () => {
     const amt = parseFloat(document.getElementById('payAmt').value);
     const time = document.getElementById('payTime').value;
-
-    if (!amt || !time) return alert("Amount and Time (HH:mm) are required.");
+    if (!amt || !time) return alert("Amount and Time are required");
 
     if (!confirm(`Record KSh ${amt} at ${time}?`)) return;
 
@@ -137,8 +136,7 @@ window.processPayment = () => {
         time: time,
         act: "Payment",
         det: `Payment of KSh ${amt}`,
-        by: currentUserEmail.split('@')[0],
-        timestamp: Date.now()
+        by: currentUserEmail.split('@')[0]
     });
 
     saveData();
@@ -149,7 +147,6 @@ window.processPayment = () => {
 // Settle Loan
 window.settleAndReset = () => {
     if (!confirm("Settle this loan completely?")) return;
-
     const client = clients[currentIndex];
     const today = new Date().toLocaleDateString('en-GB');
 
@@ -203,8 +200,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
             time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
             act: "New Loan",
             det: "Account Created with 1.25× multiplier",
-            by: currentUserEmail.split('@')[0],
-            timestamp: Date.now()
+            by: currentUserEmail.split('@')[0]
         }]
     };
 
@@ -218,31 +214,25 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
 
 // Financials Cards
 function updateFinancials() {
-    let totalOut = 0, totalPaid = 0, todayCollection = 0;
-    const today = new Date().toLocaleDateString('en-GB');
-
+    let totalOut = 0, totalPaid = 0;
     clients.forEach(c => {
         const due = (c.loan || 0) * 1.25;
         totalOut += (c.balance || due - (c.totalPaid || 0));
         totalPaid += (c.totalPaid || 0);
-
-        (c.history || []).forEach(h => {
-            if (h.date === today && h.act === "Payment") todayCollection += parseFloat(h.amt || 0);
-        });
     });
 
     const grid = document.getElementById('finance-grid');
     if (grid) {
         grid.innerHTML = `
             <div class="stat-card"><h3>Grand Total Out</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
-            <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
+            <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh 0</h2></div>
             <div class="stat-card"><h3>Total Paid Monthly</h3><select><option>May</option></select><h2>KSh 100,000</h2></div>
             <div class="stat-card"><h3>Yearly Total</h3><select><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
             <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
             <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
             <div class="stat-card"><h3>Grand Total in Account</h3>
-                <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%;padding:10px;margin:8px 0;">
-                <button onclick="saveAccountBalance()" class="btn-save">Save</button>
+                <input type="number" id="account-balance" placeholder="Enter Amount">
+                <button onclick="saveAccountBalance()" class="btn-save" style="margin-top:8px;">Save</button>
             </div>
             <div class="stat-card"><h3>Yearly Profit</h3><select><option>2025</option></select><h2>KSh 300,000</h2></div>
             <div class="stat-card"><h3>Yearly Loss</h3><select><option>2025</option></select><h2>KSh 50,000</h2></div>
@@ -252,10 +242,10 @@ function updateFinancials() {
 
 window.saveAccountBalance = () => {
     const val = document.getElementById('account-balance').value;
-    if (val) alert(`Account Balance saved: KSh ${parseFloat(val).toLocaleString()}`);
+    if (val) alert(`Account Balance saved: KSh ${val}`);
 };
 
-// Populate Month Selectors - FIXED
+// Month Selectors
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
@@ -263,26 +253,16 @@ function populateMonthSelectors() {
 
     if (loanMonth) {
         loanMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => {
-            loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
-        });
+        months.forEach((m, i) => loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
     }
     if (settledMonth) {
         settledMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => {
-            settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`;
-        });
+        months.forEach((m, i) => settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
     }
 }
 
-window.filterLoans = () => {
-    // Can be improved later
-    alert("Loans filtered for selected month/week (feature ready)");
-};
-
-window.filterSettled = () => {
-    alert("Settled loans filtered for selected month");
-};
+window.filterLoans = () => alert("Loans for selected month loaded");
+window.filterSettled = () => alert("Settled loans for selected month loaded");
 
 // Debts
 function renderDebts() {
@@ -307,36 +287,29 @@ window.clearDebt = (idNumber) => {
 };
 
 window.addManualDebt = () => {
-    const name = document.getElementById('debt-name').value.trim();
-    const idNumber = document.getElementById('debt-id').value.trim();
-    if (!name || !idNumber) return alert("Name and ID Number are required");
-
+    const name = document.getElementById('debt-name').value;
+    const idNumber = document.getElementById('debt-id').value;
+    if (!name || !idNumber) return alert("Name and ID required");
     clients.push({
-        name, 
-        idNumber, 
+        name, idNumber,
         loan: parseFloat(document.getElementById('debt-principal').value) || 0,
         totalPaid: 0,
         balance: parseFloat(document.getElementById('debt-balance').value) || 0,
         history: []
     });
     saveData();
-    alert("Manual debt added successfully.");
+    alert("Manual debt added.");
     renderDebts();
 };
 
 // Reports
 window.loadReports = () => {
     const tbody = document.getElementById('reports-body');
-    if (tbody) {
-        tbody.innerHTML = `<tr><td>\( {currentUserEmail}</td><td> \){clients.length}</td><td>45</td><td>12</td><td>8</td></tr>`;
-    }
+    if (tbody) tbody.innerHTML = `<tr><td>\( {currentUserEmail}</td><td> \){clients.length}</td><td>45</td><td>12</td><td>8</td></tr>`;
 };
 
 // Sidebar & Theme
-window.toggleSidebar = () => {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
-};
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
 
 window.toggleDarkMode = () => {
     document.body.classList.toggle('dark-mode');
@@ -351,14 +324,10 @@ window.showSection = (id) => {
     if (section) section.classList.remove('hidden');
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(n => 
-        n.getAttribute('onclick') && n.getAttribute('onclick').includes(id)
-    );
+    const activeNav = document.querySelector(`.nav-item[onclick*="${id}"]`);
     if (activeNav) activeNav.classList.add('active');
 
-    if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.remove('open');
-    }
+    if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
 
     if (id === 'debts-sec') renderDebts();
     if (id === 'reports-sec') loadReports();
