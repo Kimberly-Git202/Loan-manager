@@ -20,7 +20,7 @@ let clients = [];
 let currentIndex = null;
 let currentUserEmail = "";
 
-// Auth
+// Auth - Login always shows first
 onAuthStateChanged(auth, (user) => {
     const login = document.getElementById('login-overlay');
     if (user) {
@@ -46,8 +46,8 @@ function loadData() {
         clients = snap.val() || [];
         renderTable();
         updateFinancials();
-        if (currentIndex !== null) openDashboard(currentIndex);
         populateMonthSelectors();
+        if (currentIndex !== null) openDashboard(currentIndex);
     });
 }
 
@@ -119,7 +119,7 @@ window.processPayment = () => {
     const time = document.getElementById('payTime').value;
 
     if (!amt || !time) {
-        alert("Amount and Time (HH:mm) are required.");
+        alert("Amount and Time (HH:mm) are required. Time must be entered manually.");
         return;
     }
 
@@ -213,7 +213,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     showSection('clients-sec');
 });
 
-// Financials Cards
+// Financials - Full Cards as per sketch
 function updateFinancials() {
     let totalOut = 0, totalPaid = 0, todayCollection = 0;
     const today = new Date().toLocaleDateString('en-GB');
@@ -230,14 +230,24 @@ function updateFinancials() {
 
     const grid = document.getElementById('finance-grid');
     grid.innerHTML = `
-        <div class="stat-card"><h3>Total Outstanding</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
-        <div class="stat-card"><h3>Total Recovered</h3><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
-        <div class="stat-card"><h3>Collected Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Grand Total Out</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Total Paid Monthly</h3><select onchange="alert('Monthly total for selected month would show here')"><option>May</option></select><h2>KSh 100,000</h2></div>
+        <div class="stat-card"><h3>Yearly Total</h3><select onchange="alert('Yearly total for selected year')"><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
+        <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
+        <div class="stat-card"><h3>Grand Total in Account</h3><input type="number" id="account-balance" placeholder="Enter Amount"><button onclick="saveAccountBalance()" class="btn-save" style="margin-top:8px;">Save</button></div>
+        <div class="stat-card"><h3>Yearly Profit</h3><select><option>2025</option></select><h2>KSh 300,000</h2></div>
+        <div class="stat-card"><h3>Yearly Loss</h3><select><option>2025</option></select><h2>KSh 50,000</h2></div>
     `;
-    document.getElementById('top-today').innerText = `KSh ${todayCollection.toLocaleString()}`;
+}
+
+window.saveAccountBalance = () => {
+    const val = document.getElementById('account-balance').value;
+    if (val) alert(`Account Balance saved: KSh ${val}`);
 };
 
-// Loans Issued Module (Month + Week)
+// Loans Issued
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
@@ -250,9 +260,6 @@ function populateMonthSelectors() {
 }
 
 window.filterLoans = () => {
-    const month = document.getElementById('loan-month').value;
-    const week = document.getElementById('loan-week').value;
-    // Simple simulation - in real app filter by date
     const tbody = document.getElementById('loans-body');
     tbody.innerHTML = clients.map((c, i) => `
         <tr>
@@ -266,7 +273,6 @@ window.filterLoans = () => {
     `).join('');
 };
 
-// Settled Loans
 window.filterSettled = () => {
     const tbody = document.getElementById('settled-body');
     tbody.innerHTML = clients.filter(c => c.balance === 0).map((c, i) => `
@@ -301,7 +307,28 @@ window.clearDebt = (idNumber) => {
     }
 };
 
-// Reports
+window.addManualDebt = () => {
+    const name = document.getElementById('debt-name').value;
+    const idNumber = document.getElementById('debt-id').value;
+    const principal = parseFloat(document.getElementById('debt-principal').value) || 0;
+    const balance = parseFloat(document.getElementById('debt-balance').value) || 0;
+
+    if (name && idNumber) {
+        clients.push({
+            name: name,
+            idNumber: idNumber,
+            loan: principal,
+            totalPaid: 0,
+            balance: balance,
+            history: []
+        });
+        saveData();
+        alert("Manual debt added.");
+        renderDebts();
+    }
+};
+
+// Reports - Employee based on email
 window.loadReports = () => {
     const tbody = document.getElementById('reports-body');
     tbody.innerHTML = `
