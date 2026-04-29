@@ -54,7 +54,7 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// FIXED Render Table
+// Render Clients Table - Fixed columns
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     if (!tbody) return;
@@ -292,7 +292,7 @@ function populateMonthSelectors() {
 window.filterLoans = () => alert("Loans filtered");
 window.filterSettled = () => alert("Settled loans filtered");
 
-// Debts - Added Details column
+// FIXED Debts - Added Details column
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
     if (!tbody) return;
@@ -301,6 +301,7 @@ function renderDebts() {
             <td>${c.name || ''}</td>
             <td>${c.idNumber || ''}</td>
             <td>KSh ${(c.loan || 0).toLocaleString()}</td>
+            <td>${c.details || 'Payment not received'}</td>
             <td style="color:var(--danger)">KSh ${(c.balance || 0).toLocaleString()}</td>
             <td><button onclick="clearDebt('${c.idNumber}')" class="btn-save">Clear</button></td>
         </tr>
@@ -317,13 +318,17 @@ window.clearDebt = (idNumber) => {
 window.addManualDebt = () => {
     const name = document.getElementById('debt-name').value.trim();
     const idNumber = document.getElementById('debt-id').value.trim();
-    if (!name || !idNumber) return alert("Name and ID required");
+    const details = document.getElementById('debt-details') ? document.getElementById('debt-details').value.trim() : "Payment not received";
+
+    if (!name || !idNumber) return alert("Name and ID Number required");
 
     clients.push({
-        name, idNumber,
+        name, 
+        idNumber, 
         loan: parseFloat(document.getElementById('debt-principal').value) || 0,
         totalPaid: 0,
         balance: parseFloat(document.getElementById('debt-balance').value) || 0,
+        details: details,
         history: []
     });
     saveData();
