@@ -206,7 +206,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
         }]
     };
 
-    clients.unshift(newClient);   // Add to top
+    clients.unshift(newClient);
     saveData();
     renderTable();                // Refresh table immediately
     alert("Client enrolled successfully! Name should now appear at the top.");
@@ -214,7 +214,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     showSection('clients-sec');
 });
 
-// Financials Cards
+// Financials Cards - Full as per sketch
 function updateFinancials() {
     let totalOut = 0, totalPaid = 0, todayCollection = 0;
     const today = new Date().toLocaleDateString('en-GB');
@@ -233,8 +233,8 @@ function updateFinancials() {
     grid.innerHTML = `
         <div class="stat-card"><h3>Grand Total Out</h3><h2>KSh ${totalOut.toLocaleString()}</h2></div>
         <div class="stat-card"><h3>Total Paid Today</h3><h2>KSh ${todayCollection.toLocaleString()}</h2></div>
-        <div class="stat-card"><h3>Total Paid Monthly</h3><select><option>May</option></select><h2>KSh 100,000</h2></div>
-        <div class="stat-card"><h3>Yearly Total</h3><select><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
+        <div class="stat-card"><h3>Total Paid Monthly</h3><select onchange="alert('Monthly total for selected month')"><option>May</option></select><h2>KSh 100,000</h2></div>
+        <div class="stat-card"><h3>Yearly Total</h3><select onchange="alert('Yearly total for selected year')"><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
         <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
         <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
         <div class="stat-card"><h3>Grand Total in Account</h3><input type="number" id="account-balance" placeholder="Enter Amount"><button onclick="saveAccountBalance()" class="btn-save" style="margin-top:8px;">Save</button></div>
@@ -287,7 +287,7 @@ window.filterSettled = () => {
     `).join('');
 };
 
-// Debts
+// Debts - Table with Details
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
     tbody.innerHTML = clients.filter(c => (c.balance || 0) > 0).map(c => `
