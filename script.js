@@ -40,14 +40,13 @@ window.handleLogin = () => {
 
 window.handleLogout = () => signOut(auth);
 
-// Load & Save
+// Load Data
 function loadData() {
     onValue(ref(db, 'jml_data/'), (snap) => {
         clients = snap.val() || [];
         renderTable();
         updateFinancials();
         populateMonthSelectors();
-        if (currentIndex !== null) openDashboard(currentIndex);
     });
 }
 
@@ -55,22 +54,26 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// Render Clients Table
+// FIXED Render Table - Columns match header
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     if (!tbody) return;
+
     tbody.innerHTML = clients.map((c, i) => {
         const totalDue = (c.loan || 0) * 1.25;
         const balance = totalDue - (c.totalPaid || 0);
+
         return `
             <tr>
                 <td>${i+1}</td>
                 <td><strong>${c.name || ''}</strong></td>
                 <td>${c.idNumber || ''}</td>
                 <td>${c.phone || ''}</td>
-                <td>KSh ${(c.loan || 0).toLocaleString()}</td>
-                <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
-                <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">KSh ${balance.toLocaleString()}</td>
+                <td>KSh ${(c.loan || 0).toLocaleString()}</td>        <!-- Principal -->
+                <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>   <!-- Total Paid -->
+                <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">
+                    KSh ${balance.toLocaleString()}
+                </td>
                 <td><button class="view-btn" onclick="openDashboard(${i})">View Dossier</button></td>
             </tr>
         `;
@@ -88,7 +91,7 @@ window.searchClients = () => {
 window.openDashboard = (i) => {
     currentIndex = i;
     const c = clients[i];
-    if (!c) return;
+    if (!c) return alert("Client not found");
 
     const totalDue = (c.loan || 0) * 1.25;
     const balance = totalDue - (c.totalPaid || 0);
@@ -120,7 +123,7 @@ window.openDashboard = (i) => {
 window.processPayment = () => {
     const amt = parseFloat(document.getElementById('payAmt').value);
     const time = document.getElementById('payTime').value;
-    if (!amt || !time) return alert("Amount and Time are required");
+    if (!amt || !time) return alert("Amount and Time (HH:mm) are required.");
 
     if (!confirm(`Record KSh ${amt} at ${time}?`)) return;
 
@@ -144,7 +147,7 @@ window.processPayment = () => {
     openDashboard(currentIndex);
 };
 
-// Settle Loan
+// Settle Loan & Delete
 window.settleAndReset = () => {
     if (!confirm("Settle this loan completely?")) return;
     const client = clients[currentIndex];
@@ -207,7 +210,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     clients.unshift(newClient);
     saveData();
     renderTable();
-    alert("Client enrolled successfully! Name should now appear at the top.");
+    alert("Client enrolled successfully!");
     e.target.reset();
     showSection('clients-sec');
 });
@@ -231,8 +234,8 @@ function updateFinancials() {
             <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
             <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
             <div class="stat-card"><h3>Grand Total in Account</h3>
-                <input type="number" id="account-balance" placeholder="Enter Amount">
-                <button onclick="saveAccountBalance()" class="btn-save" style="margin-top:8px;">Save</button>
+                <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%; padding:10px; margin:8px 0;">
+                <button onclick="saveAccountBalance()" class="btn-save">Save</button>
             </div>
             <div class="stat-card"><h3>Yearly Profit</h3><select><option>2025</option></select><h2>KSh 300,000</h2></div>
             <div class="stat-card"><h3>Yearly Loss</h3><select><option>2025</option></select><h2>KSh 50,000</h2></div>
@@ -261,8 +264,8 @@ function populateMonthSelectors() {
     }
 }
 
-window.filterLoans = () => alert("Loans for selected month loaded");
-window.filterSettled = () => alert("Settled loans for selected month loaded");
+window.filterLoans = () => alert("Loans filter ready");
+window.filterSettled = () => alert("Settled filter ready");
 
 // Debts
 function renderDebts() {
@@ -287,9 +290,10 @@ window.clearDebt = (idNumber) => {
 };
 
 window.addManualDebt = () => {
-    const name = document.getElementById('debt-name').value;
-    const idNumber = document.getElementById('debt-id').value;
+    const name = document.getElementById('debt-name').value.trim();
+    const idNumber = document.getElementById('debt-id').value.trim();
     if (!name || !idNumber) return alert("Name and ID required");
+
     clients.push({
         name, idNumber,
         loan: parseFloat(document.getElementById('debt-principal').value) || 0,
@@ -324,8 +328,8 @@ window.showSection = (id) => {
     if (section) section.classList.remove('hidden');
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const activeNav = document.querySelector(`.nav-item[onclick*="${id}"]`);
-    if (activeNav) activeNav.classList.add('active');
+    const active = document.querySelector(`.nav-item[onclick*="${id}"]`);
+    if (active) active.classList.add('active');
 
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
 
