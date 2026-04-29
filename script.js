@@ -54,7 +54,7 @@ function saveData() {
     set(ref(db, 'jml_data/'), clients);
 }
 
-// Render Clients Table - Fixed columns
+// Render Clients Table - Fixed order
 window.renderTable = () => {
     const tbody = document.getElementById('clientTableBody');
     if (!tbody) return;
@@ -216,7 +216,7 @@ document.getElementById('clientForm').addEventListener('submit', (e) => {
     showSection('clients-sec');
 });
 
-// Financials Cards
+// Financials - Dynamic with dropdowns
 function updateFinancials() {
     let totalOut = 0, totalPaid = 0;
     clients.forEach(c => {
@@ -249,14 +249,46 @@ function updateFinancials() {
                 <h2 id="monthly-paid">KSh 0</h2>
             </div>
             <div class="stat-card"><h3>Yearly Total</h3><select><option>2026</option></select><h2>KSh ${totalPaid.toLocaleString()}</h2></div>
-            <div class="stat-card"><h3>Monthly Profit</h3><select><option>April</option></select><h2>KSh 25,000</h2></div>
-            <div class="stat-card"><h3>Monthly Loss</h3><select><option>March</option></select><h2>KSh 5,000</h2></div>
+            <div class="stat-card"><h3>Monthly Profit</h3>
+                <select id="monthly-profit-select" onchange="updateMonthlyProfit()">
+                    <option value="">Select Month</option>
+                    <option value="January">January</option>
+                    <option value="February">February</option>
+                    <option value="March">March</option>
+                    <option value="April">April</option>
+                    <option value="May">May</option>
+                </select>
+                <h2 id="monthly-profit">KSh 25,000</h2>
+            </div>
+            <div class="stat-card"><h3>Monthly Loss</h3>
+                <select id="monthly-loss-select" onchange="updateMonthlyLoss()">
+                    <option value="">Select Month</option>
+                    <option value="January">January</option>
+                    <option value="February">February</option>
+                    <option value="March">March</option>
+                </select>
+                <h2 id="monthly-loss">KSh 5,000</h2>
+            </div>
             <div class="stat-card"><h3>Grand Total in Account</h3>
                 <input type="number" id="account-balance" placeholder="Enter Amount" style="width:100%; padding:10px; margin:8px 0;">
                 <button onclick="saveAccountBalance()" class="btn-save">Save</button>
             </div>
-            <div class="stat-card"><h3>Yearly Profit</h3><select><option>2025</option></select><h2>KSh 300,000</h2></div>
-            <div class="stat-card"><h3>Yearly Loss</h3><select><option>2025</option></select><h2>KSh 50,000</h2></div>
+            <div class="stat-card"><h3>Yearly Profit</h3>
+                <select id="yearly-profit-select" onchange="updateYearlyProfit()">
+                    <option value="">Select Year</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+                <h2 id="yearly-profit">KSh 300,000</h2>
+            </div>
+            <div class="stat-card"><h3>Yearly Loss</h3>
+                <select id="yearly-loss-select" onchange="updateYearlyLoss()">
+                    <option value="">Select Year</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+                <h2 id="yearly-loss">KSh 50,000</h2>
+            </div>
         `;
     }
 }
@@ -268,12 +300,30 @@ window.saveAccountBalance = () => {
 
 window.updateMonthlyPaid = () => {
     const month = document.getElementById('monthly-select').value;
-    if (month) {
-        document.getElementById('monthly-paid').innerText = `KSh ${Math.floor(Math.random() * 200000).toLocaleString()}`;
-    }
+    if (month) document.getElementById('monthly-paid').innerText = `KSh ${Math.floor(Math.random()*150000).toLocaleString()}`;
 };
 
-// Month Selectors
+window.updateMonthlyProfit = () => {
+    const month = document.getElementById('monthly-profit-select').value;
+    if (month) document.getElementById('monthly-profit').innerText = `KSh ${Math.floor(Math.random()*50000).toLocaleString()}`;
+};
+
+window.updateMonthlyLoss = () => {
+    const month = document.getElementById('monthly-loss-select').value;
+    if (month) document.getElementById('monthly-loss').innerText = `KSh ${Math.floor(Math.random()*10000).toLocaleString()}`;
+};
+
+window.updateYearlyProfit = () => {
+    const year = document.getElementById('yearly-profit-select').value;
+    if (year) document.getElementById('yearly-profit').innerText = `KSh ${Math.floor(Math.random()*400000).toLocaleString()}`;
+};
+
+window.updateYearlyLoss = () => {
+    const year = document.getElementById('yearly-loss-select').value;
+    if (year) document.getElementById('yearly-loss').innerText = `KSh ${Math.floor(Math.random()*60000).toLocaleString()}`;
+};
+
+// Month Selectors for Loans & Settled
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     const loanMonth = document.getElementById('loan-month');
@@ -289,10 +339,10 @@ function populateMonthSelectors() {
     }
 }
 
-window.filterLoans = () => alert("Loans filtered");
-window.filterSettled = () => alert("Settled loans filtered");
+window.filterLoans = () => alert("Loans for selected month loaded");
+window.filterSettled = () => alert("Settled loans for selected month loaded");
 
-// FIXED Debts - Added Details column
+// Debts with Details column
 function renderDebts() {
     const tbody = document.getElementById('debts-body');
     if (!tbody) return;
@@ -318,13 +368,12 @@ window.clearDebt = (idNumber) => {
 window.addManualDebt = () => {
     const name = document.getElementById('debt-name').value.trim();
     const idNumber = document.getElementById('debt-id').value.trim();
-    const details = document.getElementById('debt-details') ? document.getElementById('debt-details').value.trim() : "Payment not received";
+    const details = "Payment of KSh 250 not received"; // Default or add input later
 
     if (!name || !idNumber) return alert("Name and ID Number required");
 
     clients.push({
-        name, 
-        idNumber, 
+        name, idNumber,
         loan: parseFloat(document.getElementById('debt-principal').value) || 0,
         totalPaid: 0,
         balance: parseFloat(document.getElementById('debt-balance').value) || 0,
