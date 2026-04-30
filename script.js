@@ -370,49 +370,67 @@ window.updateYearlyLoss = () => {
 
 // Month Selectors Fix (Loans & Settled Loans)
 function populateMonthSelectors() {
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const months = [
+        "January","February","March","April","May","June",
+        "July","August","September","October","November","December"
+    ];
+
     const yearsSet = new Set();
+    const monthsSet = new Set();
 
     clients.forEach(c => {
         if (c.startDate) {
-            yearsSet.add(new Date(c.startDate).getFullYear());
+            const d = new Date(c.startDate);
+            yearsSet.add(d.getFullYear());
+            monthsSet.add(d.getMonth());
         }
     });
 
-    const years = Array.from(yearsSet);
+    const years = Array.from(yearsSet).sort();
+    const usedMonths = Array.from(monthsSet).sort();
 
+    // ===== Loans & Settled =====
     const loanMonth = document.getElementById('loan-month');
     const settledMonth = document.getElementById('settled-month');
     const loanYear = document.getElementById('loan-year');
     const settledYear = document.getElementById('settled-year');
 
-    if (loanMonth) {
-        loanMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m,i)=> {
-            loanMonth.innerHTML += `<option value="${i+1}">${m}</option>`;
+    // ===== Financials =====
+    const monthlySelect = document.getElementById('monthly-select');
+    const profitSelect = document.getElementById('monthly-profit-select');
+    const lossSelect = document.getElementById('monthly-loss-select');
+    const yearlyTotal = document.getElementById('yearly-total-select');
+    const yearlyProfit = document.getElementById('yearly-profit-select');
+    const yearlyLoss = document.getElementById('yearly-loss-select');
+
+    function fillMonths(select) {
+        if (!select) return;
+        select.innerHTML = '<option value="">Select Month</option>';
+        usedMonths.forEach(m => {
+            select.innerHTML += `<option value="${m+1}">${months[m]}</option>`;
         });
     }
 
-    if (settledMonth) {
-        settledMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m,i)=> {
-            settledMonth.innerHTML += `<option value="${i+1}">${m}</option>`;
-        });
-    }
-
-    if (loanYear) {
-        loanYear.innerHTML = '<option value="">Select Year</option>';
+    function fillYears(select) {
+        if (!select) return;
+        select.innerHTML = '<option value="">Select Year</option>';
         years.forEach(y => {
-            loanYear.innerHTML += `<option value="${y}">${y}</option>`;
+            select.innerHTML += `<option value="${y}">${y}</option>`;
         });
     }
 
-    if (settledYear) {
-        settledYear.innerHTML = '<option value="">Select Year</option>';
-        years.forEach(y => {
-            settledYear.innerHTML += `<option value="${y}">${y}</option>`;
-        });
-    }
+    // APPLY TO ALL
+    fillMonths(loanMonth);
+    fillMonths(settledMonth);
+    fillMonths(monthlySelect);
+    fillMonths(profitSelect);
+    fillMonths(lossSelect);
+
+    fillYears(loanYear);
+    fillYears(settledYear);
+    fillYears(yearlyTotal);
+    fillYears(yearlyProfit);
+    fillYears(yearlyLoss);
 }
 
 window.filterLoans = () => {
