@@ -43,7 +43,8 @@ window.handleLogout = () => signOut(auth);
 // Load Data
 function loadData() {
     onValue(ref(db, 'jml_data/'), (snap) => {
-        clients = snap.val() || [];
+        const data = snap.val();
+clients = data ? Object.values(data) : [];
         renderTable();
         updateFinancials();
         populateMonthSelectors();
@@ -64,19 +65,18 @@ window.renderTable = () => {
         const balance = totalDue - (c.totalPaid || 0);
 
         return `
-            <tr>
-                <td>${i+1}</td>
-                <td><strong>${c.name || ''}</strong></td>
-                <td>${c.idNumber || ''}</td>
-                <td>${c.phone || ''}</td>
-                <td>KSh ${(c.loan || 0).toLocaleString()}</td>
-                <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
-                <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">
-                    KSh ${balance.toLocaleString()}
-                </td>
-                <td><button class="view-btn" onclick="openDashboard(${i})">View Dossier</button></td>
-            </tr>
-        `;
+<tr>
+    <td>${i+1}</td>
+    <td><strong>${c.name || ''}</strong></td>
+    <td>${c.idNumber || ''}</td>
+    <td>${c.phone || ''}</td>
+    <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
+    <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">
+        KSh ${balance.toLocaleString()}
+    </td>
+    <td><button class="view-btn" onclick="openDashboard(${i})">View Dossier</button></td>
+</tr>
+`;
     }).join('');
 };
 
@@ -116,7 +116,10 @@ window.openDashboard = (i) => {
         `;
     }).join('');
 
-    document.getElementById('detailWindow').classList.remove('hidden');
+    const modal = document.getElementById('detailWindow');
+modal.classList.remove('hidden');
+modal.style.display = "flex";
+
 };
 
 // Record Payment
@@ -178,7 +181,9 @@ window.deleteClient = () => {
 
 window.closeDetails = () => {
     currentIndex = null;
-    document.getElementById('detailWindow').classList.add('hidden');
+    const modal = document.getElementById('detailWindow');
+    modal.classList.add('hidden');
+    modal.style.display = "none";
 };
 
 // Enroll Client
@@ -366,29 +371,90 @@ window.updateYearlyLoss = () => {
 // Month Selectors Fix (Loans & Settled Loans)
 function populateMonthSelectors() {
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    const yearsSet = new Set();
+
+    clients.forEach(c => {
+        if (c.startDate) {
+            yearsSet.add(new Date(c.startDate).getFullYear());
+        }
+    });
+
+    const years = Array.from(yearsSet);
+
     const loanMonth = document.getElementById('loan-month');
     const settledMonth = document.getElementById('settled-month');
+    const loanYear = document.getElementById('loan-year');
+    const settledYear = document.getElementById('settled-year');
 
     if (loanMonth) {
         loanMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => loanMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
+        months.forEach((m,i)=> {
+            loanMonth.innerHTML += `<option value="${i+1}">${m}</option>`;
+        });
     }
+
     if (settledMonth) {
         settledMonth.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => settledMonth.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
+        months.forEach((m,i)=> {
+            settledMonth.innerHTML += `<option value="${i+1}">${m}</option>`;
+        });
+    }
+
+    if (loanYear) {
+        loanYear.innerHTML = '<option value="">Select Year</option>';
+        years.forEach(y => {
+            loanYear.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+    }
+
+    if (settledYear) {
+        settledYear.innerHTML = '<option value="">Select Year</option>';
+        years.forEach(y => {
+            settledYear.innerHTML += `<option value="${y}">${y}</option>`;
+        });
     }
 }
 
 window.filterLoans = () => {
-    const monthSelect = document.getElementById('loan-month');
-    const monthName = monthSelect.options[monthSelect.selectedIndex].text;
-    alert(monthSelect.value ? `Showing loans issued in ${monthName}` : "Showing all loans issued");
+    const month = document.getElementById('loan-month').value;
+    const year = document.getElementById('loan-year').value;
+    const tbody = document.getElementById('loans-body');
+
+    const filtered = clients.filter(c => {
+        if (!c.startDate) return false;
+        const d = new Date(c.startDate);
+        return (!month || d.getMonth()+1 == month) &&
+               (!year || d.getFullYear() == year);
+    });
+
+    tbody.innerHTML = filtered.map((c,i)=>`
+        <tr>
+            <td>${i+1}</td>
+            <td>${c.name}</td>
+            <td>${c.idNumber}</td>
+            <td>${c.phone}</td>
+            <td>KSh ${c.loan.toLocaleString()}</td>
+            <td>${c.startDate}</td>
+        </tr>
+    `).join('');
 };
 
 window.filterSettled = () => {
-    const monthSelect = document.getElementById('settled-month');
-    const monthName = monthSelect.options[monthSelect.selectedIndex].text;
-    alert(monthSelect.value ? `Showing settled loans in ${monthName}` : "Showing all settled loans");
+    const month = document.getElementById('settled-month').value;
+    const year = document.getElementById('settled-year').value;
+    const tbody = document.getElementById('settled-body');
+
+    const filtered = clients.filter(c => (c.balance || 0) <= 0);
+
+    tbody.innerHTML = filtered.map((c,i)=>`
+        <tr>
+            <td>${i+1}</td>
+            <td>${c.name}</td>
+            <td>${c.idNumber}</td>
+            <td>KSh ${c.totalPaid.toLocaleString()}</td>
+            <td>Settled</td>
+        </tr>
+    `).join('');
 };
 
 // Debts with Details column
