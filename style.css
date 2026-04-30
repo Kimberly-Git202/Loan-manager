@@ -49,10 +49,16 @@ body {
 
 .sidebar.open { left: 0; }
 
-@media (min-width: 769px) {
-    .sidebar { left: 0; }
-    .main-content { margin-left: 280px; }
+.sidebar {
+    transition: transform 0.3s ease;
 }
+.sidebar {
+    transform: translateX(-100%);
+}
+.sidebar.open {
+    transform: translateX(0);
+}
+
 
 .sidebar-header { 
     padding: 25px; 
