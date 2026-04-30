@@ -265,7 +265,7 @@ function updateFinancials() {
         </div>
         <div class="stat-card">
             <h3>Yearly Total</h3>
-            <select id="yearly-total-select"><option value="2026">2026</option></select>
+            <select id="yearly-total-select"></select>
             <h2>KSh ${totalPaidAll.toLocaleString()}</h2>
         </div>
         <div class="stat-card">
@@ -315,8 +315,7 @@ function updateFinancials() {
             <h3>Yearly Profit</h3>
             <select id="yearly-profit-select" onchange="updateYearlyProfit()">
                 <option value="">Select Year</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
+                
             </select>
             <h2 id="yearly-profit">KSh 0</h2>
         </div>
@@ -324,8 +323,7 @@ function updateFinancials() {
             <h3>Yearly Loss</h3>
             <select id="yearly-loss-select" onchange="updateYearlyLoss()">
                 <option value="">Select Year</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
+                
             </select>
             <h2 id="yearly-loss">KSh 0</h2>
         </div>
