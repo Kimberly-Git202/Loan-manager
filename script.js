@@ -418,19 +418,19 @@ if (years.length === 0) {
     const yearlyLoss = document.getElementById('yearly-loss-select');
 
     function fillMonths(select) {
-        if (!select) return;
-        select.innerHTML = '<option value="">Select Month</option>';
-        const monthsToUse = usedMonths.length ? usedMonths : [...Array(12).keys()];
+    if (!select) return;
 
-monthsToUse.forEach(m => {
-            years.forEach(y => {
-    monthsToUse.forEach(m => {
-        select.innerHTML += `<option value="${y}-${m+1}">
-            ${months[m]} ${y}
-        </option>`;
-    });
-});
+    select.innerHTML = '<option value="">Select Month</option>';
+
+    const monthsToUse = usedMonths.length ? usedMonths : [...Array(12).keys()];
+
+    years.forEach(y => {
+        monthsToUse.forEach(m => {
+            select.innerHTML += `<option value="${y}-${m+1}">
+                ${months[m]} ${y}
+            </option>`;
         });
+    });
     }
 
     function fillYears(select) {
@@ -456,14 +456,18 @@ monthsToUse.forEach(m => {
 }
 
 window.filterLoans = () => {
-    const selected = document.getElementById('loan-month').value;
-const [year, month] = selected.split('-');
+    const selected = document.getElementById('loan-month').value || "";
+    const parts = selected.split('-');
+
+    const month = parts[1];
     const year = document.getElementById('loan-year').value;
+
     const tbody = document.getElementById('loans-body');
 
     const filtered = clients.filter(c => {
         if (!c.startDate) return false;
         const d = new Date(c.startDate);
+
         return (!month || d.getMonth()+1 == month) &&
                (!year || d.getFullYear() == year);
     });
@@ -479,6 +483,7 @@ const [year, month] = selected.split('-');
         </tr>
     `).join('');
 };
+
 
 window.filterSettled = () => {
     const month = document.getElementById('settled-month').value;
@@ -562,7 +567,13 @@ window.showSection = (id) => {
     if (section) section.classList.remove('hidden');
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const active = document.querySelector(`.nav-item[onclick*="${id}"]`);
+    document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.remove('active');
+
+    if (item.getAttribute('onclick')?.includes(id)) {
+        item.classList.add('active');
+    }
+});
     if (active) active.classList.add('active');
 
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
