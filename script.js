@@ -51,9 +51,15 @@ clients = data ? Object.values(data) : [];
     });
 }
 
-function saveData() {
-    set(ref(db, 'jml_data/'), clients);
-}
+
+  function saveData() {
+    const obj = {};
+    clients.forEach((c, i) => {
+        obj[i] = c;
+    });
+    set(ref(db, 'jml_data/'), obj);
+  }
+
 
 // Render Clients Table
 window.renderTable = () => {
@@ -70,7 +76,8 @@ window.renderTable = () => {
     <td><strong>${c.name || ''}</strong></td>
     <td>${c.idNumber || ''}</td>
     <td>${c.phone || ''}</td>
-    <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
+    <td>KSh ${(c.loan || 0).toLocaleString()}</td>
+<td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
     <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">
         KSh ${balance.toLocaleString()}
     </td>
@@ -101,7 +108,9 @@ window.openDashboard = (i) => {
     document.getElementById('d-total').innerText = `KSh ${totalDue.toLocaleString()}`;
     document.getElementById('d-balance').innerText = `KSh ${balance.toLocaleString()}`;
     document.getElementById('d-paid').innerText = `KSh ${(c.totalPaid || 0).toLocaleString()}`;
+    document.getElementById('clientNotes').value = c.notes || "";
 
+  
     const historyBody = document.getElementById('historyBody');
     historyBody.innerHTML = (c.history || []).slice().reverse().map(h => {
         const isLate = h.time && h.time >= "18:00";
@@ -190,7 +199,8 @@ window.closeDetails = () => {
 document.getElementById('clientForm').addEventListener('submit', (e) => {
     e.preventDefault();
 
-    const loanAmount = parseFloat(document.getElementById('f-loan').value) || 0;
+    const loanInput = document.getElementById('f-loan').value;
+const loanAmount = loanInput ? parseFloat(loanInput) : null;
 
     const newClient = {
         name: document.getElementById('f-name').value,
@@ -384,7 +394,13 @@ function populateMonthSelectors() {
         }
     });
 
-    const years = Array.from(yearsSet).sort();
+    let years = Array.from(yearsSet).sort();
+
+// fallback if empty
+if (years.length === 0) {
+    const currentYear = new Date().getFullYear();
+    years = [currentYear - 1, currentYear, currentYear + 1];
+}
     const usedMonths = Array.from(monthsSet).sort();
 
     // ===== Loans & Settled =====
@@ -404,8 +420,16 @@ function populateMonthSelectors() {
     function fillMonths(select) {
         if (!select) return;
         select.innerHTML = '<option value="">Select Month</option>';
-        usedMonths.forEach(m => {
-            select.innerHTML += `<option value="${m+1}">${months[m]}</option>`;
+        const monthsToUse = usedMonths.length ? usedMonths : [...Array(12).keys()];
+
+monthsToUse.forEach(m => {
+            years.forEach(y => {
+    monthsToUse.forEach(m => {
+        select.innerHTML += `<option value="${y}-${m+1}">
+            ${months[m]} ${y}
+        </option>`;
+    });
+});
         });
     }
 
@@ -432,7 +456,8 @@ function populateMonthSelectors() {
 }
 
 window.filterLoans = () => {
-    const month = document.getElementById('loan-month').value;
+    const selected = document.getElementById('loan-month').value;
+const [year, month] = selected.split('-');
     const year = document.getElementById('loan-year').value;
     const tbody = document.getElementById('loans-body');
 
@@ -550,3 +575,55 @@ window.showSection = (id) => {
 // Start
 console.log("%cJML Loan Manager - Complete Version Loaded", "color:#2563eb; font-weight:bold");
 loadData();
+
+
+window.assignLoan = () => {
+    const amount = parseFloat(document.getElementById('newLoanAmount').value);
+    const start = document.getElementById('newStartDate').value;
+    const end = document.getElementById('newEndDate').value;
+
+    if (!amount) return alert("Enter loan amount");
+
+    const c = clients[currentIndex];
+
+    c.loan = amount;
+    c.startDate = start;
+    c.endDate = end;
+    c.totalPaid = 0;
+    c.balance = amount * 1.25;
+
+    c.history.push({
+        date: new Date().toLocaleDateString('en-GB'),
+        time: new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}),
+        act: "New Loan",
+        det: `Loan issued KSh ${amount}`,
+        by: currentUserEmail.split('@')[0]
+    });
+
+    saveData();
+    alert("Loan assigned");
+    openDashboard(currentIndex);
+};
+
+
+window.saveNotes = () => {
+    const note = document.getElementById('clientNotes').value;
+    clients[currentIndex].notes = note;
+    saveData();
+    alert("Notes saved");
+};
+
+window.enableEdit = () => {
+    const c = clients[currentIndex];
+    document.getElementById('edit-name').value = c.name;
+    document.getElementById('edit-phone').value = c.phone;
+};
+
+window.saveEdit = () => {
+    const c = clients[currentIndex];
+    c.name = document.getElementById('edit-name').value;
+    c.phone = document.getElementById('edit-phone').value;
+    saveData();
+    alert("Updated");
+    openDashboard(currentIndex);
+};
