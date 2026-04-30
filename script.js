@@ -346,12 +346,35 @@ window.saveAccountBalance = () => {
 };
 
 // Dynamic Updates (using simple logic for now - can be improved later with real history dates)
-window.updateMonthlyPaid = () => {
-    const month = document.getElementById('monthly-select').value;
-    const paid = month ? Math.floor(Math.random() * 85000) + 12000 : 0;
-    document.getElementById('monthly-paid').innerText = `KSh ${paid.toLocaleString()}`;
-};
 
+window.updateMonthlyPaid = () => {
+    const selected = document.getElementById('monthly-select').value;
+
+    if (!selected) return;
+
+    const [year, month] = selected.split('-');
+
+    let total = 0;
+
+    clients.forEach(c => {
+        (c.history || []).forEach(h => {
+            if (h.act === "Payment") {
+                const d = new Date(h.date.split('/').reverse().join('-'));
+
+                if (
+                    d.getMonth()+1 == month &&
+                    d.getFullYear() == year
+                ) {
+                    const amt = parseFloat(h.det.replace(/[^\d]/g,'')) || 0;
+                    total += amt;
+                }
+            }
+        });
+    });
+
+    document.getElementById('monthly-paid').innerText =
+        `KSh ${total.toLocaleString()}`;
+};
 window.updateMonthlyProfit = () => {
     const month = document.getElementById('monthly-profit-select').value;
     const profit = month ? Math.floor(Math.random() * 38000) + 8000 : 0;
@@ -383,31 +406,41 @@ function populateMonthSelectors() {
         "July","August","September","October","November","December"
     ];
 
-    const yearsSet = new Set();
-    const monthsSet = new Set();
+    const loanMonth = document.getElementById('loan-month');
+    const loanYear = document.getElementById('loan-year');
 
-    clients.forEach(c => {
-        if (c.startDate) {
-            const d = new Date(c.startDate);
-            yearsSet.add(d.getFullYear());
-            monthsSet.add(d.getMonth());
-        }
+    const settledMonth = document.getElementById('settled-month');
+    const settledYear = document.getElementById('settled-year');
+
+    // Fill ALL months
+    [loanMonth, settledMonth].forEach(select => {
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Select Month</option>';
+
+        months.forEach((m, i) => {
+            select.innerHTML += `<option value="${i+1}">${m}</option>`;
+        });
     });
 
-    let years = Array.from(yearsSet).sort();
-
-// fallback if empty
-if (years.length === 0) {
+    // Generate years (last 5 + current + next)
     const currentYear = new Date().getFullYear();
-    years = [currentYear - 1, currentYear, currentYear + 1];
-}
-    const usedMonths = Array.from(monthsSet).sort();
+    const years = [];
 
-    // ===== Loans & Settled =====
-    const loanMonth = document.getElementById('loan-month');
-    const settledMonth = document.getElementById('settled-month');
-    const loanYear = document.getElementById('loan-year');
-    const settledYear = document.getElementById('settled-year');
+    for (let i = currentYear - 5; i <= currentYear + 1; i++) {
+        years.push(i);
+    }
+
+    [loanYear, settledYear].forEach(select => {
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Select Year</option>';
+
+        years.forEach(y => {
+            select.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+    });
+}
 
     // ===== Financials =====
     const monthlySelect = document.getElementById('monthly-select');
@@ -456,11 +489,13 @@ if (years.length === 0) {
 }
 
 window.filterLoans = () => {
-    const selected = document.getElementById('loan-month').value || "";
-    const parts = selected.split('-');
-
-    const month = parts[1];
+    const month = document.getElementById('loan-month').value;
     const year = document.getElementById('loan-year').value;
+
+    if (!month || !year) {
+        alert("Select month and year");
+        return;
+    }
 
     const tbody = document.getElementById('loans-body');
 
@@ -468,8 +503,7 @@ window.filterLoans = () => {
         if (!c.startDate) return false;
         const d = new Date(c.startDate);
 
-        return (!month || d.getMonth()+1 == month) &&
-               (!year || d.getFullYear() == year);
+        return d.getMonth()+1 == month && d.getFullYear() == year;
     });
 
     tbody.innerHTML = filtered.map((c,i)=>`
@@ -548,7 +582,37 @@ window.addManualDebt = () => {
 // Reports
 window.loadReports = () => {
     const tbody = document.getElementById('reports-body');
-    if (tbody) tbody.innerHTML = `<tr><td>\( {currentUserEmail}</td><td> \){clients.length}</td><td>45</td><td>12</td><td>8</td></tr>`;
+
+    const stats = {};
+
+    clients.forEach(c => {
+        (c.history || []).forEach(h => {
+            const emp = h.by || "Unknown";
+
+            if (!stats[emp]) {
+                stats[emp] = {
+                    clients: 0,
+                    payments: 0,
+                    loans: 0,
+                    settled: 0
+                };
+            }
+
+            if (h.act === "New Loan") stats[emp].loans++;
+            if (h.act === "Payment") stats[emp].payments++;
+            if (h.act === "Settlement") stats[emp].settled++;
+        });
+    });
+
+    tbody.innerHTML = Object.entries(stats).map(([emp, s]) => `
+        <tr>
+            <td>${emp}</td>
+            <td>${s.clients}</td>
+            <td>${s.payments}</td>
+            <td>${s.loans}</td>
+            <td>${s.settled}</td>
+        </tr>
+    `).join('');
 };
 
 // Sidebar & Theme
@@ -574,7 +638,7 @@ window.showSection = (id) => {
         item.classList.add('active');
     }
 });
-    if (active) active.classList.add('active');
+    
 
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
 
@@ -583,9 +647,6 @@ window.showSection = (id) => {
     if (id === 'financials-sec') updateFinancials();
 };
 
-// Start
-console.log("%cJML Loan Manager - Complete Version Loaded", "color:#2563eb; font-weight:bold");
-loadData();
 
 
 window.assignLoan = () => {
@@ -638,3 +699,6 @@ window.saveEdit = () => {
     alert("Updated");
     openDashboard(currentIndex);
 };
+
+// Start
+console.log("%cJML Loan Manager - Complete Version Loaded", "color:#2563eb; font-weight:bold");
