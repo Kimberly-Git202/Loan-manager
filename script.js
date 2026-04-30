@@ -559,7 +559,13 @@ window.loadReports = () => {
 };
 
 // Sidebar & Theme
-window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
+window.toggleSidebar = () => {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('open');
+};
+
 
 window.toggleDarkMode = () => {
     document.body.classList.toggle('dark-mode');
@@ -569,18 +575,23 @@ window.toggleDarkMode = () => {
 if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
 window.showSection = (id) => {
-    document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
-    const section = document.getElementById(id);
-    if (section) section.classList.remove('hidden');
+    document.querySelectorAll('.content-section').forEach(s => {
+        s.classList.add('hidden');
+    });
+
+    const target = document.getElementById(id);
+    if (target) {
+        target.classList.remove('hidden');
+    }
 
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.remove('active');
 
-    if (item.getAttribute('onclick')?.includes(id)) {
-        item.classList.add('active');
+    event?.currentTarget?.classList.add('active');
+
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar')?.classList.remove('open');
     }
-});
+};
     
 
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
@@ -589,8 +600,6 @@ window.showSection = (id) => {
     if (id === 'reports-sec') loadReports();
     if (id === 'financials-sec') updateFinancials();
 };
-
-
 
 window.assignLoan = () => {
     const amount = parseFloat(document.getElementById('newLoanAmount').value);
