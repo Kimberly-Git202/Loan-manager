@@ -207,6 +207,10 @@
                 <div class="metric-box"><small>Paid</small><p id="d-paid"></p></div>
             </div>
 
+            <h3>Notes & Reminders</h3>
+<textarea id="clientNotes" placeholder="Enter notes..." style="width:100%; height:80px;"></textarea>
+<button onclick="saveNotes()" class="btn-save">Save Notes</button>
+
             <h3>Payment History</h3>
             <div class="history-container">
                 <table class="styled-table">
@@ -215,16 +219,29 @@
                 </table>
             </div>
 
+            
+            <div class="payment-box">
+    <h4>Assign Loan</h4>
+    <input type="number" id="newLoanAmount" placeholder="Enter Principal">
+    <input type="date" id="newStartDate">
+    <input type="date" id="newEndDate">
+    <button onclick="assignLoan()" class="btn-save">Save Loan</button>
+            </div>
+
             <div class="payment-box">
                 <h4>New Payment</h4>
                 <input type="number" id="payAmt" placeholder="Amount (KSh)">
                 <input type="time" id="payTime" placeholder="Time (HH:mm)">
+                <input type="text" id="edit-name">
+<input type="text" id="edit-phone">
+<button onclick="saveEdit()" class="btn-save">Save Changes</button>
                 <button onclick="processPayment()" class="btn-save">Record Payment</button>
             </div>
 
             <div class="btn-group">
                 <button onclick="settleAndReset()" class="btn-save">Settle Loan</button>
                 <button onclick="deleteClient()" class="btn-delete">Delete</button>
+                <button onclick="enableEdit()" class="btn-save">Edit Client</button>
             </div>
         </div>
     </div>
