@@ -592,14 +592,6 @@ window.showSection = (id) => {
         document.getElementById('sidebar')?.classList.remove('open');
     }
 };
-    
-
-    if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
-
-    if (id === 'debts-sec') renderDebts();
-    if (id === 'reports-sec') loadReports();
-    if (id === 'financials-sec') updateFinancials();
-};
 
 window.assignLoan = () => {
     const amount = parseFloat(document.getElementById('newLoanAmount').value);
