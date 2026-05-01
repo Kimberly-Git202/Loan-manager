@@ -32,7 +32,7 @@ body {
 
 .app-container { display: flex; min-height: 100vh; position: relative; }
 
-/* Sidebar - FIXED */
+/* FIXED SIDEBAR */
 .sidebar {
     position: fixed;
     top: 0;
@@ -56,7 +56,6 @@ body {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid rgba(255,255,255,0.1);
-    font-weight: 600;
 }
 
 .nav-item { 
@@ -165,7 +164,7 @@ body {
     gap: 15px; 
 }
 
-/* Modal */
+/* Dossier Modal */
 .modal { 
     position: fixed; 
     inset: 0; 
