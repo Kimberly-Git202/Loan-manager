@@ -10,7 +10,7 @@
 <body>
     <div id="overlay" onclick="toggleSidebar()"></div>
 
-    <!-- Login Overlay - Always shows first -->
+    <!-- Login Overlay -->
     <div id="login-overlay" class="modal">
         <div class="modal-content" style="max-width: 380px; text-align: center;">
             <h2>JML LIMITED</h2>
@@ -29,14 +29,14 @@
                 <i class="fas fa-times" onclick="toggleSidebar()" style="cursor:pointer; font-size:1.4rem;"></i>
             </div>
             <div class="nav-item active" onclick="showSection('clients-sec'); toggleSidebar()"><i class="fas fa-users"></i> Clients</div>
-            <div class="nav-item" onclick="showSection('enroll-sec')"><i class="fas fa-user-plus"></i> Enroll Client</div>
-            <div class="nav-item" onclick="showSection('financials-sec')"><i class="fas fa-chart-line"></i> Financials</div>
-            <div class="nav-item" onclick="showSection('loans-sec')"><i class="fas fa-hand-holding-usd"></i> Loans</div>
-            <div class="nav-item" onclick="showSection('settled-sec')"><i class="fas fa-check-circle"></i> Settled Loans</div>
-            <div class="nav-item" onclick="showSection('debts-sec')"><i class="fas fa-exclamation-triangle"></i> Debts</div>
-            <div class="nav-item" onclick="showSection('settings-sec')"><i class="fas fa-cog"></i> Settings</div>
-            <div class="nav-item" onclick="showSection('modes-sec')"><i class="fas fa-moon"></i> Modes</div>
-            <div class="nav-item" onclick="showSection('reports-sec')"><i class="fas fa-file-alt"></i> Reports</div>
+            <div class="nav-item" onclick="showSection('enroll-sec'); toggleSidebar()"><i class="fas fa-user-plus"></i> Enroll Client</div>
+            <div class="nav-item" onclick="showSection('financials-sec'); toggleSidebar()"><i class="fas fa-chart-line"></i> Financials</div>
+            <div class="nav-item" onclick="showSection('loans-sec'); toggleSidebar()"><i class="fas fa-hand-holding-usd"></i> Loans</div>
+            <div class="nav-item" onclick="showSection('settled-sec'); toggleSidebar()"><i class="fas fa-check-circle"></i> Settled Loans</div>
+            <div class="nav-item" onclick="showSection('debts-sec'); toggleSidebar()"><i class="fas fa-exclamation-triangle"></i> Debts</div>
+            <div class="nav-item" onclick="showSection('settings-sec'); toggleSidebar()"><i class="fas fa-cog"></i> Settings</div>
+            <div class="nav-item" onclick="showSection('modes-sec'); toggleSidebar()"><i class="fas fa-moon"></i> Modes</div>
+            <div class="nav-item" onclick="showSection('reports-sec'); toggleSidebar()"><i class="fas fa-file-alt"></i> Reports</div>
             <div class="nav-item" onclick="handleLogout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-sign-out-alt"></i> Logout</div>
         </nav>
 
@@ -94,12 +94,12 @@
                 </div>
             </section>
 
-            <!-- Financials - Cards as per sketch -->
+            <!-- Financials -->
             <section id="financials-sec" class="content-section hidden">
                 <div class="finance-grid" id="finance-grid"></div>
             </section>
 
-            <!-- Loans Issued -->
+            <!-- Loans -->
             <section id="loans-sec" class="content-section hidden">
                 <div class="card">
                     <h2>Loans Issued</h2>
@@ -107,7 +107,7 @@
                         <option value="">Select Month</option>
                     </select>
                     <select id="loan-year" onchange="filterLoans()">
-    <option value="">Select Year</option>
+                        <option value="">Select Year</option>
                     </select>
                     <select id="loan-week" onchange="filterLoans()">
                         <option value="ALL">All Weeks</option>
@@ -133,7 +133,7 @@
                         <option value="">Select Month</option>
                     </select>
                     <select id="settled-year" onchange="filterSettled()">
-    <option value="">Select Year</option>
+                        <option value="">Select Year</option>
                     </select>
                     <div class="table-container" style="margin-top:15px;">
                         <table class="styled-table">
@@ -144,27 +144,26 @@
                 </div>
             </section>
 
-            <!-- Debts - Table as per sketch -->
+            <!-- Debts -->
             <section id="debts-sec" class="content-section hidden">
                 <div class="card">
                     <h2>Debts</h2>
                     <div class="table-container">
                         <table class="styled-table">
                             <thead>
-<tr>
-<th>Full Name</th>
-<th>ID Number</th>
-<th>Principal</th>
-<th>Details</th>
-<th>Date</th>
-<th>Balance</th>
-<th>Action</th>
-</tr>
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>ID Number</th>
+                                    <th>Principal</th>
+                                    <th>Details</th>
+                                    <th>Date</th>
+                                    <th>Balance</th>
+                                    <th>Action</th>
+                                </tr>
                             </thead>
                             <tbody id="debts-body"></tbody>
                         </table>
                     </div>
-                    <!-- Manual Fill Form for Debts -->
                     <div style="margin-top:20px; padding:15px; background:var(--card); border-radius:12px;">
                         <h4>Add Manual Debt</h4>
                         <input type="text" id="debt-name" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:8px;">
@@ -219,8 +218,8 @@
             </div>
 
             <h3>Notes & Reminders</h3>
-<textarea id="clientNotes" placeholder="Enter notes..." style="width:100%; height:80px;"></textarea>
-<button onclick="saveNotes()" class="btn-save">Save Notes</button>
+            <textarea id="clientNotes" placeholder="Enter notes..." style="width:100%; height:80px;"></textarea>
+            <button onclick="saveNotes()" class="btn-save">Save Notes</button>
 
             <h3>Payment History</h3>
             <div class="history-container">
@@ -230,13 +229,12 @@
                 </table>
             </div>
 
-            
             <div class="payment-box">
-    <h4>Assign Loan</h4>
-    <input type="number" id="newLoanAmount" placeholder="Enter Principal">
-    <input type="date" id="newStartDate">
-    <input type="date" id="newEndDate">
-    <button onclick="assignLoan()" class="btn-save">Save Loan</button>
+                <h4>Assign Loan</h4>
+                <input type="number" id="newLoanAmount" placeholder="Enter Principal">
+                <input type="date" id="newStartDate">
+                <input type="date" id="newEndDate">
+                <button onclick="assignLoan()" class="btn-save">Save Loan</button>
             </div>
 
             <div class="payment-box">
@@ -244,8 +242,8 @@
                 <input type="number" id="payAmt" placeholder="Amount (KSh)">
                 <input type="time" id="payTime" placeholder="Time (HH:mm)">
                 <input type="text" id="edit-name">
-<input type="text" id="edit-phone">
-<button onclick="saveEdit()" class="btn-save">Save Changes</button>
+                <input type="text" id="edit-phone">
+                <button onclick="saveEdit()" class="btn-save">Save Changes</button>
                 <button onclick="processPayment()" class="btn-save">Record Payment</button>
             </div>
 
@@ -257,6 +255,6 @@
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
-                                   </html>
+                        </html>
