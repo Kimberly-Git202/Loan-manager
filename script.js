@@ -561,18 +561,18 @@ window.loadReports = () => {
 // Sidebar & Theme
 window.toggleSidebar = () => {
     const sidebar = document.getElementById('sidebar');
-    if (!sidebar) return;
-
-    sidebar.classList.toggle('open');
-};
-
-window.toggleSidebar = () => {
-    const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('overlay');
+
+    if (!sidebar || !overlay) return;
 
     sidebar.classList.toggle('open');
     overlay.classList.toggle('show');
 };
+
+// Close when clicking overlay
+document.getElementById('overlay').addEventListener('click', () => {
+    toggleSidebar();
+});
 
 
 if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
@@ -644,6 +644,31 @@ window.saveEdit = () => {
     alert("Updated");
     openDashboard(currentIndex);
 };
+
+let startX = 0;
+let endX = 0;
+
+document.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+});
+
+document.addEventListener('touchend', (e) => {
+    endX = e.changedTouches[0].clientX;
+
+    const diff = endX - startX;
+
+    // Swipe right → open
+    if (diff > 70) {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('overlay').classList.add('show');
+    }
+
+    // Swipe left → close
+    if (diff < -70) {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('overlay').classList.remove('show');
+    }
+});
 
 // Start
 console.log("%cJML Loan Manager - Complete Version Loaded", "color:#2563eb; font-weight:bold");
