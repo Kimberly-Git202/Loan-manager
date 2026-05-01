@@ -252,3 +252,10 @@ body {
     .sidebar.open { left: 0; }
     .main-content { margin-left: 0; }
 }
+.nav-item {
+    transition: all 0.2s ease;
+}
+
+.nav-item:active {
+    transform: scale(0.97);
+}
