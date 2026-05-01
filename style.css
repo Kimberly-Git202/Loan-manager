@@ -38,27 +38,32 @@ body {
     background: var(--primary); 
     color: white; 
     position: fixed;
-    left: -280px;
     top: 0;
+    left: 0;
     height: 100vh;
-    transition: left 0.3s ease;
+
+    transform: translateX(-100%); /* hidden */
+    transition: transform 0.3s ease;
+
     z-index: 1000;
     overflow-y: auto;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.3);
 }
 
-.sidebar.open { left: 0; }
-
-.sidebar {
-    transition: transform 0.3s ease;
-}
-.sidebar {
-    transform: translateX(-100%);
-}
 .sidebar.open {
-    transform: translateX(0);
+    transform: translateX(0); /* show */
 }
 
+#overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    z-index: 900;
+}
+
+#overlay.show {
+    display: block;
+}
 
 .sidebar-header { 
     padding: 25px; 
