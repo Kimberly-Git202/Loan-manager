@@ -171,7 +171,7 @@ window.processPayment = () => {
 
     saveData();
     alert("Payment recorded successfully.");
-    openDashboard(currentIndex);
+    openDashboard(clients[currentIndex].id);
 };
 
 // Settle Loan
@@ -566,27 +566,28 @@ window.toggleSidebar = () => {
     sidebar.classList.toggle('open');
 };
 
+window.toggleSidebar = () => {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
 
-window.toggleDarkMode = () => {
-    document.body.classList.toggle('dark-mode');
-    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
 };
+
 
 if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
 
-window.showSection = (id) => {
+window.showSection = (id, el) => {
     document.querySelectorAll('.content-section').forEach(s => {
         s.classList.add('hidden');
     });
 
-    const target = document.getElementById(id);
-    if (target) {
-        target.classList.remove('hidden');
-    }
+    document.getElementById(id)?.classList.remove('hidden');
 
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.nav-item')
+        .forEach(n => n.classList.remove('active'));
 
-    event?.currentTarget?.classList.add('active');
+    if (el) el.classList.add('active');
 
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar')?.classList.remove('open');
