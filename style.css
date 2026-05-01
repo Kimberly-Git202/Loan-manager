@@ -33,46 +33,55 @@ body {
 .app-container { display: flex; min-height: 100vh; position: relative; }
 
 /* Sidebar - Half screen on mobile */
-.sidebar { 
-    width: 280px; 
-    background: var(--primary); 
-    color: white; 
+/* Sidebar Base */
+.sidebar {
     position: fixed;
     top: 0;
     left: 0;
+    width: 280px;
     height: 100vh;
-
-    transform: translateX(-100%); /* hidden */
-    transition: transform 0.3s ease;
-
+    background: var(--primary);
+    color: white;
     z-index: 1000;
-    overflow-y: auto;
+
+    transform: translateX(-100%);
+    transition: transform 0.35s ease;
 }
 
+/* Show Sidebar */
 .sidebar.open {
-    transform: translateX(0); /* show */
+    transform: translateX(0);
 }
 
+/* Overlay */
 #overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
-    display: none;
+    background: rgba(0,0,0,0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease;
     z-index: 900;
 }
 
 #overlay.show {
-    display: block;
+    opacity: 1;
+    visibility: visible;
 }
 
-.sidebar-header { 
-    padding: 25px; 
-    font-weight: 700; 
-    font-size: 1.3rem; 
-    border-bottom: 1px solid rgba(255,255,255,0.1); 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
+/* Desktop Mode */
+@media (min-width: 769px) {
+    .sidebar {
+        transform: translateX(0);
+    }
+
+    #overlay {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 280px;
+    }
 }
 
 .nav-item { 
