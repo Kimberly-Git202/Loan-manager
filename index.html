@@ -52,7 +52,7 @@
                 </div>
             </header>
 
-            <!-- Clients -->
+            <!-- Your sections remain exactly as you had -->
             <section id="clients-sec" class="content-section">
                 <div class="table-container">
                     <table class="styled-table">
@@ -73,7 +73,6 @@
                 </div>
             </section>
 
-            <!-- Enroll -->
             <section id="enroll-sec" class="content-section hidden">
                 <div class="stat-card" style="max-width:600px; margin:auto;">
                     <h2>Enroll New Client</h2>
@@ -94,21 +93,15 @@
                 </div>
             </section>
 
-            <!-- Financials -->
             <section id="financials-sec" class="content-section hidden">
                 <div class="finance-grid" id="finance-grid"></div>
             </section>
 
-            <!-- Loans -->
             <section id="loans-sec" class="content-section hidden">
                 <div class="card">
                     <h2>Loans Issued</h2>
-                    <select id="loan-month" onchange="filterLoans()">
-                        <option value="">Select Month</option>
-                    </select>
-                    <select id="loan-year" onchange="filterLoans()">
-                        <option value="">Select Year</option>
-                    </select>
+                    <select id="loan-month" onchange="filterLoans()"></select>
+                    <select id="loan-year" onchange="filterLoans()"></select>
                     <select id="loan-week" onchange="filterLoans()">
                         <option value="ALL">All Weeks</option>
                         <option value="1">Week 1</option>
@@ -125,16 +118,11 @@
                 </div>
             </section>
 
-            <!-- Settled Loans -->
             <section id="settled-sec" class="content-section hidden">
                 <div class="card">
                     <h2>Settled Loans</h2>
-                    <select id="settled-month" onchange="filterSettled()">
-                        <option value="">Select Month</option>
-                    </select>
-                    <select id="settled-year" onchange="filterSettled()">
-                        <option value="">Select Year</option>
-                    </select>
+                    <select id="settled-month" onchange="filterSettled()"></select>
+                    <select id="settled-year" onchange="filterSettled()"></select>
                     <div class="table-container" style="margin-top:15px;">
                         <table class="styled-table">
                             <thead><tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Total Paid</th><th>Cleared Date</th></tr></thead>
@@ -144,7 +132,6 @@
                 </div>
             </section>
 
-            <!-- Debts -->
             <section id="debts-sec" class="content-section hidden">
                 <div class="card">
                     <h2>Debts</h2>
@@ -177,17 +164,14 @@
                 </div>
             </section>
 
-            <!-- Settings -->
             <section id="settings-sec" class="content-section hidden">
                 <div class="card"><h2>Settings (Admin Only)</h2><p>Role management and employee access control.</p></div>
             </section>
 
-            <!-- Modes -->
             <section id="modes-sec" class="content-section hidden">
                 <div class="card"><h2>Modes</h2><button onclick="toggleDarkMode()" class="btn-save">Toggle Light / Dark Mode</button></div>
             </section>
 
-            <!-- Reports -->
             <section id="reports-sec" class="content-section hidden">
                 <div class="card">
                     <h2>Reports</h2>
@@ -249,6 +233,7 @@
                 <input type="time" id="payTime" placeholder="Time (HH:mm)">
                 <input type="text" id="edit-name">
                 <input type="text" id="edit-phone">
+                <input type="text" id="edit-amount">
                 <button onclick="saveEdit()" class="btn-save">Save Changes</button>
                 <button onclick="processPayment()" class="btn-save">Record Payment</button>
             </div>
@@ -263,4 +248,4 @@
 
     <script src="script.js"></script>
 </body>
-                        </html>
+    </html>
