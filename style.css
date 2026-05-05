@@ -9,7 +9,6 @@
     --border: #e2e8f0;
     --success: #10b981;
     --danger: #ef4444;
-    --warning: #f59e0b;
 }
 
 body.dark-mode {
@@ -22,21 +21,18 @@ body.dark-mode {
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body { 
     font-family: 'Inter', sans-serif; 
     background: var(--bg); 
     color: var(--text); 
-    line-height: 1.6;
-    overflow-x: hidden;
 }
 
 .app-container { display: flex; min-height: 100vh; position: relative; }
 
-/* Sidebar Fixed */
 .sidebar {
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     width: 280px;
     height: 100vh;
     background: var(--primary);
@@ -46,9 +42,7 @@ body {
     transition: transform 0.35s ease;
 }
 
-.sidebar.open {
-    transform: translateX(0);
-}
+.sidebar.open { transform: translateX(0); }
 
 .sidebar-header {
     padding: 20px 25px;
@@ -64,7 +58,6 @@ body {
     display: flex; 
     align-items: center; 
     gap: 12px; 
-    transition: 0.2s; 
 }
 .nav-item:hover, .nav-item.active { 
     background: rgba(255,255,255,0.15); 
@@ -76,8 +69,8 @@ body {
     background: rgba(0,0,0,0.45);
     opacity: 0;
     visibility: hidden;
-    transition: 0.3s ease;
     z-index: 900;
+    transition: 0.3s;
 }
 
 #overlay.show {
@@ -93,39 +86,22 @@ body {
 
 .main-content { 
     flex: 1; 
-    overflow-y: auto; 
     padding: 20px; 
-}
-
-.top-bar { 
-    display: flex; 
-    align-items: center; 
-    margin-bottom: 25px; 
-    gap: 15px; 
+    overflow-y: auto; 
 }
 
 .table-container { 
     background: var(--card); 
     border-radius: 12px; 
     overflow-x: auto; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
 }
 .styled-table { 
     width: 100%; 
     border-collapse: collapse; 
     min-width: 800px; 
 }
-.styled-table th { 
-    background: rgba(0,0,0,0.03); 
-    padding: 16px; 
-    text-align: left; 
-    font-weight: 600; 
-    color: #64748b; 
-}
-.styled-table td { 
-    padding: 16px; 
-    border-bottom: 1px solid var(--border); 
-}
+.styled-table th { background: rgba(0,0,0,0.03); padding: 16px; text-align: left; }
+.styled-table td { padding: 16px; border-bottom: 1px solid var(--border); }
 
 .card, .stat-card { 
     background: var(--card); 
@@ -149,7 +125,6 @@ body {
     display: none; 
     align-items: center; 
     justify-content: center; 
-    padding: 15px;
 }
 .modal-content { 
     background: var(--card); 
@@ -167,7 +142,6 @@ body {
     right: 25px; 
     font-size: 2rem; 
     cursor: pointer; 
-    opacity: 0.7; 
 }
 
 .highlight-new { background: #ecfdf5 !important; }
