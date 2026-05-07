@@ -3,253 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JML LIMITED | Professional Loan Manager</title>
+    <title>JML LOAN MANAGER | Enterprise</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div id="overlay" onclick="toggleSidebar()"></div>
+<body class="light-mode">
 
-    <!-- Login Overlay -->
     <div id="login-overlay" class="modal">
-        <div class="modal-content" style="max-width: 380px; text-align: center;">
+        <div class="modal-content auth-card">
             <h2>JML LIMITED</h2>
-            <p>Secure Staff Portal</p>
-            <input type="email" id="login-email" placeholder="Work Email" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px;">
-            <input type="password" id="login-password" placeholder="Password" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px;">
-            <button onclick="handleLogin()" class="btn-save">Access System</button>
+            <input type="email" id="login-email" placeholder="Email">
+            <input type="password" id="login-password" placeholder="Password">
+            <button onclick="handleLogin()" class="btn-save">Secure Login</button>
         </div>
     </div>
 
     <div class="app-container">
-        <!-- Sidebar -->
-        <nav class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <span>JML LIMITED</span>
-                <i class="fas fa-times" onclick="toggleSidebar()" style="cursor:pointer; font-size:1.4rem;"></i>
-            </div>
-            <div class="nav-item active" onclick="showSection('clients-sec'); toggleSidebar()"><i class="fas fa-users"></i> Clients</div>
-            <div class="nav-item" onclick="showSection('enroll-sec'); toggleSidebar()"><i class="fas fa-user-plus"></i> Enroll Client</div>
-            <div class="nav-item" onclick="showSection('financials-sec'); toggleSidebar()"><i class="fas fa-chart-line"></i> Financials</div>
-            <div class="nav-item" onclick="showSection('loans-sec'); toggleSidebar()"><i class="fas fa-hand-holding-usd"></i> Loans</div>
-            <div class="nav-item" onclick="showSection('settled-sec'); toggleSidebar()"><i class="fas fa-check-circle"></i> Settled Loans</div>
-            <div class="nav-item" onclick="showSection('debts-sec'); toggleSidebar()"><i class="fas fa-exclamation-triangle"></i> Debts</div>
-            <div class="nav-item" onclick="showSection('settings-sec'); toggleSidebar()"><i class="fas fa-cog"></i> Settings</div>
-            <div class="nav-item" onclick="showSection('modes-sec'); toggleSidebar()"><i class="fas fa-moon"></i> Modes</div>
-            <div class="nav-item" onclick="showSection('reports-sec'); toggleSidebar()"><i class="fas fa-file-alt"></i> Reports</div>
-            <div class="nav-item" onclick="handleLogout()" style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);"><i class="fas fa-sign-out-alt"></i> Logout</div>
-        </nav>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header"><span>JML LOANS</span><i class="fas fa-bars" onclick="toggleSidebar()"></i></div>
+            <nav>
+                <div class="nav-item active" onclick="showSection('list-sec', this)"><i class="fas fa-users"></i><span>1. Clients</span></div>
+                <div class="nav-item" onclick="showSection('enroll-sec', this)"><i class="fas fa-user-plus"></i><span>2. Enroll Client</span></div>
+                <div class="nav-item" onclick="showSection('finance-sec', this)"><i class="fas fa-chart-pie"></i><span>3. Financials</span></div>
+                <div class="nav-item" onclick="showSection('loans-sec', this)"><i class="fas fa-hand-holding-dollar"></i><span>4. Loans</span></div>
+                <div class="nav-item" onclick="showSection('settled-sec', this)"><i class="fas fa-check-double"></i><span>5. Settled Loans</span></div>
+                <div class="nav-item" onclick="showSection('debt-sec', this)"><i class="fas fa-exclamation-triangle"></i><span>6. Debts</span></div>
+                <div class="nav-item" onclick="showSection('settings-sec', this)"><i class="fas fa-cog"></i><span>7. Settings</span></div>
+                <div class="nav-item" onclick="toggleDarkMode()"><i class="fas fa-moon"></i><span>8. Themes</span></div>
+                <div class="nav-item" onclick="showSection('report-sec', this)"><i class="fas fa-file-invoice"></i><span>9. Reports</span></div>
+            </nav>
+        </aside>
 
         <main class="main-content">
             <header class="top-bar">
-                <i class="fas fa-bars menu-btn" onclick="toggleSidebar()"></i>
-                <div class="search-container" style="flex:1; margin:0 20px;">
-                    <input type="text" id="globalSearch" oninput="searchClients()" placeholder="Search clients by name or ID..." style="width:100%; padding:12px 40px 12px 15px; border-radius:8px;">
-                </div>
-                <div style="text-align:right;">
-                    <small>Today's Collection</small>
-                    <div id="top-today" style="font-weight:bold; color:var(--success);">KSh 0</div>
-                </div>
+                <input type="text" id="globalSearch" placeholder="Search by Name or ID..." oninput="app.search()">
+                <div class="top-stats">Today: <span id="top-today">KSh 0</span></div>
             </header>
 
-            <!-- Clients -->
-            <section id="clients-sec" class="content-section">
+            <section id="list-sec" class="content-section">
                 <div class="table-container">
                     <table class="styled-table">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Full Name</th>
-                                <th>ID Number</th>
-                                <th>Phone</th>
-                                <th>Principal</th>
-                                <th>Total Paid</th>
-                                <th>Balance</th>
-                                <th>Action</th>
-                            </tr>
+                            <tr><th>#</th><th>Name</th><th>ID Number</th><th>Phone</th><th>Paid</th><th>Balance</th><th>Action</th></tr>
                         </thead>
                         <tbody id="clientTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- Enroll -->
             <section id="enroll-sec" class="content-section hidden">
-                <div class="stat-card" style="max-width:600px; margin:auto;">
+                <div class="card form-card">
                     <h2>Enroll New Client</h2>
-                    <form id="clientForm">
+                    <form id="enrollForm" class="grid-form">
                         <input type="text" id="f-name" placeholder="Full Name" required>
-                        <input type="text" id="f-idNumber" placeholder="ID Number" required>
-                        <input type="tel" id="f-phone" placeholder="Phone Number" required>
-                        <input type="text" id="f-location" placeholder="Location" required>
-                        <input type="text" id="f-occupation" placeholder="Occupation" required>
-                        <input type="text" id="f-referral" placeholder="Referral" required>
-                        <input type="number" id="f-loan" placeholder="Principal Amount (KSh)" required>
-                        <div style="display:flex; gap:10px;">
-                            <input type="date" id="f-start">
-                            <input type="date" id="f-end">
-                        </div>
-                        <button type="submit" class="btn-save">Enroll Client</button>
+                        <input type="text" id="f-id" placeholder="ID Number" required>
+                        <input type="text" id="f-phone" placeholder="Phone">
+                        <input type="text" id="f-loc" placeholder="Location">
+                        <input type="text" id="f-occ" placeholder="Occupation">
+                        <input type="text" id="f-ref" placeholder="Referral">
+                        <input type="number" id="f-loan" placeholder="Principal (KSH)" required>
+                        <button type="submit" class="btn-save">Submit Enrollment</button>
                     </form>
                 </div>
             </section>
 
-            <!-- Financials -->
-            <section id="financials-sec" class="content-section hidden">
-                <div class="finance-grid" id="finance-grid"></div>
+            <section id="finance-sec" class="content-section hidden">
+                <div class="finance-controls">
+                    <select id="fin-month" onchange="app.updateFinancials()"></select>
+                    <select id="fin-year" onchange="app.updateFinancials()"></select>
+                </div>
+                <div class="finance-grid" id="finance-display"></div>
             </section>
 
-            <!-- Loans -->
-            <section id="loans-sec" class="content-section hidden">
-                <div class="card">
-                    <h2>Loans Issued</h2>
-                    <select id="loan-month" onchange="filterLoans()"></select>
-                    <select id="loan-year" onchange="filterLoans()"></select>
-                    <select id="loan-week" onchange="filterLoans()">
-                        <option value="ALL">All Weeks</option>
-                        <option value="1">Week 1</option>
-                        <option value="2">Week 2</option>
-                        <option value="3">Week 3</option>
-                        <option value="4">Week 4</option>
-                    </select>
-                    <div class="table-container" style="margin-top:15px;">
-                        <table class="styled-table">
-                            <thead><tr><th>#</th><th>Name</th><th>ID</th><th>Phone</th><th>Loan Amount</th><th>Date Issued</th></tr></thead>
-                            <tbody id="loans-body"></tbody>
-                        </table>
-                    </div>
+            <section id="debt-sec" class="content-section hidden">
+                <div class="table-container">
+                    <h3>Current Debts</h3>
+                    <table class="styled-table">
+                        <thead><tr><th>Name</th><th>ID</th><th>Principal</th><th>Balance</th><th>Action</th></tr></thead>
+                        <tbody id="debtTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="card manual-debt">
+                    <h4>Add Manual Debt</h4>
+                    <input type="text" id="m-debt-name" placeholder="Name">
+                    <input type="number" id="m-debt-amt" placeholder="Balance">
+                    <button onclick="app.addManualDebt()" class="btn-save">Add Debt</button>
                 </div>
             </section>
 
-            <!-- Settled Loans -->
-            <section id="settled-sec" class="content-section hidden">
-                <div class="card">
-                    <h2>Settled Loans</h2>
-                    <select id="settled-month" onchange="filterSettled()"></select>
-                    <select id="settled-year" onchange="filterSettled()"></select>
-                    <div class="table-container" style="margin-top:15px;">
-                        <table class="styled-table">
-                            <thead><tr><th>#</th><th>Full Name</th><th>ID Number</th><th>Total Paid</th><th>Cleared Date</th></tr></thead>
-                            <tbody id="settled-body"></tbody>
-                        </table>
+            <div id="dossierModal" class="modal hidden">
+                <div class="modal-content dossier-layout">
+                    <span class="close" onclick="app.closeDossier()">&times;</span>
+                    <div class="dossier-header">
+                        <h2 id="d-name">--</h2>
+                        <p>ID: <span id="d-id">--</span> | Updated: <span id="d-up">--</span></p>
+                    </div>
+                    <div class="dossier-body">
+                        <div class="info-pane">
+                            <h4>Client Info</h4>
+                            <div id="d-info-box"></div>
+                            <textarea id="d-notes" placeholder="Notes & Reminders..."></textarea>
+                            <button onclick="app.saveNotes()">Save Notes</button>
+                        </div>
+                        <div class="stats-pane">
+                            <div class="metric">Principal: <b id="v-p">0</b></div>
+                            <div class="metric">Total Paid: <b id="v-tp" style="color:green">0</b></div>
+                            <div class="metric">Balance: <b id="v-bal" style="color:red">0</b></div>
+                        </div>
+                        <div class="history-pane">
+                            <h4>Audit History</h4>
+                            <div class="scroll-table">
+                                <table class="history-table">
+                                    <thead><tr><th>Date</th><th>Activity</th><th>Time</th><th>User</th></tr></thead>
+                                    <tbody id="historyBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="actions-pane">
+                            <input type="number" id="payAmt" placeholder="Amount">
+                            <input type="time" id="payTime">
+                            <button onclick="app.processPayment()" class="btn-pay">Record Payment</button>
+                            <button onclick="app.settleLoan()" class="btn-settle">Settle Loan</button>
+                        </div>
                     </div>
                 </div>
-            </section>
-
-            <!-- Debts -->
-            <section id="debts-sec" class="content-section hidden">
-                <div class="card">
-                    <h2>Debts</h2>
-                    <div class="table-container">
-                        <table class="styled-table">
-                            <thead>
-                                <tr>
-                                    <th>Full Name</th>
-                                    <th>ID Number</th>
-                                    <th>Principal</th>
-                                    <th>Details</th>
-                                    <th>Date</th>
-                                    <th>Balance</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="debts-body"></tbody>
-                        </table>
-                    </div>
-                    <div style="margin-top:20px; padding:15px; background:var(--card); border-radius:12px;">
-                        <h4>Add Manual Debt</h4>
-                        <input type="text" id="debt-name" placeholder="Full Name" style="width:100%; padding:10px; margin-bottom:8px;">
-                        <input type="text" id="debt-id" placeholder="ID Number" style="width:100%; padding:10px; margin-bottom:8px;">
-                        <input type="number" id="debt-principal" placeholder="Principal" style="width:100%; padding:10px; margin-bottom:8px;">
-                        <input type="text" id="debt-details" placeholder="Details" style="width:100%; padding:10px; margin-bottom:8px;">
-                        <input type="text" id="debt-Date" placeholder="Date" style="width:100%; padding:10px; margin-bottom:8px;">
-                        <input type="number" id="debt-balance" placeholder="Balance" style="width:100%; padding:10px; margin-bottom:8px;">
-                        <button onclick="addManualDebt()" class="btn-save">Add Debt</button>
-                    </div>
-                </div>
-            </section>
-
-            <section id="settings-sec" class="content-section hidden">
-                <div class="card"><h2>Settings (Admin Only)</h2><p>Role management and employee access control.</p></div>
-            </section>
-
-            <section id="modes-sec" class="content-section hidden">
-                <div class="card"><h2>Modes</h2><button onclick="toggleDarkMode()" class="btn-save">Toggle Light / Dark Mode</button></div>
-            </section>
-
-            <section id="reports-sec" class="content-section hidden">
-                <div class="card">
-                    <h2>Reports</h2>
-                    <select id="report-employee" onchange="loadReports()">
-                        <option value="">All Employees</option>
-                    </select>
-                    <div class="table-container" style="margin-top:15px;">
-                        <table class="styled-table">
-                            <thead><tr><th>Employee</th><th>Clients Handled</th><th>Payments Recorded</th><th>Loans Issued</th><th>Settled</th></tr></thead>
-                            <tbody id="reports-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+            </div>
         </main>
     </div>
-
-    <!-- Dossier Modal -->
-    <div id="detailWindow" class="modal hidden">
-        <div class="modal-content">
-            <span class="close" onclick="closeDetails()">×</span>
-            <h2 id="d-name"></h2>
-            <div class="loan-metrics">
-                <p><strong>Phone:</strong> <span id="d-phone"></span></p>
-                <p><strong>Location:</strong> <span id="d-location"></span></p>
-                <p><strong>Occupation:</strong> <span id="d-occupation"></span></p>
-                <p><strong>Referral:</strong> <span id="d-referral"></span></p>
-                <p><strong>Start Date:</strong> <span id="d-start"></span></p>
-                <p><strong>End Date:</strong> <span id="d-end"></span></p>
-                <div class="metric-box"><small>Principal</small><p id="d-principal"></p></div>
-                <div class="metric-box"><small>Total (1.25×)</small><p id="d-total"></p></div>
-                <div class="metric-box"><small>Balance</small><p id="d-balance"></p></div>
-                <div class="metric-box"><small>Paid</small><p id="d-paid"></p></div>
-            </div>
-
-            <h3>Notes & Reminders</h3>
-            <textarea id="clientNotes" placeholder="Enter notes..." style="width:100%; height:80px;"></textarea>
-            <button onclick="saveNotes()" class="btn-save">Save Notes</button>
-
-            <h3>Payment History</h3>
-            <div class="history-container">
-                <table class="styled-table">
-                    <thead><tr><th>Date</th><th>Time</th><th>Activity</th><th>Handled By</th></tr></thead>
-                    <tbody id="historyBody"></tbody>
-                </table>
-            </div>
-
-            <div class="payment-box">
-                <h4>Assign Loan</h4>
-                <input type="number" id="newLoanAmount" placeholder="Enter Principal">
-                <input type="date" id="newStartDate">
-                <input type="date" id="newEndDate">
-                <button onclick="assignLoan()" class="btn-save">Save Loan</button>
-            </div>
-
-            <div class="payment-box">
-                <h4>New Payment</h4>
-                <input type="number" id="payAmt" placeholder="Amount (KSh)">
-                <input type="time" id="payTime" placeholder="Time (HH:mm)">
-                <input type="text" id="edit-name">
-                <input type="text" id="edit-phone">
-                <button onclick="saveEdit()" class="btn-save">Save Changes</button>
-                <button onclick="processPayment()" class="btn-save">Record Payment</button>
-            </div>
-
-            <div class="btn-group">
-                <button onclick="settleAndReset()" class="btn-save">Settle Loan</button>
-                <button onclick="deleteClient()" class="btn-delete">Delete</button>
-                <button onclick="enableEdit()" class="btn-save">Edit Client</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
-    </html>
+</html>
