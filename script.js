@@ -1,206 +1,197 @@
-// script.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
-  authDomain: "jml-loans-560d8.firebaseapp.com",
-  projectId: "jml-loans-560d8",
-  databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app",
-  messagingSenderId: "425047270355",
-  appId: "1:425047270355:web:6ccd08365ca1cde7354526"
+    apiKey: "AIzaSyAEMpC9oczMDYybbkZirDkY9a25d8ZqjJw",
+    authDomain: "jml-loans-560d8.firebaseapp.com",
+    projectId: "jml-loans-560d8",
+    databaseURL: "https://jml-loans-560d8-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+const auth = getAuth(firebaseApp);
 
 let clients = [];
-let currentIndex = null;
-let currentUserEmail = "";
+let activeClientId = null;
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, user => {
     if (user) {
-        document.getElementById('login-overlay').style.display = 'none';
-        currentUserEmail = user.email || "User";
-        loadData();
-    } else {
-        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('login-overlay').classList.add('hidden');
+        initApp();
     }
 });
 
-window.handleLogin = () => {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    signInWithEmailAndPassword(auth, email, password).catch(() => alert("Invalid Credentials"));
-};
-
-window.handleLogout = () => signOut(auth);
-
-function loadData() {
-    onValue(ref(db, 'jml_data/'), (snap) => {
+function initApp() {
+    onValue(ref(db, 'jml_data/'), snap => {
         const data = snap.val();
-        clients = data ? Object.entries(data).map(([id, value]) => ({id, ...value})) : [];
-        renderTable();
-        updateFinancials();
-        populateMonthSelectors();
+        clients = data ? Object.values(data) : [];
+        app.render();
+        app.updateFinancials();
+        app.renderDebts();
     });
+    populateSelectors();
 }
 
-function saveData() {
-    const obj = {};
-    clients.forEach(c => {
-        const id = c.id || Date.now().toString();
-        obj[id] = c;
-    });
-    set(ref(db, 'jml_data/'), obj);
-}
-
-window.renderTable = () => {
-    const tbody = document.getElementById('clientTableBody');
-    tbody.innerHTML = clients.map((c, i) => {
-        const totalDue = (c.loan || 0) * 1.25;
-        const balance = totalDue - (c.totalPaid || 0);
-        return `
-            <tr>
+const app = {
+    render(data = clients) {
+        const tbody = document.getElementById('clientTableBody');
+        tbody.innerHTML = data.map((c, i) => {
+            const totalDue = Number(c.principal) * 1.25;
+            const paid = Number(c.totalPaid || 0);
+            return `
+            <tr onclick="app.openDossier('${c.id}')">
                 <td>${i+1}</td>
-                <td>${c.name || ''}</td>
-                <td>${c.idNumber || ''}</td>
-                <td>${c.phone || ''}</td>
-                <td>KSh ${(c.loan || 0).toLocaleString()}</td>
-                <td>KSh ${(c.totalPaid || 0).toLocaleString()}</td>
-                <td style="color:${balance > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:bold">KSh ${balance.toLocaleString()}</td>
-                <td><button class="view-btn" onclick="openDashboard('${c.id}')">View</button></td>
+                <td><b>${c.name}</b></td>
+                <td>${c.id}</td>
+                <td>${c.phone}</td>
+                <td style="color:green">KSh ${paid.toLocaleString()}</td>
+                <td style="color:red">KSh ${(totalDue - paid).toLocaleString()}</td>
+                <td><button class="view-btn">VIEW</button></td>
             </tr>`;
-    }).join('');
+        }).join('');
+    },
+
+    openDossier(id) {
+        activeClientId = id;
+        const c = clients.find(x => x.id === id);
+        if(!c) return;
+
+        const totalDue = Number(c.principal) * 1.25;
+        const paid = Number(c.totalPaid || 0);
+
+        document.getElementById('d-name').innerText = c.name;
+        document.getElementById('d-id').innerText = c.id;
+        document.getElementById('d-up').innerText = c.updatedAt || 'New';
+        document.getElementById('v-p').innerText = Number(c.principal).toLocaleString();
+        document.getElementById('v-tp').innerText = paid.toLocaleString();
+        document.getElementById('v-bal').innerText = (totalDue - paid).toLocaleString();
+        document.getElementById('d-notes').value = c.notes || '';
+        document.getElementById('d-info-box').innerHTML = `<p>Phone: ${c.phone}</p><p>Loc: ${c.location}</p><p>Ref: ${c.referral}</p>`;
+
+        const hBody = document.getElementById('historyBody');
+        hBody.innerHTML = (c.history || []).slice().reverse().map((h, idx, arr) => {
+            const isLate = h.time > "18:00" ? 'class="late-row"' : '';
+            const isNew = h.act === "New Loan" ? 'class="new-row"' : '';
+            
+            // Logic for missed payment gaps
+            let isGap = '';
+            if(idx < arr.length - 1) {
+                const diff = (new Date(h.date) - new Date(arr[idx+1].date)) / (1000*60*24);
+                if(diff > 1.5) isGap = 'class="gap-row"';
+            }
+
+            return `<tr ${isLate || isNew || isGap}>
+                <td>${h.date}</td><td>${h.act}</td><td>${h.time}</td><td>${h.by}</td>
+            </tr>`;
+        }).join('');
+
+        document.getElementById('dossierModal').classList.remove('hidden');
+    },
+
+    processPayment() {
+        const amt = parseFloat(document.getElementById('payAmt').value);
+        const time = document.getElementById('payTime').value;
+        if(!amt || !time || !confirm(`Record KSh ${amt}?`)) return;
+
+        const c = clients.find(x => x.id === activeClientId);
+        const newPaid = (Number(c.totalPaid) || 0) + amt;
+        const history = c.history || [];
+
+        history.push({
+            date: new Date().toLocaleDateString('en-GB'),
+            time: time,
+            act: `Payment: KSh ${amt}`,
+            by: auth.currentUser.email.split('@')[0]
+        });
+
+        update(ref(db, `jml_data/${activeClientId}`), {
+            totalPaid: newPaid,
+            history: history,
+            updatedAt: new Date().toLocaleString()
+        });
+        document.getElementById('payAmt').value = '';
+    },
+
+    updateFinancials() {
+        const m = document.getElementById('fin-month').value;
+        const y = document.getElementById('fin-year').value;
+        
+        let totalOut = 0, monthlyPaid = 0, todayPaid = 0;
+        const today = new Date().toLocaleDateString('en-GB');
+
+        clients.forEach(c => {
+            const bal = (Number(c.principal) * 1.25) - Number(c.totalPaid || 0);
+            totalOut += bal;
+
+            (c.history || []).forEach(h => {
+                if(h.date === today && h.act.includes("Payment")) {
+                    todayPaid += parseFloat(h.act.split('KSh ')[1]);
+                }
+                const [hD, hM, hY] = h.date.split('/');
+                if(parseInt(hM) == m && hY == y && h.act.includes("Payment")) {
+                    monthlyPaid += parseFloat(h.act.split('KSh ')[1]);
+                }
+            });
+        });
+
+        document.getElementById('top-today').innerText = `KSh ${todayPaid.toLocaleString()}`;
+        document.getElementById('finance-display').innerHTML = `
+            <div class="stat-card"><h4>Grand Total Out</h4><h2>KSh ${totalOut.toLocaleString()}</h2></div>
+            <div class="stat-card"><h4>Monthly Total Paid</h4><h2>KSh ${monthlyPaid.toLocaleString()}</h2></div>
+            <div class="stat-card"><h4>Monthly Profit (20% of 1.25)</h4><h2>KSh ${(monthlyPaid * 0.2).toLocaleString()}</h2></div>
+        `;
+    }
 };
 
-window.searchClients = () => {
-    const term = document.getElementById('globalSearch').value.toLowerCase();
-    document.querySelectorAll('#clientTableBody tr').forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(term) ? "" : "none";
-    });
+window.app = app;
+window.handleLogin = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-password').value;
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Login Error"));
 };
 
-window.openDashboard = (id) => {
-    currentIndex = clients.findIndex(c => c.id === id);
-    const c = clients[currentIndex];
-    if (!c) return alert("Client not found");
-
-    const totalDue = (c.loan || 0) * 1.25;
-    const balance = totalDue - (c.totalPaid || 0);
-
-    document.getElementById('d-name').innerText = c.name || '';
-    document.getElementById('d-principal').innerText = `KSh ${(c.loan || 0).toLocaleString()}`;
-    document.getElementById('d-total').innerText = `KSh ${totalDue.toLocaleString()}`;
-    document.getElementById('d-balance').innerText = `KSh ${balance.toLocaleString()}`;
-    document.getElementById('d-paid').innerText = `KSh ${(c.totalPaid || 0).toLocaleString()}`;
-
-    document.getElementById('clientNotes').value = c.notes || "";
-
-    const historyBody = document.getElementById('historyBody');
-    historyBody.innerHTML = (c.history || []).map(h => `
-        <tr>
-            <td>${h.date}</td>
-            <td>${h.time || ''}</td>
-            <td>${h.act || ''}</td>
-            <td>${h.by || ''}</td>
-        </tr>
-    `).join('');
-
-    document.getElementById('detailWindow').style.display = "flex";
-};
-
-window.processPayment = () => {
-    const amt = parseFloat(document.getElementById('payAmt').value);
-    const time = document.getElementById('payTime').value;
-    if (!amt || !time) return alert("Amount and Time required");
-
-    const c = clients[currentIndex];
-    c.totalPaid = (c.totalPaid || 0) + amt;
-    c.history = c.history || [];
-    c.history.push({
-        date: new Date().toLocaleDateString('en-GB'),
-        time: time,
-        act: "Payment",
-        by: currentUserEmail.split('@')[0]
-    });
-
-    saveData();
-    alert("Payment recorded");
-    openDashboard(c.id);
-};
-
-document.getElementById('clientForm').addEventListener('submit', (e) => {
+document.getElementById('enrollForm').addEventListener('submit', e => {
     e.preventDefault();
-    const newClient = {
-        id: Date.now().toString(),
+    const id = document.getElementById('f-id').value;
+    const princ = parseFloat(document.getElementById('f-loan').value);
+    
+    set(ref(db, `jml_data/${id}`), {
+        id: id,
         name: document.getElementById('f-name').value,
-        idNumber: document.getElementById('f-idNumber').value,
         phone: document.getElementById('f-phone').value,
-        location: document.getElementById('f-location').value,
-        occupation: document.getElementById('f-occupation').value,
-        referral: document.getElementById('f-referral').value,
-        loan: parseFloat(document.getElementById('f-loan').value) || 0,
+        location: document.getElementById('f-loc').value,
+        principal: princ,
         totalPaid: 0,
-        history: [{date: new Date().toLocaleDateString('en-GB'), act: "New Loan", by: currentUserEmail.split('@')[0]}]
-    };
-
-    clients.unshift(newClient);
-    saveData();
-    renderTable();
-    alert("Client enrolled successfully!");
-    e.target.reset();
-    showSection('clients-sec');
+        history: [{
+            date: new Date().toLocaleDateString('en-GB'),
+            time: "08:00",
+            act: "New Loan",
+            by: "System"
+        }]
+    }).then(() => {
+        alert("Enrolled!");
+        e.target.reset();
+        showSection('list-sec', document.querySelector('.nav-item'));
+    });
 });
 
-function updateFinancials() {
-    let loaned = 0, paid = 0;
-    clients.forEach(c => {
-        loaned += c.loan || 0;
-        paid += c.totalPaid || 0;
-    });
-    document.getElementById('finance-grid').innerHTML = `
-        <div class="stat-card"><h3>Total Loaned</h3><h2>KSh ${loaned.toLocaleString()}</h2></div>
-        <div class="stat-card"><h3>Total Paid</h3><h2>KSh ${paid.toLocaleString()}</h2></div>
-    `;
+function populateSelectors() {
+    const m = document.getElementById('fin-month');
+    const y = document.getElementById('fin-year');
+    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    months.forEach((name, i) => m.innerHTML += `<option value="${i+1}">${name}</option>`);
+    for(let i=2024; i<=2026; i++) y.innerHTML += `<option value="${i}">${i}</option>`;
+    m.value = new Date().getMonth() + 1;
+    y.value = new Date().getFullYear();
 }
 
-function populateMonthSelectors() {
-    const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-    const currentYear = new Date().getFullYear();
-
-    document.querySelectorAll('#loan-month, #settled-month').forEach(sel => {
-        sel.innerHTML = '<option value="">Select Month</option>';
-        months.forEach((m, i) => sel.innerHTML += `<option value="\( {i+1}"> \){m}</option>`);
-    });
-
-    document.querySelectorAll('#loan-year, #settled-year').forEach(sel => {
-        sel.innerHTML = '<option value="">Select Year</option>';
-        for (let y = currentYear - 5; y <= currentYear + 2; y++) {
-            sel.innerHTML += `<option value="\( {y}"> \){y}</option>`;
-        }
-    });
-}
-
-window.toggleSidebar = () => {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('overlay').classList.toggle('show');
-};
-
-window.showSection = (id) => {
+window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('collapsed');
+window.toggleDarkMode = () => document.body.classList.toggle('dark-mode');
+window.showSection = (id, el) => {
     document.querySelectorAll('.content-section').forEach(s => s.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
-    if (window.innerWidth <= 768) toggleSidebar();
-};
-
-window.toggleDarkMode = () => {
-    document.body.classList.toggle('dark-mode');
-    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
-};
-
-window.onload = () => {
-    if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
-    populateMonthSelectors();
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
 };
